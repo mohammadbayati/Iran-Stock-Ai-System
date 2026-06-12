@@ -19,10 +19,12 @@ def main():
 
     run([python_exe, "scraper/fetch_symbols.py"])
     run([python_exe, "scraper/screen_top10.py"])
+    run([python_exe, "scraper/send_telegram_report.py"])
 
     print("\nDONE.")
     print("Output file:")
     print("output/top10_initial.csv")
+    print("Telegram report sent.")
 
 
 if __name__ == "__main__":
