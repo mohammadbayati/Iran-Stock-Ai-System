@@ -17,12 +17,12 @@ def run(command):
 def main():
     python_exe = sys.executable
 
-    run([python_exe, "scraper\\fetch_symbols.py"])
-    run([python_exe, "scraper\\screen_top10.py"])
+    run([python_exe, "scraper/fetch_symbols.py"])
+    run([python_exe, "scraper/screen_top10.py"])
 
     print("\nDONE.")
     print("Output file:")
-    print("output\\top10_initial.csv")
+    print("output/top10_initial.csv")
 
 
 if __name__ == "__main__":
