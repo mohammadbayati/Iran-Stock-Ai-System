@@ -1,28 +1,69 @@
+import csv
 import os
 from pathlib import Path
 
 import requests
 
 
-CLAUDE_REPORT_FILE = Path("output") / "claude_strategy_report.txt"
-FALLBACK_FILE = Path("output") / "top10_initial.csv"
+INPUT_FILE = Path("output") / "top10_initial.csv"
 
 
-def read_report() -> str:
-    if CLAUDE_REPORT_FILE.exists():
-        return CLAUDE_REPORT_FILE.read_text(encoding="utf-8")
+def read_top10_csv() -> list[dict]:
+    if not INPUT_FILE.exists():
+        raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
-    if FALLBACK_FILE.exists():
-        return FALLBACK_FILE.read_text(encoding="utf-8-sig")
+    with INPUT_FILE.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        return list(reader)
 
-    raise FileNotFoundError("No report file found to send.")
+
+def format_number(value):
+    try:
+        number = float(value)
+        return f"{number:,.0f}"
+    except Exception:
+        return str(value)
+
+
+def build_telegram_report(rows: list[dict]) -> str:
+    lines = []
+
+    lines.append("📊 گزارش خودکار Top 10 بازار")
+    lines.append("")
+    lines.append("⚠️ این گزارش توصیه خرید/فروش نیست؛ فقط خروجی غربالگری اولیه بازار است.")
+    lines.append("برای تصمیم نهایی باید حمایت/مقاومت، RSI، MACD، روند صنعت و ریسک بازار هم بررسی شود.")
+    lines.append("")
+
+    for index, row in enumerate(rows, start=1):
+        symbol = row.get("symbol", "")
+        score = row.get("initial_score", "")
+        label = row.get("initial_label", "")
+        last_price = row.get("last_price", "")
+        close_change = row.get("close_price_change_percent", "")
+        buyer_power = row.get("buyer_power", "")
+        real_money_flow = row.get("real_money_flow", "")
+        trade_value = row.get("trade_value", "")
+        volume = row.get("volume", "")
+        reasons = row.get("reasons", "")
+
+        lines.append(f"{index}) {symbol}")
+        lines.append(f"امتیاز: {score} | وضعیت: {label}")
+        lines.append(f"قیمت آخرین: {format_number(last_price)}")
+        lines.append(f"تغییر پایانی: {close_change}%")
+        lines.append(f"قدرت خریدار: {buyer_power}")
+        lines.append(f"پول حقیقی: {format_number(real_money_flow)}")
+        lines.append(f"ارزش معاملات: {format_number(trade_value)}")
+        lines.append(f"حجم: {format_number(volume)}")
+        lines.append(f"دلایل: {reasons}")
+        lines.append("")
+
+    lines.append("✅ نسخه فعلی: Screener اولیه بدون Claude API")
+    lines.append("مرحله بعدی پیشنهادی: اضافه کردن اندیکاتورها و حمایت/مقاومت برای تصمیم‌سازی دقیق‌تر.")
+
+    return "\n".join(lines)
 
 
 def split_message(text: str, max_length: int = 3500) -> list[str]:
-    """
-    Telegram has message length limits.
-    We split conservatively to avoid errors.
-    """
     chunks = []
     current = ""
 
@@ -68,12 +109,9 @@ def send_telegram_message(message: str):
 
 
 def main():
-    report = read_report()
-
-    header = "📊 گزارش تحلیلی Claude برای بازار امروز\n\n"
-    full_text = header + report
-
-    chunks = split_message(full_text)
+    rows = read_top10_csv()
+    report = build_telegram_report(rows)
+    chunks = split_message(report)
 
     for index, chunk in enumerate(chunks, start=1):
         if len(chunks) > 1:
