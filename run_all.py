@@ -1,4 +1,4 @@
-import subprocess
+﻿import subprocess
 import sys
 
 
@@ -19,13 +19,11 @@ def main():
 
     run([python_exe, "scraper/fetch_symbols.py"])
     run([python_exe, "scraper/screen_top10.py"])
-    run([python_exe, "scraper/claude_analyze_top10.py"])
     run([python_exe, "scraper/send_telegram_report.py"])
 
     print("\nDONE.")
     print("Output files:")
     print("output/top10_initial.csv")
-    print("output/claude_strategy_report.txt")
     print("Telegram report sent.")
 
 
