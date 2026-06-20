@@ -5,10 +5,10 @@ from pathlib import Path
 import requests
 
 
-INPUT_FILE = Path("output") / "top10_initial.csv"
+INPUT_FILE = Path("output") / "decision_report.csv"
 
 
-def read_top10_csv() -> list[dict]:
+def read_decision_csv() -> list[dict]:
     if not INPUT_FILE.exists():
         raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
@@ -19,46 +19,88 @@ def read_top10_csv() -> list[dict]:
 
 def format_number(value):
     try:
+        if value is None or value == "":
+            return "-"
         number = float(value)
         return f"{number:,.0f}"
     except Exception:
         return str(value)
 
 
+def format_float(value, digits=2):
+    try:
+        if value is None or value == "":
+            return "-"
+        number = float(value)
+        return f"{number:.{digits}f}"
+    except Exception:
+        return str(value)
+
+
+def translate_decision(label: str) -> str:
+    mapping = {
+        "Entry Candidate": "کاندید ورود",
+        "Wait for Pullback": "صبر برای پولبک",
+        "Watch - Needs Volume Confirmation": "واچ؛ نیازمند تأیید حجم",
+        "Watch Only": "فقط واچ",
+        "Avoid Entry Now - Overbought": "عدم ورود فعلاً؛ اشباع خرید",
+    }
+
+    return mapping.get(label, label)
+
+
 def build_telegram_report(rows: list[dict]) -> str:
     lines = []
 
-    lines.append("📊 گزارش خودکار Top 10 بازار")
+    lines.append("📊 گزارش تصمیم‌محور بازار")
     lines.append("")
-    lines.append("⚠️ این گزارش توصیه خرید/فروش نیست؛ فقط خروجی غربالگری اولیه بازار است.")
-    lines.append("برای تصمیم نهایی باید حمایت/مقاومت، RSI، MACD، روند صنعت و ریسک بازار هم بررسی شود.")
+    lines.append("⚠️ این گزارش توصیه خرید/فروش نیست؛ خروجی سیستم کمک‌تصمیم است.")
+    lines.append("معیارها: امتیاز اولیه، روند تکنیکال، RSI، حجم ۲۰ روزه، فاصله از سقف/کف ۲۰ روزه.")
     lines.append("")
 
-    for index, row in enumerate(rows, start=1):
-        symbol = row.get("symbol", "")
-        score = row.get("initial_score", "")
-        label = row.get("initial_label", "")
-        last_price = row.get("last_price", "")
-        close_change = row.get("close_price_change_percent", "")
-        buyer_power = row.get("buyer_power", "")
-        real_money_flow = row.get("real_money_flow", "")
-        trade_value = row.get("trade_value", "")
-        volume = row.get("volume", "")
-        reasons = row.get("reasons", "")
+    groups = {
+        "Entry Candidate": [],
+        "Wait for Pullback": [],
+        "Watch - Needs Volume Confirmation": [],
+        "Watch Only": [],
+        "Avoid Entry Now - Overbought": [],
+    }
 
-        lines.append(f"{index}) {symbol}")
-        lines.append(f"امتیاز: {score} | وضعیت: {label}")
-        lines.append(f"قیمت آخرین: {format_number(last_price)}")
-        lines.append(f"تغییر پایانی: {close_change}%")
-        lines.append(f"قدرت خریدار: {buyer_power}")
-        lines.append(f"پول حقیقی: {format_number(real_money_flow)}")
-        lines.append(f"ارزش معاملات: {format_number(trade_value)}")
-        lines.append(f"حجم: {format_number(volume)}")
-        lines.append(f"دلایل: {reasons}")
+    for row in rows:
+        decision = row.get("decision_label", "Watch Only")
+        groups.setdefault(decision, []).append(row)
+
+    for decision, grouped_rows in groups.items():
+        if not grouped_rows:
+            continue
+
+        lines.append(f"🔹 {translate_decision(decision)}")
         lines.append("")
 
-    lines.append("✅ نسخه فعلی: Screener اولیه بدون Claude API")
-    lines.append("مرحله بعدی پیشنهادی: اضافه کردن اندیکاتورها و حمایت/مقاومت برای تصمیم‌سازی دقیق‌تر.")
+        for row in grouped_rows:
+            symbol = row.get("symbol", "")
+            initial_score = row.get("initial_score", "")
+            initial_label = row.get("initial_label", "")
+            trend_score = row.get("trend_score", "")
+            rsi = row.get("rsi_14", "")
+            rsi_status = row.get("rsi_status", "")
+            volume_ratio = row.get("volume_ratio_20", "")
+            return_5d = row.get("return_5d_percent", "")
+            distance_to_high = row.get("distance_to_20d_high_percent", "")
+            reasons = row.get("decision_reasons", "")
+
+            lines.append(f"نماد: {symbol}")
+            lines.append(f"امتیاز اولیه: {initial_score} | وضعیت اولیه: {initial_label}")
+            lines.append(f"Trend Score: {format_float(trend_score, 0)}")
+            lines.append(f"RSI: {format_float(rsi)} | وضعیت RSI: {rsi_status}")
+            lines.append(f"نسبت حجم به میانگین ۲۰ روزه: {format_float(volume_ratio)}")
+            lines.append(f"بازده ۵ روزه: {format_float(return_5d)}٪")
+            lines.append(f"فاصله تا سقف ۲۰ روزه: {format_float(distance_to_high)}٪")
+            lines.append(f"منطق تصمیم: {reasons}")
+            lines.append("")
+
+    lines.append("✅ نسخه فعلی: Decision Support Engine v1")
+    lines.append("مرحله بعدی: اضافه‌کردن حمایت/مقاومت، حدضرر، تارگت و Risk/Reward.")
 
     return "\n".join(lines)
 
@@ -86,12 +128,16 @@ def split_message(text: str, max_length: int = 3500) -> list[str]:
 def send_telegram_message(message: str):
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    is_ci = os.environ.get("CI", "").lower() == "true"
 
-    if not token:
-        raise ValueError("Missing TELEGRAM_BOT_TOKEN environment variable")
+    if not token or not chat_id:
+        if is_ci:
+            raise ValueError("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID environment variable")
 
-    if not chat_id:
-        raise ValueError("Missing TELEGRAM_CHAT_ID environment variable")
+        print("Telegram credentials not found. Local run: skipping Telegram send.")
+        print("")
+        print(message)
+        return {"ok": False, "skipped": True}
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
@@ -109,7 +155,7 @@ def send_telegram_message(message: str):
 
 
 def main():
-    rows = read_top10_csv()
+    rows = read_decision_csv()
     report = build_telegram_report(rows)
     chunks = split_message(report)
 
@@ -118,7 +164,7 @@ def main():
             chunk = f"بخش {index}/{len(chunks)}\n\n{chunk}"
 
         result = send_telegram_message(chunk)
-        print(f"Telegram message part {index} sent.")
+        print(f"Telegram message part {index} processed.")
         print(result)
 
 
