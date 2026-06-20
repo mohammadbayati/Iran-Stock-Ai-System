@@ -1,0 +1,5 @@
+﻿.venv/
+tickers_data/
+data/history/
+__pycache__/
+*.pyc
