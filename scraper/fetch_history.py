@@ -67,19 +67,33 @@ def save_history(symbol: str, df: pd.DataFrame):
 
 
 def main():
+    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+
     symbols = read_top10_symbols()
 
     print(f"Symbols to fetch history for: {len(symbols)}")
     print(symbols)
 
+    success_count = 0
+    error_count = 0
+
     for symbol in symbols:
         try:
             df = fetch_symbol_history(symbol)
-            save_history(symbol, df)
+
+            if not df.empty:
+                save_history(symbol, df)
+                success_count += 1
+            else:
+                error_count += 1
+
         except Exception as e:
+            error_count += 1
             print(f"ERROR fetching history for {symbol}: {e}")
 
     print("History fetch completed.")
+    print(f"Successful histories: {success_count}")
+    print(f"Failed histories: {error_count}")
 
 
 if __name__ == "__main__":

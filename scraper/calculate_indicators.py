@@ -1,10 +1,68 @@
-﻿from pathlib import Path
+﻿import csv
+from pathlib import Path
 
 import pandas as pd
 
 
+TOP10_FILE = Path("output") / "top10_initial.csv"
 HISTORY_DIR = Path("data") / "history"
 OUTPUT_FILE = Path("data") / "indicators.csv"
+
+
+INDICATOR_COLUMNS = [
+    "symbol",
+    "latest_date",
+    "latest_adj_close",
+    "ema_9",
+    "ema_21",
+    "ema_50",
+    "ema_200",
+    "rsi_14",
+    "rsi_status",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "avg_volume_20",
+    "volume_ratio_20",
+    "return_1d_percent",
+    "return_5d_percent",
+    "return_20d_percent",
+    "rolling_high_20",
+    "rolling_low_20",
+    "distance_to_20d_high_percent",
+    "distance_to_20d_low_percent",
+    "trend_score",
+    "technical_label",
+]
+
+
+def read_top10_symbols() -> list[str]:
+    if not TOP10_FILE.exists():
+        return []
+
+    symbols = []
+
+    with TOP10_FILE.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            symbol = row.get("symbol", "").strip()
+
+            if symbol:
+                symbols.append(symbol)
+
+    return symbols
+
+
+def save_empty_indicators(reason: str):
+    print(reason)
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(columns=INDICATOR_COLUMNS).to_csv(
+        OUTPUT_FILE,
+        index=False,
+        encoding="utf-8-sig",
+    )
+    print(f"Empty indicators saved: {OUTPUT_FILE}")
 
 
 def calculate_rsi(series: pd.Series, period: int = 14) -> pd.Series:
@@ -143,12 +201,26 @@ def calculate_indicators_for_file(file_path: Path) -> dict | None:
 
 
 def main():
+    symbols = read_top10_symbols()
+
+    if not symbols:
+        save_empty_indicators("No Top 10 symbols found.")
+        return
+
     if not HISTORY_DIR.exists():
-        raise FileNotFoundError(f"History directory not found: {HISTORY_DIR}")
+        save_empty_indicators(f"History directory not found: {HISTORY_DIR}")
+        return
 
     rows = []
 
-    for file_path in HISTORY_DIR.glob("*.csv"):
+    for symbol in symbols:
+        safe_symbol = symbol.replace("/", "_").replace("\\", "_").replace(" ", "_")
+        file_path = HISTORY_DIR / f"{safe_symbol}.csv"
+
+        if not file_path.exists():
+            print(f"History file not found for current Top 10 symbol: {symbol}")
+            continue
+
         print(f"Calculating indicators for: {file_path.name}")
 
         result = calculate_indicators_for_file(file_path)
@@ -157,10 +229,10 @@ def main():
             rows.append(result)
 
     if not rows:
-        print("No indicator rows generated.")
+        save_empty_indicators("No indicator rows generated from available history files.")
         return
 
-    output_df = pd.DataFrame(rows)
+    output_df = pd.DataFrame(rows, columns=INDICATOR_COLUMNS)
     output_df = output_df.sort_values(
         by=["trend_score", "volume_ratio_20", "return_5d_percent"],
         ascending=[False, False, False],
