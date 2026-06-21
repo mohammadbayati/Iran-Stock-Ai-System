@@ -1,8 +1,3 @@
-"""
-Fetch historical OHLCV data using pytse-client.
-In CI mode, skips fetch and uses cached data/history/ files.
-"""
-
 import sys
 import os
 import argparse
@@ -15,6 +10,21 @@ from config.settings import IS_CI, FETCH_HISTORY_IN_CI, TOP10_CSV, HISTORY_DIR, 
 FORCE_ENV = os.getenv("FORCE_HISTORY_FETCH", "false").lower() == "true"
 PYTSE_CACHE = os.path.join(os.getcwd(), "tickers_data")
 
+ARABIC_TO_PERSIAN = str.maketrans({
+    "ك": "ک",
+    "ي": "ی",
+    "ة": "ه",
+    "ى": "ی",
+    "ؤ": "و",
+    "إ": "ا",
+    "أ": "ا",
+    "آ": "آ",
+})
+
+
+def normalize(symbol: str) -> str:
+    return symbol.translate(ARABIC_TO_PERSIAN).strip()
+
 
 def should_fetch() -> bool:
     if FORCE_ENV:
@@ -26,20 +36,25 @@ def should_fetch() -> bool:
 
 
 def fetch_ticker(symbol: str) -> bool:
+    sym_normalized = normalize(symbol)
     try:
         import pytse_client as tse
-        tse.download(symbols=symbol, write_to_csv=True, include_jdate=True)
-        src = os.path.join(PYTSE_CACHE, f"{symbol}.csv")
+        tse.download(symbols=sym_normalized, write_to_csv=True, include_jdate=True)
+        src = os.path.join(PYTSE_CACHE, f"{sym_normalized}.csv")
         if os.path.exists(src):
             os.makedirs(HISTORY_DIR, exist_ok=True)
-            dst = os.path.join(HISTORY_DIR, f"{symbol}.csv")
+            dst = os.path.join(HISTORY_DIR, f"{sym_normalized}.csv")
             shutil.copy2(src, dst)
-            print(f"[fetch_history] ✓ {symbol}")
+            print(f"[fetch_history] ✓ {sym_normalized}")
             return True
-        print(f"[fetch_history] ✗ {symbol}: no file produced")
+        print(f"[fetch_history] ✗ {sym_normalized}: no file produced")
         return False
     except Exception as e:
-        print(f"[fetch_history] ✗ {symbol}: {e}")
+        err = str(e)
+        if "Cannot find symbol" in err:
+            print(f"[fetch_history] ✗ {sym_normalized}: not in pytse-client")
+        else:
+            print(f"[fetch_history] ✗ {sym_normalized}: {err}")
         return False
 
 
@@ -69,7 +84,7 @@ if __name__ == "__main__":
     symbols = load_symbols_from_top10()
     if not symbols:
         sys.exit(0)
-    print(f"[fetch_history] Fetching: {symbols}")
+    print(f"[fetch_history] Fetching {len(symbols)} symbols")
     results = fetch_all(symbols)
     ok = sum(v for v in results.values())
     print(f"[fetch_history] Done: {ok}/{len(results)} succeeded")

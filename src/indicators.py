@@ -7,9 +7,15 @@ from src.candlestick import detect_patterns
 
 MINIMUM_BARS = 22
 
+_AR2FA = str.maketrans({"ك": "ک", "ي": "ی", "ة": "ه", "ى": "ی"})
+
+
+def _normalize(s: str) -> str:
+    return s.translate(_AR2FA).strip()
+
 
 def load_history(symbol: str):
-    path = os.path.join(HISTORY_DIR, f"{symbol}.csv")
+    path = os.path.join(HISTORY_DIR, f"{_normalize(symbol)}.csv")
     if not os.path.exists(path):
         return None
     try:
