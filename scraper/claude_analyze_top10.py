@@ -6,7 +6,8 @@ from anthropic import Anthropic
 
 
 SKILL_FILE = Path("skills") / "iran-stock-super-strategy-engine" / "SKILL.md"
-INPUT_FILE = Path("output") / "top10_initial.csv"
+TOP10_FILE = Path("output") / "top10_initial.csv"
+DECISION_FILE = Path("output") / "decision_report.csv"
 OUTPUT_FILE = Path("output") / "claude_strategy_report.txt"
 
 
@@ -17,13 +18,29 @@ def read_file(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def read_top10_csv() -> list[dict]:
-    if not INPUT_FILE.exists():
-        raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
+def read_csv(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
 
-    with INPUT_FILE.open("r", encoding="utf-8-sig", newline="") as f:
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         return list(reader)
+
+
+def merge_rows(top10: list[dict], decisions: list[dict]) -> list[dict]:
+    decision_by_symbol = {row["symbol"]: row for row in decisions}
+
+    merged = []
+    for row in top10:
+        symbol = row.get("symbol", "")
+        combined = dict(row)
+        if symbol in decision_by_symbol:
+            for key, value in decision_by_symbol[symbol].items():
+                if key not in combined or combined[key] == "":
+                    combined[key] = value
+        merged.append(combined)
+
+    return merged
 
 
 def format_rows_for_claude(rows: list[dict]) -> str:
@@ -45,7 +62,28 @@ def format_rows_for_claude(rows: list[dict]) -> str:
         lines.append(f"best_sell_price: {row.get('best_sell_price', '')}")
         lines.append(f"initial_score: {row.get('initial_score', '')}")
         lines.append(f"initial_label: {row.get('initial_label', '')}")
-        lines.append(f"reasons: {row.get('reasons', '')}")
+        lines.append(f"screener_reasons: {row.get('reasons', '')}")
+        lines.append(f"ema_9: {row.get('ema_9', '')}")
+        lines.append(f"ema_21: {row.get('ema_21', '')}")
+        lines.append(f"ema_50: {row.get('ema_50', '')}")
+        lines.append(f"ema_200: {row.get('ema_200', '')}")
+        lines.append(f"rsi_14: {row.get('rsi_14', '')}")
+        lines.append(f"rsi_status: {row.get('rsi_status', '')}")
+        lines.append(f"macd: {row.get('macd', '')}")
+        lines.append(f"macd_signal: {row.get('macd_signal', '')}")
+        lines.append(f"macd_histogram: {row.get('macd_histogram', '')}")
+        lines.append(f"volume_ratio_20: {row.get('volume_ratio_20', '')}")
+        lines.append(f"return_1d_percent: {row.get('return_1d_percent', '')}")
+        lines.append(f"return_5d_percent: {row.get('return_5d_percent', '')}")
+        lines.append(f"return_20d_percent: {row.get('return_20d_percent', '')}")
+        lines.append(f"rolling_high_20: {row.get('rolling_high_20', '')}")
+        lines.append(f"rolling_low_20: {row.get('rolling_low_20', '')}")
+        lines.append(f"distance_to_20d_high_percent: {row.get('distance_to_20d_high_percent', '')}")
+        lines.append(f"distance_to_20d_low_percent: {row.get('distance_to_20d_low_percent', '')}")
+        lines.append(f"trend_score: {row.get('trend_score', '')}")
+        lines.append(f"technical_label: {row.get('technical_label', '')}")
+        lines.append(f"decision_label: {row.get('decision_label', '')}")
+        lines.append(f"decision_reasons: {row.get('decision_reasons', '')}")
         lines.append("")
 
     return "\n".join(lines)
@@ -59,15 +97,15 @@ You are using the following Claude Skill instructions as the analysis framework.
 {skill_text}
 </skill>
 
-Now analyze the following Iranian stock market screener output.
+Now analyze the following Iranian stock market screener output. Each candidate includes both
+real-time market data (buyer power, money flow, price action) and calculated technical indicators
+(EMA, RSI, MACD, volume ratio, trend score, decision label).
 
 Important constraints:
-- The data below is an initial screener output, not a complete technical dataset.
-- Missing data such as RSI, MACD, EMA, ADX, Bollinger Bands, support/resistance, P/E, sector index, and market regime must be explicitly disclosed.
+- Still missing: ADX, Bollinger Bands, support/resistance levels, P/E, sector index, market regime — disclose these gaps.
 - Do not give blind buy/sell recommendations.
 - Do not claim a guaranteed success rate.
-- Instead of "success percentage", provide "Setup Confidence" and "Estimated Probability Range" as a qualitative estimate based only on the available data.
-- Keep the Telegram report concise and decision-oriented.
+- Instead of "success percentage", provide "Setup Confidence" and "Estimated Probability Range" as a qualitative estimate.
 - Write the final answer in Persian.
 - Rank the symbols into:
   1. قابل بررسی جدی
@@ -78,7 +116,6 @@ Important constraints:
   - Entry Quality estimate
   - Setup Confidence
   - Estimated Probability Range
-  - Expected upside cannot be calculated precisely unless resistance/target data exists; if missing, say so.
   - Key reason
   - Main risk
   - Final label
@@ -121,8 +158,8 @@ def call_claude(prompt: str) -> str:
     client = Anthropic(api_key=api_key)
 
     message = client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=4000,
+        model="claude-sonnet-4-6",
+        max_tokens=8000,
         temperature=0.2,
         messages=[
             {
@@ -144,7 +181,9 @@ def save_report(report: str) -> Path:
 
 def main():
     skill_text = read_file(SKILL_FILE)
-    rows = read_top10_csv()
+    top10 = read_csv(TOP10_FILE)
+    decisions = read_csv(DECISION_FILE)
+    rows = merge_rows(top10, decisions)
     top10_text = format_rows_for_claude(rows)
     prompt = build_prompt(skill_text, top10_text)
 

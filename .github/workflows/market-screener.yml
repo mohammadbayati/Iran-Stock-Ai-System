@@ -21,6 +21,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: market-screener
+  cancel-in-progress: false
+
 jobs:
   run-market-screener:
     runs-on: ubuntu-latest
@@ -33,6 +37,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -41,6 +46,7 @@ jobs:
 
       - name: Run market screener
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
@@ -50,6 +56,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/*.csv data/*.json output/*.csv
-          git commit -m "Update market screener output" || echo "No changes to commit"
+          git add data/*.csv data/*.json output/*.csv output/*.txt
+          git commit -m "Update market screener output $(date -u '+%Y-%m-%d %H:%M UTC')" || echo "No changes to commit"
           git push

@@ -145,7 +145,18 @@ def main():
         reader = csv.DictReader(f)
         rows = list(reader)
 
-    scored_rows = [score_symbol(row) for row in rows]
+    tradeable = [
+        row for row in rows
+        if to_float(row.get("last_price")) > 0
+        and to_float(row.get("volume")) > 0
+        and to_float(row.get("trade_value")) > 0
+    ]
+
+    skipped = len(rows) - len(tradeable)
+    if skipped:
+        print(f"Filtered out {skipped} non-trading/suspended symbols.")
+
+    scored_rows = [score_symbol(row) for row in tradeable]
 
     scored_rows.sort(
         key=lambda x: float(x.get("initial_score", 0)),

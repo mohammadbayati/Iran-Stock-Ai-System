@@ -1,11 +1,13 @@
 import csv
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
 
 
 INPUT_FILE = Path("output") / "decision_report.csv"
+CLAUDE_REPORT_FILE = Path("output") / "claude_strategy_report.txt"
 
 
 def read_decision_csv() -> list[dict]:
@@ -52,7 +54,12 @@ def translate_decision(label: str) -> str:
 def build_telegram_report(rows: list[dict]) -> str:
     lines = []
 
+    tehran_offset = timedelta(hours=3, minutes=30)
+    now_tehran = datetime.now(timezone.utc) + tehran_offset
+    timestamp = now_tehran.strftime("%Y-%m-%d | %H:%M تهران")
+
     lines.append("📊 گزارش تصمیم‌محور بازار")
+    lines.append(f"🕐 {timestamp}")
     lines.append("")
     lines.append("⚠️ این گزارش توصیه خرید/فروش نیست؛ خروجی سیستم کمک‌تصمیم است.")
     lines.append("معیارها: امتیاز اولیه، روند تکنیکال، RSI، حجم ۲۰ روزه، فاصله از سقف/کف ۲۰ روزه.")
@@ -100,7 +107,6 @@ def build_telegram_report(rows: list[dict]) -> str:
             lines.append("")
 
     lines.append("✅ نسخه فعلی: Decision Support Engine v1")
-    lines.append("مرحله بعدی: اضافه‌کردن حمایت/مقاومت، حدضرر، تارگت و Risk/Reward.")
 
     return "\n".join(lines)
 
@@ -154,18 +160,29 @@ def send_telegram_message(message: str):
     return response.json()
 
 
-def main():
-    rows = read_decision_csv()
-    report = build_telegram_report(rows)
-    chunks = split_message(report)
+def send_report(text: str, label: str):
+    chunks = split_message(text)
 
     for index, chunk in enumerate(chunks, start=1):
         if len(chunks) > 1:
             chunk = f"بخش {index}/{len(chunks)}\n\n{chunk}"
 
         result = send_telegram_message(chunk)
-        print(f"Telegram message part {index} processed.")
+        print(f"{label} part {index} processed.")
         print(result)
+
+
+def main():
+    rows = read_decision_csv()
+    decision_report = build_telegram_report(rows)
+    send_report(decision_report, "Decision report")
+
+    if CLAUDE_REPORT_FILE.exists():
+        claude_report = CLAUDE_REPORT_FILE.read_text(encoding="utf-8").strip()
+        if claude_report:
+            send_report(claude_report, "Claude strategy report")
+    else:
+        print("Claude strategy report not found; skipping.")
 
 
 if __name__ == "__main__":
