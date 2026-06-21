@@ -1,3 +1,12 @@
+import os
+
+IS_CI = os.getenv("CI", "false").lower() == "true"
+FETCH_HISTORY_IN_CI = os.getenv("FETCH_HISTORY_IN_CI", "false").lower() == "true"
+
+if IS_CI and not FETCH_HISTORY_IN_CI:
+    print("[fetch_history] CI mode: skipping remote fetch. Using cached data/history/ files.")
+    import sys
+    sys.exit(0)
 import csv
 from pathlib import Path
 
