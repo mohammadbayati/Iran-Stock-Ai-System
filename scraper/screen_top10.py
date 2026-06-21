@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.settings import SYMBOLS_CSV, TOP10_CSV, TOP_N, OUTPUT_DIR, HISTORY_DIR
+from config.settings import SYMBOLS_CSV, TOP10_CSV, TOP_N, OUTPUT_DIR, HISTORY_DIR, IS_CI
 
 ARABIC_TO_PERSIAN = str.maketrans({"ك": "ک", "ي": "ی", "ة": "ه", "ى": "ی"})
 
@@ -131,14 +131,20 @@ def screen_top10(df: pd.DataFrame) -> pd.DataFrame:
 
     df["initial_score"] = df.apply(score_symbol, axis=1)
     df["initial_label"] = df["initial_score"].apply(initial_label)
+    df["has_history"] = df["symbol"].apply(_has_history)
     df = df.sort_values("initial_score", ascending=False).reset_index(drop=True)
 
-    df = df.head(TOP_N).copy()
-    df["has_history"] = df["symbol"].apply(_has_history)
+    if IS_CI:
+        # در CI فقط سمبل‌هایی که history کش دارن رو انتخاب کن
+        df_hist = df[df["has_history"] == True].head(TOP_N).copy()
+        print(f"[screen_top10] CI mode: {len(df_hist)}/{len(df)} symbols have cached history")
+        result = df_hist
+    else:
+        result = df.head(TOP_N).copy()
 
-    with_hist = df["has_history"].sum()
-    print(f"[screen_top10] Selected {len(df)} symbols ({with_hist} with cached history)")
-    return df
+    with_hist = result["has_history"].sum()
+    print(f"[screen_top10] Selected {len(result)} symbols ({with_hist} with cached history)")
+    return result
 
 
 def save_top10(df: pd.DataFrame):
