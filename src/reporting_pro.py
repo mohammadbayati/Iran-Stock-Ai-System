@@ -29,6 +29,23 @@ LABEL_FA_SHORT = {
 }
 
 
+def _to_jalali(dt: datetime) -> str:
+    try:
+        import jdatetime
+        jdt = jdatetime.datetime.fromgregorian(datetime=dt)
+        months = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور",
+                  "مهر","آبان","آذر","دی","بهمن","اسفند"]
+        return f"{jdt.day} {months[jdt.month-1]} {jdt.year}"
+    except ImportError:
+        return dt.strftime("%Y-%m-%d")
+
+
+def _weekday_fa(dt: datetime) -> str:
+    days = {0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه",
+            3: "پنج‌شنبه", 4: "جمعه", 5: "شنبه", 6: "یکشنبه"}
+    return days.get(dt.weekday(), "")
+
+
 def _fmt(val, suffix="", fmt=".0f") -> str:
     if val is None or (isinstance(val, float) and pd.isna(val)):
         return "—"
@@ -38,10 +55,20 @@ def _fmt(val, suffix="", fmt=".0f") -> str:
         return str(val)
 
 
-def _jalali_weekday() -> str:
-    days = {0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه",
-            3: "پنج‌شنبه", 4: "جمعه", 5: "شنبه", 6: "یکشنبه"}
-    return days.get(datetime.now().weekday(), "")
+def _smart_money_short(sm_fa: str) -> str:
+    sm_fa = str(sm_fa)
+    replacements = {
+        "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود": "تجمیع هوشمند",
+        "توزیع پنهان: حقیقی می‌خرد، پول هوشمند خارج می‌شود": "توزیع پنهان",
+        "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد": "افت حقیقی‌محور",
+        "هم‌راستای صعودی: خریدار و پول هر دو وارد": "هم‌راستای صعودی",
+        "هم‌راستای نزولی: فروشنده و خروج پول هر دو تایید": "هم‌راستای نزولی",
+        "رشد حقیقی‌محور: بدون پشتوانه پول هوشمند": "رشد حقیقی‌محور",
+        "بدون سیگنال واضح": "خنثی",
+    }
+    for k, v in replacements.items():
+        sm_fa = sm_fa.replace(k, v)
+    return sm_fa
 
 
 def _entry_block(row: pd.Series) -> str:
@@ -55,17 +82,23 @@ def _entry_block(row: pd.Series) -> str:
     ret5 = _fmt(row.get("return_5d_percent"), suffix="%", fmt=".1f")
     sl = _fmt(row.get("stop_loss"), fmt=",.0f")
     tp = _fmt(row.get("target_1"), fmt=",.0f")
-    rr = _fmt(row.get("risk_reward"), fmt=".1f")
-    sm = str(row.get("smart_money_fa", "")).replace("تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "تجمیع هوشمند")
-    sm = sm.replace("افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "افت حقیقی‌محور")
-    sm = sm.replace("هم‌راستای صعودی: خریدار و پول هر دو وارد", "هم‌راستای صعودی")
-    sm = sm.replace("بدون سیگنال واضح", "خنثی")
+
+    rr_raw = row.get("risk_reward")
+    try:
+        rr = f"{float(rr_raw):.1f}" if rr_raw and not pd.isna(rr_raw) and float(rr_raw) > 0.1 else "—"
+    except Exception:
+        rr = "—"
+
+    sm = _smart_money_short(row.get("smart_money_fa", ""))
+    sector = str(row.get("sector", ""))
+    sec_status = str(row.get("sector_status", ""))
 
     lines = [
         f"┌──────────────────────────────┐",
-        f"│ 🟢 {symbol:<6}  {grade} {stars}  امتیاز {score}",
+        f"│ 🟢 {symbol}  {grade} {stars}  امتیاز {score}",
         f"│ RSI {rsi} | روند {trend}/6 | حجم {vol}x | بازده {ret5}",
         f"│ 🧠 {sm}",
+        f"│ 🏭 {sector} {sec_status}",
         f"│ 🛑 {sl}  🎯 {tp}  ⚖️ {rr}",
         f"└──────────────────────────────┘",
     ]
@@ -77,16 +110,16 @@ def _summary_line(row: pd.Series) -> str:
     score = int(row.get("confidence_score", 0))
     grade = str(row.get("confidence_grade", ""))
     label = LABEL_FA_SHORT.get(str(row.get("decision_label", "")), "")
-    return f"  {label} | {symbol} | {grade} | امتیاز {score}"
+    sector = str(row.get("sector", ""))
+    return f"  {label} | {symbol} | {grade} | {score} | {sector}"
 
 
 def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
     now = datetime.now()
-    weekday = _jalali_weekday()
-    date_str = now.strftime("%Y-%m-%d")
+    weekday = _weekday_fa(now)
+    jalali_date = _to_jalali(now)
     time_str = now.strftime("%H:%M")
 
-    # Parse market header for mood
     mood_line = ""
     flow_line = ""
     if market_header:
@@ -98,27 +131,24 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
 
     header = (
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📡 بورس تهران | {weekday} {date_str}\n"
+        f"📡 بورس تهران | {weekday} {jalali_date}\n"
         f"🕐 {time_str} | {mood_line}\n"
         f"{flow_line}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
-    # Entry candidates — full block
     entries = df[df["decision_label"] == LABEL_ENTRY_CANDIDATE].sort_values("confidence_score", ascending=False)
     entry_section = ""
     if not entries.empty:
         entry_section = f"\n🏆 کاندید ورود ({len(entries)} نماد)\n"
         entry_section += "\n".join(_entry_block(row) for _, row in entries.iterrows())
 
-    # Tech watch — full block
     watches = df[df["decision_label"] == LABEL_TECH_WATCH].sort_values("confidence_score", ascending=False)
     watch_section = ""
     if not watches.empty:
         watch_section = f"\n🟡 واچ تکنیکال ({len(watches)} نماد)\n"
         watch_section += "\n".join(_entry_block(row) for _, row in watches.iterrows())
 
-    # Rest — summary lines only
     rest_labels = [LABEL_PULLBACK, LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT, LABEL_MISSING]
     rest_rows = df[df["decision_label"].isin(rest_labels)].sort_values("confidence_score", ascending=False)
     rest_section = ""
@@ -126,7 +156,6 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
         rest_section = "\n─────────────────────────\n"
         rest_section += "\n".join(_summary_line(row) for _, row in rest_rows.iterrows())
 
-    # Stats
     entry_count = len(entries)
     high_conf = len(df[df["confidence_score"] >= 70]) if "confidence_score" in df.columns else 0
     stats = (
@@ -135,7 +164,6 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
         f"⚠️ کمک‌تصمیم — مسئولیت با شماست"
     )
 
-    # Accuracy
     try:
         from src.signal_tracker import get_accuracy_summary
         acc = get_accuracy_summary()
@@ -146,7 +174,6 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
 
     full = header + entry_section + watch_section + rest_section + stats
 
-    # Chunk for Telegram
     chunks = []
     while len(full) > TELEGRAM_MAX_CHARS:
         split_at = full.rfind("\n", 0, TELEGRAM_MAX_CHARS)
