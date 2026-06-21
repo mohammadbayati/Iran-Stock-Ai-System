@@ -68,11 +68,18 @@ def _entry_block(row: pd.Series) -> str:
     sector = str(row.get("sector", ""))
     sec_status = str(row.get("sector_status", ""))
 
+    candle = str(row.get("candlestick_patterns", ""))
+    candle_line = f"│ 🕯 {candle}" if candle and candle != "بدون الگو" and candle != "nan" else ""
+
     lines = [
         f"┌──────────────────────────────┐",
         f"│ 🟢 {symbol}  {grade} {stars}  امتیاز {score}",
         f"│ RSI {rsi} | روند {trend}/6 | حجم {vol}x | بازده {ret5}",
         f"│ 🧠 {sm}",
+    ]
+    if candle_line:
+        lines.append(candle_line)
+    lines += [
         f"│ 🏭 {sector} {sec_status}",
         f"│ 🛑 {sl}  🎯 {tp}  ⚖️ {rr}",
         f"└──────────────────────────────┘",
@@ -86,7 +93,9 @@ def _summary_line(row: pd.Series) -> str:
     grade = str(row.get("confidence_grade", ""))
     label = LABEL_FA_SHORT.get(str(row.get("decision_label", "")), "")
     sector = str(row.get("sector", ""))
-    return f"  {label} | {symbol} | {grade} | {score} | {sector}"
+    candle = str(row.get("candlestick_patterns", ""))
+    candle_tag = f" | {candle}" if candle and candle != "بدون الگو" and candle != "nan" else ""
+    return f"  {label} | {symbol} | {grade} | {score} | {sector}{candle_tag}"
 
 
 def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
@@ -144,6 +153,8 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
         from src.signal_tracker import get_accuracy_summary
         acc = get_accuracy_summary()
         if "هنوز" not in acc:
+            stats += f"\n{acc}"
+        elif "انتظار" in acc:
             stats += f"\n{acc}"
     except Exception:
         pass

@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
+from src.candlestick import detect_patterns
 
 MINIMUM_BARS = 22
 
@@ -96,6 +97,7 @@ def calculate_indicators(symbol: str) -> dict:
         "target_1": None, "risk_reward": None, "stale": False,
         "bb_upper": None, "bb_mid": None, "bb_lower": None,
         "bb_width": None, "bb_position": None,
+        "candlestick_signal": None, "candlestick_patterns": None, "candlestick_bonus": 0,
     }
     df = load_history(symbol)
     if df is None or len(df) < MINIMUM_BARS:
@@ -139,6 +141,7 @@ def calculate_indicators(symbol: str) -> dict:
 
     macd, macd_sig, macd_hist = _macd(close) if len(close) >= 26 else (None, None, None)
     bb_upper, bb_mid, bb_lower, bb_width, bb_position = _bollinger(close)
+    candle_result = detect_patterns(df)
 
     return {
         "symbol": symbol, "missing": False,
@@ -154,4 +157,7 @@ def calculate_indicators(symbol: str) -> dict:
         "risk_reward": risk_reward, "stale": stale,
         "bb_upper": bb_upper, "bb_mid": bb_mid, "bb_lower": bb_lower,
         "bb_width": bb_width, "bb_position": bb_position,
+        "candlestick_signal": candle_result["signal"],
+        "candlestick_patterns": candle_result["patterns_fa"],
+        "candlestick_bonus": candle_result["bonus"],
     }
