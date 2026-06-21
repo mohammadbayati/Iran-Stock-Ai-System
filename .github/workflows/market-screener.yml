@@ -52,10 +52,4 @@ jobs:
         run: |
           python run_all.py
 
-      - name: Commit updated output files
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add data/*.csv data/*.json output/*.csv output/*.txt
-          git commit -m "Update market screener output $(date -u '+%Y-%m-%d %H:%M UTC')" || echo "No changes to commit"
-          git push
+    
