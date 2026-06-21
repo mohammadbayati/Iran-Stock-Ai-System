@@ -44,7 +44,7 @@ jobs:
 
       - name: Run pro pipeline
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.8174643136:AAFJ6vSkZ3on5gQnYDjwGftxhdESvL5T7dA }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.8393593614:AAGCmYzo4RMBaaQ1U3W8LGjBRrBwXKef3ak }}
           TELEGRAM_CHAT_ID: ${{ secrets.63857910 }}
           CI: "true"
           FETCH_HISTORY_IN_CI: ${{ github.event.inputs.refresh_history || 'false' }}
