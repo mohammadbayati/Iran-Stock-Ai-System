@@ -1,9 +1,14 @@
+"""
+Pro Decision Engine — merges all 7 intelligence layers.
+"""
+
 import sys
 import os
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from config.settings import INDICATORS_CSV, DECISION_REPORT_CSV, SYMBOLS_CSV, OUTPUT_DIR, DATA_DIR
 from src.decision_engine import classify, rsi_status
 from src.smart_money import analyze_smart_money
 from src.queue_analyzer import analyze_queue
@@ -12,17 +17,11 @@ from src.confidence_score import calculate_confidence
 from src.market_mood import calculate_market_mood, format_market_header
 from src.signal_tracker import log_signals, update_outcomes, get_accuracy_summary
 
-INDICATORS_CSV = "data/indicators.csv"
-SYMBOLS_CSV = "data/symbols.csv"
-DECISION_REPORT_CSV = "output/decision_report.csv"
-DATA_DIR = "data"
-
 
 def run():
     if not os.path.exists(INDICATORS_CSV):
         print(f"[pro_decision] {INDICATORS_CSV} not found")
         return None, ""
-
     if not os.path.exists(SYMBOLS_CSV):
         print(f"[pro_decision] {SYMBOLS_CSV} not found")
         return None, ""
@@ -30,59 +29,40 @@ def run():
     indicators = pd.read_csv(INDICATORS_CSV)
     symbols_df = pd.read_csv(SYMBOLS_CSV)
 
-    # ستون missing ممکنه در indicators قدیمی نباشه
     if "missing" not in indicators.columns:
         indicators["missing"] = False
     else:
         indicators["missing"] = indicators["missing"].astype(str).str.lower() == "true"
 
-    # sector و mood از کل بازار
     sector_strengths = calculate_sector_strengths(symbols_df)
     sector_heatmap = format_sector_heatmap(sector_strengths)
     mood = calculate_market_mood(symbols_df)
     market_header = format_market_header(mood, sector_heatmap)
 
-    # لوکاپ نمادها از داده لایو
     sym_lookup = {str(r["symbol"]): r.to_dict() for _, r in symbols_df.iterrows()}
 
     rows = []
     for _, ind_row in indicators.iterrows():
         symbol = str(ind_row["symbol"])
         live = sym_lookup.get(symbol, {})
+        missing = bool(ind_row["missing"])
 
-        # Layer 1 — پول هوشمند
         sm = analyze_smart_money(live)
-
-        # Layer 2 — صف
         q = analyze_queue(live)
-
-        # Layer 4 — سکتور
         sector = get_sector(symbol)
         sec = sector_strengths.get(sector)
         sector_bonus = sec.confidence_bonus if sec else 0
 
-        missing = bool(ind_row["missing"])
-
-        # خواندن ستون‌های اندیکاتور با نام‌های موجود در indicators.csv
         rsi_val = None
         for col in ["rsi", "rsi_14"]:
             if col in ind_row and pd.notna(ind_row[col]):
                 rsi_val = float(ind_row[col])
                 break
 
-        trend_val = None
-        if "trend_score" in ind_row and pd.notna(ind_row["trend_score"]):
-            trend_val = int(ind_row["trend_score"])
+        trend_val = int(ind_row["trend_score"]) if "trend_score" in ind_row and pd.notna(ind_row.get("trend_score")) else None
+        vol_val = float(ind_row["volume_ratio_20"]) if "volume_ratio_20" in ind_row and pd.notna(ind_row.get("volume_ratio_20")) else None
+        rr_val = float(ind_row["risk_reward"]) if "risk_reward" in ind_row and pd.notna(ind_row.get("risk_reward")) else None
 
-        vol_val = None
-        if "volume_ratio_20" in ind_row and pd.notna(ind_row["volume_ratio_20"]):
-            vol_val = float(ind_row["volume_ratio_20"])
-
-        rr_val = None
-        if "risk_reward" in ind_row and pd.notna(ind_row.get("risk_reward")):
-            rr_val = float(ind_row["risk_reward"])
-
-        # Layer 5 — امتیاز اعتماد
         conf = calculate_confidence(
             smart_money_bonus=sm.confidence_bonus,
             queue_bonus=q.confidence_bonus,
@@ -98,7 +78,6 @@ def run():
         ind_dict["initial_score"] = conf.score
         ind_dict["rsi"] = rsi_val
 
-        # تصمیم نهایی
         label, reasons = classify(ind_dict)
 
         rows.append({
@@ -119,9 +98,9 @@ def run():
         })
 
     result = pd.DataFrame(rows)
-    os.makedirs("output", exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     result.to_csv(DECISION_REPORT_CSV, index=False, encoding="utf-8-sig")
-    print(f"[pro_decision] {len(result)} نماد پردازش شد → {DECISION_REPORT_CSV}")
+    print(f"[pro_decision] {len(result)} نماد → {DECISION_REPORT_CSV}")
 
     log_signals(result)
     update_outcomes(result)

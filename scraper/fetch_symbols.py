@@ -1,117 +1,58 @@
-import csv
+"""
+Fetch live market snapshot from tradersarena.ir
+"""
+
 import json
-from pathlib import Path
-
+import sys
+import os
 import requests
+import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config.settings import LIVE_DATA_URL, SYMBOLS_CSV, SYMBOLS_JSON, DATA_DIR
 
-API_URL = "https://tradersarena.ir/data/mainwatch/symbols"
-
-OUTPUT_DIR = Path("data")
-OUTPUT_DIR.mkdir(exist_ok=True)
-
-
-COLUMNS = [
-    "ins_code",
-    "isin",
-    "symbol",
-    "buy_volume_or_count",
-    "trade_value",
-    "last_price",
-    "last_price_change_percent",
-    "close_price",
-    "close_price_change_percent",
-    "buy_power_numerator",
-    "sell_power_denominator",
-    "buyer_power",
-    "real_money_flow",
-    "unknown_1",
-    "unknown_2",
-    "volume",
-    "best_buy_price",
-    "best_sell_price",
-    "best_sell_volume",
-    "previous_close"
+COLUMN_NAMES = [
+    "ins_code", "isin", "symbol", "buy_volume_or_count", "trade_value",
+    "last_price", "last_price_change_percent", "close_price",
+    "close_price_change_percent", "buy_power_numerator", "sell_power_denominator",
+    "buyer_power", "real_money_flow", "unknown_1", "unknown_2",
+    "volume", "best_buy_price", "best_sell_price", "best_sell_volume", "previous_close",
 ]
 
 
-def fetch_symbols():
-    session = requests.Session()
-    session.trust_env = False  # جلوگیری از استفاده از Proxy سیستم
+def fetch_symbols() -> pd.DataFrame:
+    print(f"[fetch_symbols] Fetching live data from {LIVE_DATA_URL}")
+    try:
+        resp = requests.get(LIVE_DATA_URL, timeout=15)
+        resp.raise_for_status()
+        raw = resp.json()
+    except Exception as e:
+        print(f"[fetch_symbols] ERROR: {e}")
+        raise
 
-    response = session.get(
-        API_URL,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "X-Requested-With": "XMLHttpRequest",
-            "Referer": "https://tradersarena.ir/"
-        },
-        timeout=30
-    )
+    rows = raw if isinstance(raw, list) else raw.get("data", raw.get("symbols", []))
 
-    response.raise_for_status()
-    return response.json()
+    records = []
+    for row in rows:
+        if not isinstance(row, (list, tuple)):
+            continue
+        record = {}
+        for i, col in enumerate(COLUMN_NAMES):
+            record[col] = row[i] if i < len(row) else None
+        records.append(record)
 
-
-def normalize_rows(raw_rows):
-    normalized = []
-
-    for row in raw_rows:
-        item = {}
-
-        for index, column_name in enumerate(COLUMNS):
-            if index < len(row):
-                item[column_name] = row[index]
-            else:
-                item[column_name] = None
-
-        normalized.append(item)
-
-    return normalized
+    df = pd.DataFrame(records)
+    print(f"[fetch_symbols] {len(df)} symbols fetched")
+    return df
 
 
-def save_json(rows):
-    output_path = OUTPUT_DIR / "symbols.json"
-
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(rows, f, ensure_ascii=False, indent=2)
-
-    return output_path
-
-
-def save_csv(rows):
-    output_path = OUTPUT_DIR / "symbols.csv"
-
-    with output_path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
-
-    return output_path
-
-
-def main():
-    raw_rows = fetch_symbols()
-    rows = normalize_rows(raw_rows)
-
-    json_path = save_json(rows)
-    csv_path = save_csv(rows)
-
-    print(f"Fetched symbols: {len(rows)}")
-    print(f"JSON saved to: {json_path}")
-    print(f"CSV saved to: {csv_path}")
-
-    print("\nSample rows:")
-    for item in rows[:5]:
-        print(
-            item["symbol"],
-            item["last_price"],
-            item["close_price"],
-            item["buyer_power"],
-            item["real_money_flow"]
-        )
+def save_symbols(df: pd.DataFrame):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    df.to_csv(SYMBOLS_CSV, index=False, encoding="utf-8-sig")
+    df.to_json(SYMBOLS_JSON, orient="records", force_ascii=False, indent=2)
+    print(f"[fetch_symbols] Saved to {SYMBOLS_CSV}")
 
 
 if __name__ == "__main__":
-    main()
+    df = fetch_symbols()
+    save_symbols(df)

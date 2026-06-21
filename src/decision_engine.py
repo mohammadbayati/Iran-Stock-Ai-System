@@ -27,7 +27,6 @@ def rsi_status(rsi) -> str:
 
 def classify(row: dict) -> tuple:
     reasons = []
-
     missing = row.get("missing", False)
     if isinstance(missing, str):
         missing = missing.lower() == "true"
@@ -64,6 +63,7 @@ def classify(row: dict) -> tuple:
 
     rsi_ok = 45 <= rsi < 70
     trend_ok = trend >= 4
+
     try:
         vol_ok = vol_ratio is not None and float(vol_ratio) >= 1.2
     except (ValueError, TypeError):

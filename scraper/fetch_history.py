@@ -1,109 +1,75 @@
+"""
+Fetch historical OHLCV data using pytse-client.
+In CI mode, skips fetch and uses cached data/history/ files.
+"""
+
+import sys
 import os
-
-IS_CI = os.getenv("CI", "false").lower() == "true"
-FETCH_HISTORY_IN_CI = os.getenv("FETCH_HISTORY_IN_CI", "false").lower() == "true"
-
-if IS_CI and not FETCH_HISTORY_IN_CI:
-    print("[fetch_history] CI mode: skipping remote fetch. Using cached data/history/ files.")
-    import sys
-    sys.exit(0)
-import csv
-from pathlib import Path
-
+import argparse
+import shutil
 import pandas as pd
-import pytse_client as tse
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config.settings import IS_CI, FETCH_HISTORY_IN_CI, TOP10_CSV, HISTORY_DIR, DATA_DIR
+
+FORCE_ENV = os.getenv("FORCE_HISTORY_FETCH", "false").lower() == "true"
+PYTSE_CACHE = os.path.join(os.getcwd(), "tickers_data")
 
 
-TOP10_FILE = Path("output") / "top10_initial.csv"
-HISTORY_DIR = Path("data") / "history"
+def should_fetch() -> bool:
+    if FORCE_ENV:
+        return True
+    if IS_CI and not FETCH_HISTORY_IN_CI:
+        print("[fetch_history] CI mode: skipping remote history fetch")
+        return False
+    return True
 
 
-def read_top10_symbols() -> list[str]:
-    if not TOP10_FILE.exists():
-        raise FileNotFoundError(f"Top 10 file not found: {TOP10_FILE}")
-
-    symbols = []
-
-    with TOP10_FILE.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-
-        for row in reader:
-            symbol = row.get("symbol", "").strip()
-
-            if symbol:
-                symbols.append(symbol)
-
-    return symbols
-
-
-def normalize_history_dataframe(history) -> pd.DataFrame:
-    df = pd.DataFrame(history)
-
-    if df.empty:
-        return df
-
-    df = df.reset_index()
-
-    return df
+def fetch_ticker(symbol: str) -> bool:
+    try:
+        import pytse_client as tse
+        tse.download(symbols=symbol, write_to_csv=True, include_jdate=True)
+        src = os.path.join(PYTSE_CACHE, f"{symbol}.csv")
+        if os.path.exists(src):
+            os.makedirs(HISTORY_DIR, exist_ok=True)
+            dst = os.path.join(HISTORY_DIR, f"{symbol}.csv")
+            shutil.copy2(src, dst)
+            print(f"[fetch_history] ✓ {symbol}")
+            return True
+        print(f"[fetch_history] ✗ {symbol}: no file produced")
+        return False
+    except Exception as e:
+        print(f"[fetch_history] ✗ {symbol}: {e}")
+        return False
 
 
-def fetch_symbol_history(symbol: str) -> pd.DataFrame:
-    print(f"Fetching history for: {symbol}")
-
-    ticker = tse.Ticker(symbol)
-    history = ticker.history
-
-    df = normalize_history_dataframe(history)
-
-    if df.empty:
-        print(f"No history found for: {symbol}")
-        return df
-
-    df["symbol"] = symbol
-
-    return df
+def fetch_all(symbols: list) -> dict:
+    results = {}
+    for sym in symbols:
+        results[sym] = fetch_ticker(sym)
+    return results
 
 
-def save_history(symbol: str, df: pd.DataFrame):
-    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-
-    safe_symbol = symbol.replace("/", "_").replace("\\", "_").replace(" ", "_")
-    output_file = HISTORY_DIR / f"{safe_symbol}.csv"
-
-    df.to_csv(output_file, index=False, encoding="utf-8-sig")
-
-    print(f"Saved history: {output_file}")
-
-
-def main():
-    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-
-    symbols = read_top10_symbols()
-
-    print(f"Symbols to fetch history for: {len(symbols)}")
-    print(symbols)
-
-    success_count = 0
-    error_count = 0
-
-    for symbol in symbols:
-        try:
-            df = fetch_symbol_history(symbol)
-
-            if not df.empty:
-                save_history(symbol, df)
-                success_count += 1
-            else:
-                error_count += 1
-
-        except Exception as e:
-            error_count += 1
-            print(f"ERROR fetching history for {symbol}: {e}")
-
-    print("History fetch completed.")
-    print(f"Successful histories: {success_count}")
-    print(f"Failed histories: {error_count}")
+def load_symbols_from_top10() -> list:
+    if not os.path.exists(TOP10_CSV):
+        print(f"[fetch_history] {TOP10_CSV} not found")
+        return []
+    df = pd.read_csv(TOP10_CSV)
+    return df["symbol"].dropna().tolist()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
+    if args.force:
+        os.environ["FORCE_HISTORY_FETCH"] = "true"
+    if not should_fetch():
+        sys.exit(0)
+    symbols = load_symbols_from_top10()
+    if not symbols:
+        sys.exit(0)
+    print(f"[fetch_history] Fetching: {symbols}")
+    results = fetch_all(symbols)
+    ok = sum(v for v in results.values())
+    print(f"[fetch_history] Done: {ok}/{len(results)} succeeded")
