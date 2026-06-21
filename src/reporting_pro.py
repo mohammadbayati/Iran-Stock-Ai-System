@@ -1,7 +1,3 @@
-"""
-Pro Persian Telegram Report Builder — Clean Professional Format
-"""
-
 import os
 import pandas as pd
 from datetime import datetime
@@ -10,11 +6,6 @@ from src.decision_engine import (
     LABEL_ENTRY_CANDIDATE, LABEL_TECH_WATCH, LABEL_PULLBACK,
     LABEL_OVERBOUGHT, LABEL_VOLUME, LABEL_WATCH, LABEL_MISSING,
 )
-
-ORDER = [
-    LABEL_ENTRY_CANDIDATE, LABEL_TECH_WATCH, LABEL_PULLBACK,
-    LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT, LABEL_MISSING,
-]
 
 GRADE_STARS = {"A": "★★★", "B": "★★☆", "C": "★☆☆", "D": "☆☆☆", "F": "✗"}
 
@@ -55,22 +46,6 @@ def _fmt(val, suffix="", fmt=".0f") -> str:
         return str(val)
 
 
-def _smart_money_short(sm_fa: str) -> str:
-    sm_fa = str(sm_fa)
-    replacements = {
-        "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود": "تجمیع هوشمند",
-        "توزیع پنهان: حقیقی می‌خرد، پول هوشمند خارج می‌شود": "توزیع پنهان",
-        "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد": "افت حقیقی‌محور",
-        "هم‌راستای صعودی: خریدار و پول هر دو وارد": "هم‌راستای صعودی",
-        "هم‌راستای نزولی: فروشنده و خروج پول هر دو تایید": "هم‌راستای نزولی",
-        "رشد حقیقی‌محور: بدون پشتوانه پول هوشمند": "رشد حقیقی‌محور",
-        "بدون سیگنال واضح": "خنثی",
-    }
-    for k, v in replacements.items():
-        sm_fa = sm_fa.replace(k, v)
-    return sm_fa
-
-
 def _entry_block(row: pd.Series) -> str:
     grade = str(row.get("confidence_grade", ""))
     stars = GRADE_STARS.get(grade, "")
@@ -89,7 +64,7 @@ def _entry_block(row: pd.Series) -> str:
     except Exception:
         rr = "—"
 
-    sm = _smart_money_short(row.get("smart_money_fa", ""))
+    sm = str(row.get("smart_money_fa", ""))
     sector = str(row.get("sector", ""))
     sec_status = str(row.get("sector_status", ""))
 
@@ -149,7 +124,7 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
         watch_section = f"\n🟡 واچ تکنیکال ({len(watches)} نماد)\n"
         watch_section += "\n".join(_entry_block(row) for _, row in watches.iterrows())
 
-    rest_labels = [LABEL_PULLBACK, LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT, LABEL_MISSING]
+    rest_labels = [LABEL_PULLBACK, LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT]
     rest_rows = df[df["decision_label"].isin(rest_labels)].sort_values("confidence_score", ascending=False)
     rest_section = ""
     if not rest_rows.empty:
@@ -158,9 +133,10 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
 
     entry_count = len(entries)
     high_conf = len(df[df["confidence_score"] >= 70]) if "confidence_score" in df.columns else 0
+    total_shown = len(df[df["decision_label"] != LABEL_MISSING])
     stats = (
         f"\n━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📊 {len(df)} نماد | {entry_count} کاندید | {high_conf} امتیاز بالا\n"
+        f"📊 {total_shown} نماد | {entry_count} کاندید | {high_conf} امتیاز بالا\n"
         f"⚠️ کمک‌تصمیم — مسئولیت با شماست"
     )
 
