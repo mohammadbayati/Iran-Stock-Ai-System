@@ -14,7 +14,7 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
     try:
         buyer_power = float(row.get("buyer_power") or 0)
     except (ValueError, TypeError):
-        buyer_power = 1.0
+        buyer_power = 0.0
 
     try:
         flow = float(row.get("real_money_flow") or 0)
@@ -25,6 +25,46 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
         change_pct = float(row.get("close_price_change_percent") or 0)
     except (ValueError, TypeError):
         change_pct = 0.0
+
+    try:
+        trade_value = float(row.get("trade_value") or 0)
+    except (ValueError, TypeError):
+        trade_value = 0.0
+
+    no_queue_data = (buyer_power == 0.0 or buyer_power == 1.0) and flow == 0.0
+
+    if no_queue_data:
+        if change_pct > 2.0 and trade_value > 10e9:
+            return SmartMoneySignal(
+                signal="price_volume_bullish",
+                strength=50,
+                description_fa="رشد با حجم بالا",
+                is_bullish=True,
+                confidence_bonus=5,
+            )
+        elif change_pct < -2.0 and trade_value > 10e9:
+            return SmartMoneySignal(
+                signal="price_volume_bearish",
+                strength=50,
+                description_fa="افت با حجم بالا",
+                is_bullish=False,
+                confidence_bonus=-5,
+            )
+        elif abs(change_pct) < 0.5 and trade_value > 20e9:
+            return SmartMoneySignal(
+                signal="high_value_flat",
+                strength=30,
+                description_fa="حجم پول بالا، قیمت راکد",
+                is_bullish=True,
+                confidence_bonus=3,
+            )
+        return SmartMoneySignal(
+            signal="no_data",
+            strength=0,
+            description_fa="داده صف در دسترس نیست",
+            is_bullish=False,
+            confidence_bonus=0,
+        )
 
     retail_buying = buyer_power >= 1.3
     retail_selling = buyer_power <= 0.8
@@ -37,7 +77,7 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
         return SmartMoneySignal(
             signal="hidden_accumulation",
             strength=strength,
-            description_fa="تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود",
+            description_fa="تجمیع هوشمند",
             is_bullish=True,
             confidence_bonus=20,
         )
@@ -47,7 +87,7 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
         return SmartMoneySignal(
             signal="hidden_distribution",
             strength=strength,
-            description_fa="توزیع پنهان: حقیقی می‌خرد، پول هوشمند خارج می‌شود",
+            description_fa="توزیع پنهان",
             is_bullish=False,
             confidence_bonus=-15,
         )
@@ -57,7 +97,7 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
         return SmartMoneySignal(
             signal="aligned_bullish",
             strength=strength,
-            description_fa="هم‌راستای صعودی: خریدار و پول هر دو وارد",
+            description_fa="هم‌راستای صعودی",
             is_bullish=True,
             confidence_bonus=10,
         )
@@ -67,25 +107,25 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
         return SmartMoneySignal(
             signal="aligned_bearish",
             strength=strength,
-            description_fa="هم‌راستای نزولی: فروشنده و خروج پول هر دو تایید",
+            description_fa="هم‌راستای نزولی",
             is_bullish=False,
             confidence_bonus=-10,
         )
 
-    if retail_buying and not money_entering:
+    if retail_buying:
         return SmartMoneySignal(
             signal="retail_driven_up",
             strength=30,
-            description_fa="رشد حقیقی‌محور: بدون پشتوانه پول هوشمند",
+            description_fa="رشد حقیقی‌محور",
             is_bullish=True,
             confidence_bonus=-5,
         )
 
-    if retail_selling and not money_leaving:
+    if retail_selling:
         return SmartMoneySignal(
             signal="retail_driven_down",
             strength=30,
-            description_fa="افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد",
+            description_fa="افت حقیقی‌محور",
             is_bullish=False,
             confidence_bonus=5,
         )

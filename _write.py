@@ -1,13 +1,19 @@
+@'
+"""
+Calculate technical indicators from historical OHLCV data.
+"""
+
 import os
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
+
 from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
 
 MINIMUM_BARS = 22
 
 
-def load_history(symbol: str):
+def load_history(symbol: str) -> pd.DataFrame | None:
     path = os.path.join(HISTORY_DIR, f"{symbol}.csv")
     if not os.path.exists(path):
         return None
@@ -16,24 +22,25 @@ def load_history(symbol: str):
         df.columns = [c.lower().strip() for c in df.columns]
         if "close" not in df.columns:
             return None
-        return df.dropna(subset=["close"]).reset_index(drop=True)
+        df = df.dropna(subset=["close"]).reset_index(drop=True)
+        return df
     except Exception:
         return None
 
 
-def _rsi(series, period=14):
+def _rsi(series: pd.Series, period: int = 14) -> float:
     delta = series.diff()
     gain = delta.clip(lower=0)
     loss = (-delta).clip(lower=0)
     avg_gain = gain.rolling(period).mean()
     avg_loss = loss.rolling(period).mean()
-    rs = avg_gain / avg_loss.replace(0, float("nan"))
+    rs = avg_gain / avg_loss.replace(0, np.nan)
     rsi_series = 100 - (100 / (1 + rs))
     val = rsi_series.iloc[-1]
-    return round(float(val), 2) if not (val != val) else None
+    return round(float(val), 2) if not np.isnan(val) else None
 
 
-def _macd(series):
+def _macd(series: pd.Series):
     ema12 = series.ewm(span=12, adjust=False).mean()
     ema26 = series.ewm(span=26, adjust=False).mean()
     macd_line = ema12 - ema26
@@ -42,21 +49,24 @@ def _macd(series):
     return round(float(macd_line.iloc[-1]), 2), round(float(signal_line.iloc[-1]), 2), round(float(hist.iloc[-1]), 2)
 
 
-def _trend_score(df):
+def _trend_score(df: pd.DataFrame) -> int:
     close = df["close"]
     score = 0
     ma20 = close.rolling(20).mean().iloc[-1]
     latest = close.iloc[-1]
+
     if latest > ma20:
         score += 1
     if len(close) >= 50:
         ma50 = close.rolling(50).mean().iloc[-1]
         if latest > ma50:
             score += 1
+
     ma20_series = close.rolling(20).mean()
     if len(ma20_series.dropna()) >= 5:
         if ma20_series.iloc[-1] > ma20_series.iloc[-5]:
             score += 1
+
     if len(close) >= 10:
         recent = close.iloc[-5:]
         prior = close.iloc[-10:-5]
@@ -64,29 +74,46 @@ def _trend_score(df):
             score += 1
         if recent.min() > prior.min():
             score += 1
+
     high20 = close.iloc[-20:].max()
     low20 = close.iloc[-20:].min()
-    if latest > (high20 + low20) / 2:
+    mid = (high20 + low20) / 2
+    if latest > mid:
         score += 1
+
     return score
 
 
 def calculate_indicators(symbol: str) -> dict:
     base = {
-        "symbol": symbol, "missing": True, "latest_date": None,
-        "latest_close": None, "rsi": None, "macd": None,
-        "macd_signal": None, "macd_hist": None, "trend_score": None,
-        "volume_ratio_20": None, "return_5d_percent": None,
-        "distance_to_20d_high_percent": None, "distance_to_20d_low_percent": None,
-        "support": None, "resistance": None, "stop_loss": None,
-        "target_1": None, "risk_reward": None, "stale": False,
+        "symbol": symbol,
+        "missing": True,
+        "latest_date": None,
+        "latest_close": None,
+        "rsi": None,
+        "macd": None,
+        "macd_signal": None,
+        "macd_hist": None,
+        "trend_score": None,
+        "volume_ratio_20": None,
+        "return_5d_percent": None,
+        "distance_to_20d_high_percent": None,
+        "distance_to_20d_low_percent": None,
+        "support": None,
+        "resistance": None,
+        "stop_loss": None,
+        "target_1": None,
+        "risk_reward": None,
+        "stale": False,
     }
+
     df = load_history(symbol)
     if df is None or len(df) < MINIMUM_BARS:
         return base
 
     close = df["close"]
-    volume = df["volume"] if "volume" in df.columns else pd.Series(dtype=float)
+    volume = df.get("volume", pd.Series(dtype=float))
+
     latest_close = float(close.iloc[-1])
     latest_date_raw = df["date"].iloc[-1] if "date" in df.columns else None
 
@@ -115,8 +142,11 @@ def calculate_indicators(symbol: str) -> dict:
 
     support = round(low20, 2)
     resistance = round(high20, 2)
+
+    # stop_loss همیشه زیر قیمت فعلی — حداکثر ۵٪ پایین‌تر
     stop_loss = round(min(support * 0.97, latest_close * 0.95), 2)
     target_1 = resistance
+
     risk = latest_close - stop_loss
     reward = target_1 - latest_close
     risk_reward = round(reward / risk, 2) if risk > 0 and reward > 0 else None
@@ -124,15 +154,24 @@ def calculate_indicators(symbol: str) -> dict:
     macd, macd_sig, macd_hist = _macd(close) if len(close) >= 26 else (None, None, None)
 
     return {
-        "symbol": symbol, "missing": False,
+        "symbol": symbol,
+        "missing": False,
         "latest_date": str(latest_date_raw) if latest_date_raw else None,
         "latest_close": round(latest_close, 2),
-        "rsi": _rsi(close), "macd": macd, "macd_signal": macd_sig, "macd_hist": macd_hist,
-        "trend_score": _trend_score(df), "volume_ratio_20": vol_ratio,
+        "rsi": _rsi(close),
+        "macd": macd,
+        "macd_signal": macd_sig,
+        "macd_hist": macd_hist,
+        "trend_score": _trend_score(df),
+        "volume_ratio_20": vol_ratio,
         "return_5d_percent": return_5d,
         "distance_to_20d_high_percent": dist_high,
         "distance_to_20d_low_percent": dist_low,
-        "support": support, "resistance": resistance,
-        "stop_loss": stop_loss, "target_1": target_1,
-        "risk_reward": risk_reward, "stale": stale,
+        "support": support,
+        "resistance": resistance,
+        "stop_loss": stop_loss,
+        "target_1": target_1,
+        "risk_reward": risk_reward,
+        "stale": stale,
     }
+'@ | Set-Content -Path src\indicators.py -Encoding UTF8
