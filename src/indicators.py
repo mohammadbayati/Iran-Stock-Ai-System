@@ -42,6 +42,20 @@ def _macd(series):
     return round(float(macd_line.iloc[-1]), 2), round(float(signal_line.iloc[-1]), 2), round(float(hist.iloc[-1]), 2)
 
 
+def _bollinger(series, period=20):
+    ma = series.rolling(period).mean()
+    std = series.rolling(period).std()
+    upper = ma + 2 * std
+    lower = ma - 2 * std
+    latest = series.iloc[-1]
+    u = float(upper.iloc[-1])
+    l = float(lower.iloc[-1])
+    m = float(ma.iloc[-1])
+    width = round((u - l) / m * 100, 2) if m > 0 else None
+    position = round((latest - l) / (u - l) * 100, 1) if (u - l) > 0 else None
+    return round(u, 2), round(m, 2), round(l, 2), width, position
+
+
 def _trend_score(df):
     close = df["close"]
     score = 0
@@ -80,6 +94,8 @@ def calculate_indicators(symbol: str) -> dict:
         "distance_to_20d_high_percent": None, "distance_to_20d_low_percent": None,
         "support": None, "resistance": None, "stop_loss": None,
         "target_1": None, "risk_reward": None, "stale": False,
+        "bb_upper": None, "bb_mid": None, "bb_lower": None,
+        "bb_width": None, "bb_position": None,
     }
     df = load_history(symbol)
     if df is None or len(df) < MINIMUM_BARS:
@@ -122,6 +138,7 @@ def calculate_indicators(symbol: str) -> dict:
     risk_reward = round(reward / risk, 2) if risk > 0 and reward > 0 else None
 
     macd, macd_sig, macd_hist = _macd(close) if len(close) >= 26 else (None, None, None)
+    bb_upper, bb_mid, bb_lower, bb_width, bb_position = _bollinger(close)
 
     return {
         "symbol": symbol, "missing": False,
@@ -135,4 +152,6 @@ def calculate_indicators(symbol: str) -> dict:
         "support": support, "resistance": resistance,
         "stop_loss": stop_loss, "target_1": target_1,
         "risk_reward": risk_reward, "stale": stale,
+        "bb_upper": bb_upper, "bb_mid": bb_mid, "bb_lower": bb_lower,
+        "bb_width": bb_width, "bb_position": bb_position,
     }
