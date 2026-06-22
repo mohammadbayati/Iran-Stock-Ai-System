@@ -282,7 +282,7 @@ def calculate_indicators(symbol: str) -> dict:
 
     risk = latest_close - stop_loss
     reward = target_1 - latest_close
-    risk_reward = round(reward / risk, 2) if risk > 0 and reward > 0 else None
+    risk_reward = round(min(reward / risk, 10.0), 2) if risk > 0 and reward > 0 else None
 
     rsi_val = _rsi(close)
     divergence = "none"
