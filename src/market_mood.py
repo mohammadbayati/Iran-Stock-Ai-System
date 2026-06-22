@@ -1,69 +1,106 @@
+"""
+Layer 3 — Market Mood Calculator
+"""
+
 import pandas as pd
-from datetime import datetime
+from dataclasses import dataclass
 
 
-def calculate_market_mood(df: pd.DataFrame) -> dict:
-    def safe_float(val):
-        try:
-            return float(val or 0)
-        except (ValueError, TypeError):
-            return 0.0
+@dataclass
+class MarketMood:
+    mood: str
+    mood_fa: str
+    emoji: str
+    description_fa: str
+    positive_count: int
+    negative_count: int
+    total_count: int
+    buyer_power_avg: float
+    total_flow: float
+    advance_decline_ratio: float
 
-    flows = df["real_money_flow"].apply(safe_float)
-    buyer_powers = df["buyer_power"].apply(safe_float)
-    changes = df["close_price_change_percent"].apply(safe_float)
 
-    total_flow = flows.sum()
-    avg_buyer_power = buyer_powers.mean()
-    positive_count = (changes > 0).sum()
-    negative_count = (changes < 0).sum()
-    breadth_pct = positive_count / len(df) * 100 if len(df) > 0 else 50
+def _safe_float(val) -> float:
+    try:
+        return float(val or 0)
+    except (ValueError, TypeError):
+        return 0.0
 
-    retail_selling = avg_buyer_power < 0.9
-    retail_buying = avg_buyer_power > 1.3
-    money_entering = total_flow > 10e9
-    money_leaving = total_flow < -10e9
 
-    if money_entering and retail_selling:
-        mood, mood_fa, mood_desc, emoji = "smart_accumulation", "🧠 تجمیع هوشمند", "حقیقی‌ها می‌فروشند، پول هوشمند وارد می‌شود", "🟢"
-    elif money_entering and retail_buying and breadth_pct > 60:
-        mood, mood_fa, mood_desc, emoji = "broad_rally", "🚀 رالی گسترده", "هم پول و هم خریدار وارد — روند صعودی قوی", "🟢"
-    elif money_leaving and retail_buying:
-        mood, mood_fa, mood_desc, emoji = "distribution", "⚠️ توزیع", "حقیقی‌ها می‌خرند، پول هوشمند خارج می‌شود — احتیاط", "🔴"
-    elif money_leaving and retail_selling and breadth_pct < 40:
-        mood, mood_fa, mood_desc, emoji = "broad_selloff", "🔻 فروش گسترده", "هم پول و هم فروشنده خارج — روند نزولی", "🔴"
+def calculate_market_mood(df: pd.DataFrame) -> MarketMood:
+    if df.empty:
+        return MarketMood("unknown", "نامشخص", "❓", "داده کافی نیست", 0, 0, 0, 1.0, 0.0, 1.0)
+
+    df = df.copy()
+    df["_chg"] = df["close_price_change_percent"].apply(_safe_float)
+    df["_flow"] = df["real_money_flow"].apply(_safe_float)
+    df["_bp"] = df["buyer_power"].apply(_safe_float)
+    df["_val"] = df.get("trade_value", pd.Series(0, index=df.index)).apply(_safe_float)
+
+    positive = (df["_chg"] > 0).sum()
+    negative = (df["_chg"] < 0).sum()
+    total = len(df)
+
+    # جریان پول: اگر همه صفر است از تغییر قیمت × ارزش معامله استفاده کن
+    total_flow = df["_flow"].sum()
+    if abs(total_flow) < 1e9:
+        # فرمت جدید TSETMC — برآورد از قیمت و حجم
+        df["_estimated_flow"] = df["_chg"] * df["_val"] / 100
+        total_flow = df["_estimated_flow"].sum()
+
+    buyer_power_avg = df["_bp"].mean()
+    # buyer_power همه 1.0 است در فرمت جدید — از نسبت مثبت/منفی استفاده کن
+    if abs(buyer_power_avg - 1.0) < 0.05:
+        buyer_power_avg = round(positive / max(negative, 1), 2)
+
+    ad_ratio = positive / max(negative, 1)
+
+    # تشخیص حالت بازار
+    bullish = ad_ratio >= 1.5 and total_flow > 0
+    bearish = ad_ratio <= 0.7 or total_flow < -50e9
+
+    if bullish and total_flow > 100e9:
+        mood, mood_fa, emoji, desc = "strong_bull", "بازار صعودی قوی", "🚀", "جریان پول مثبت و اکثر نمادها سبز"
+    elif bullish:
+        mood, mood_fa, emoji, desc = "bull", "بازار صعودی", "📈", "اکثر نمادها مثبت با جریان ورودی"
+    elif bearish and total_flow < -100e9:
+        mood, mood_fa, emoji, desc = "strong_bear", "بازار نزولی قوی", "🔴", "خروج گسترده پول و اکثر نمادها منفی"
+    elif bearish:
+        mood, mood_fa, emoji, desc = "bear", "بازار نزولی", "📉", "فشار فروش غالب است"
     else:
-        mood, mood_fa, mood_desc, emoji = "mixed", "⚖️ بازار خنثی", "سیگنال واضحی وجود ندارد — صبر کنید", "🟡"
+        mood, mood_fa, emoji, desc = "neutral", "بازار خنثی", "⚖️", "سیگنال واضحی وجود ندارد — صبر کنید"
 
-    return {
-        "mood": mood, "mood_fa": mood_fa, "mood_desc": mood_desc, "mood_emoji": emoji,
-        "total_flow_billion": round(total_flow / 1e9, 1),
-        "avg_buyer_power": round(avg_buyer_power, 2),
-        "positive_count": int(positive_count),
-        "negative_count": int(negative_count),
-        "breadth_pct": round(breadth_pct, 1),
-    }
+    return MarketMood(
+        mood=mood, mood_fa=mood_fa, emoji=emoji,
+        description_fa=desc,
+        positive_count=int(positive),
+        negative_count=int(negative),
+        total_count=total,
+        buyer_power_avg=round(buyer_power_avg, 2),
+        total_flow=total_flow,
+        advance_decline_ratio=round(ad_ratio, 2),
+    )
 
 
-def format_market_header(mood: dict, sector_heatmap: str = "") -> str:
-    now = datetime.now().strftime("%Y-%m-%d  %H:%M")
-    flow = mood["total_flow_billion"]
-    flow_str = f"+{flow:.0f}" if flow >= 0 else f"{flow:.0f}"
+def format_market_header(mood: MarketMood, sector_heatmap: str = "") -> str:
+    flow_b = mood.total_flow / 1e9
+    flow_str = f"{flow_b:+.0f}"
 
     lines = [
-        f"📊 *گزارش سیستم کمک‌تصمیم بورس تهران*",
-        f"🕐 {now}",
-        f"─────────────────────",
-        f"{mood['mood_emoji']} *حالت بازار: {mood['mood_fa']}*",
-        f"  {mood['mood_desc']}",
-        f"",
+        "📊 *گزارش سیستم کمک‌تصمیم بورس تهران*",
+        f"🕐 {{datetime}}",
+        "─────────────────────",
+        f"{mood.emoji} *حالت بازار: {mood.mood_fa}*",
+        f"  {mood.description_fa}",
+        "",
         f"💰 جریان پول کل: {flow_str} میلیارد تومان",
-        f"📈 مثبت: {mood['positive_count']} | 📉 منفی: {mood['negative_count']}",
-        f"💪 قدرت خریدار: {mood['avg_buyer_power']}",
+        f"📈 مثبت: {mood.positive_count} | 📉 منفی: {mood.negative_count}",
+        f"💪 قدرت خریدار: {mood.buyer_power_avg}",
     ]
 
     if sector_heatmap:
-        lines += ["", sector_heatmap]
+        lines.append("")
+        lines.append(sector_heatmap)
 
     lines.append("─────────────────────")
     return "\n".join(lines)
