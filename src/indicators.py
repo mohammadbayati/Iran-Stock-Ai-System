@@ -5,7 +5,7 @@ from datetime import datetime
 from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
 from src.candlestick import detect_patterns
 
-MINIMUM_BARS = 22
+MINIMUM_BARS = 15
 
 _AR2FA = str.maketrans({"ك": "ک", "ي": "ی", "ة": "ه", "ى": "ی"})
 
@@ -58,6 +58,8 @@ def _bollinger(series, period=20):
     u = float(upper.iloc[-1])
     l = float(lower.iloc[-1])
     m = float(ma.iloc[-1])
+    if pd.isna(u) or pd.isna(l) or pd.isna(m):
+        return None, None, None, None, None
     width = round((u - l) / m * 100, 2) if m > 0 else None
     position = round((latest - l) / (u - l) * 100, 1) if (u - l) > 0 else None
     return round(u, 2), round(m, 2), round(l, 2), width, position
@@ -66,17 +68,22 @@ def _bollinger(series, period=20):
 def _trend_score(df):
     close = df["close"]
     score = 0
-    ma20 = close.rolling(20).mean().iloc[-1]
-    latest = close.iloc[-1]
-    if latest > ma20:
-        score += 1
+    if len(close) >= 20:
+        ma20 = close.rolling(20).mean().iloc[-1]
+        latest = close.iloc[-1]
+        if latest > ma20:
+            score += 1
+        ma20_series = close.rolling(20).mean()
+        if len(ma20_series.dropna()) >= 5:
+            if ma20_series.iloc[-1] > ma20_series.iloc[-5]:
+                score += 1
+        high20 = close.iloc[-20:].max()
+        low20 = close.iloc[-20:].min()
+        if latest > (high20 + low20) / 2:
+            score += 1
     if len(close) >= 50:
         ma50 = close.rolling(50).mean().iloc[-1]
-        if latest > ma50:
-            score += 1
-    ma20_series = close.rolling(20).mean()
-    if len(ma20_series.dropna()) >= 5:
-        if ma20_series.iloc[-1] > ma20_series.iloc[-5]:
+        if close.iloc[-1] > ma50:
             score += 1
     if len(close) >= 10:
         recent = close.iloc[-5:]
@@ -85,10 +92,6 @@ def _trend_score(df):
             score += 1
         if recent.min() > prior.min():
             score += 1
-    high20 = close.iloc[-20:].max()
-    low20 = close.iloc[-20:].min()
-    if latest > (high20 + low20) / 2:
-        score += 1
     return score
 
 
@@ -123,13 +126,14 @@ def calculate_indicators(symbol: str) -> dict:
         except Exception:
             pass
 
-    high20 = float(close.iloc[-20:].max())
-    low20 = float(close.iloc[-20:].min())
+    n = min(20, len(close))
+    high20 = float(close.iloc[-n:].max())
+    low20 = float(close.iloc[-n:].min())
     close_5d_ago = float(close.iloc[-6]) if len(close) >= 6 else None
 
     vol_ratio = None
-    if len(volume.dropna()) >= 20:
-        avg_vol = float(volume.iloc[-20:].mean())
+    if len(volume.dropna()) >= min(20, len(volume)):
+        avg_vol = float(volume.iloc[-n:].mean())
         last_vol = float(volume.iloc[-1])
         vol_ratio = round(last_vol / avg_vol, 2) if avg_vol > 0 else None
 
