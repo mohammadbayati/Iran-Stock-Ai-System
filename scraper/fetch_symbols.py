@@ -1,5 +1,5 @@
 """
-Fetch all 700+ symbols from TSETMC old API (MarketWatchPlus).
+Fetch all symbols from TSETMC old API (MarketWatchPlus).
 Falls back to tradersarena, then cached symbols.csv if both fail.
 """
 
@@ -13,19 +13,41 @@ from config.settings import SYMBOLS_CSV, SYMBOLS_JSON, DATA_DIR
 
 TSETMC_URL = "https://old.tsetmc.com/tsev2/data/MarketWatchPlus.aspx"
 FALLBACK_URL = "https://tradersarena.ir/data/mainwatch/symbols"
-
 HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
+def _parse_queue(queue_text: str) -> dict:
+    result = {}
+    for item in queue_text.split(";"):
+        parts = item.strip().split(",")
+        if len(parts) < 5:
+            continue
+        try:
+            ins_code = parts[0]
+            result[ins_code] = {
+                "buy_vol": float(parts[1] or 0),
+                "best_buy_price": float(parts[2] or 0),
+                "best_sell_price": float(parts[3] or 0),
+                "sell_vol": float(parts[4] or 0),
+                "best_buy_vol": float(parts[1] or 0),
+                "best_sell_vol": float(parts[4] or 0),
+            }
+        except Exception:
+            continue
+    return result
 
 
 def _parse_tsetmc(text: str) -> pd.DataFrame:
     if "@@" not in text:
         return pd.DataFrame()
+
     _, symbols_part = text.split("@@", 1)
     if "@@" in symbols_part:
         symbols_part, queue_part = symbols_part.split("@@", 1)
         queue_map = _parse_queue(queue_part)
     else:
         queue_map = {}
+
     records = []
     for sym_str in symbols_part.split(";"):
         sym_str = sym_str.strip()
@@ -54,22 +76,12 @@ def _parse_tsetmc(text: str) -> pd.DataFrame:
             buyer_power = round(buy_vol / sell_vol, 2) if sell_vol > 0 else (2.0 if buy_vol > 0 else 1.0)
             flow = buy_vol - sell_vol
             records.append({
-                "ins_code": ins_code,
-                "isin": isin,
-                "symbol": symbol,
-                "name": name,
-                "previous_close": prev_close,
-                "last_price": last,
-                "close_price": close,
+                "ins_code": ins_code, "isin": isin, "symbol": symbol, "name": name,
+                "previous_close": prev_close, "last_price": last, "close_price": close,
                 "close_price_change_percent": change_pct,
-                "volume": volume,
-                "trade_value": value,
-                "high": high,
-                "low": low,
-                "buyer_power": buyer_power,
-                "buy_power_numerator": buy_vol,
-                "sell_power_denominator": sell_vol,
-                "real_money_flow": flow,
+                "volume": volume, "trade_value": value, "high": high, "low": low,
+                "buyer_power": buyer_power, "buy_power_numerator": buy_vol,
+                "sell_power_denominator": sell_vol, "real_money_flow": flow,
                 "best_buy_price": float(q.get("best_buy_price", 0)),
                 "best_sell_price": float(q.get("best_sell_price", 0)),
                 "best_buy_volume": float(q.get("best_buy_vol", 0)),
@@ -78,27 +90,6 @@ def _parse_tsetmc(text: str) -> pd.DataFrame:
         except Exception:
             continue
     return pd.DataFrame(records)
-
-
-def _parse_queue(queue_text: str) -> dict:
-    result = {}
-    for item in queue_text.split(";"):
-        parts = item.strip().split(",")
-        if len(parts) < 5:
-            continue
-        try:
-            ins_code = parts[0]
-            result[ins_code] = {
-                "buy_vol": float(parts[1] or 0),
-                "best_buy_price": float(parts[2] or 0),
-                "best_sell_price": float(parts[3] or 0),
-                "sell_vol": float(parts[4] or 0),
-                "best_buy_vol": float(parts[1] or 0),
-                "best_sell_vol": float(parts[4] or 0),
-            }
-        except Exception:
-            continue
-    return result
 
 
 def _fetch_fallback() -> pd.DataFrame:
