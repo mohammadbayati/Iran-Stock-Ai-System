@@ -1,5 +1,9 @@
 """
 Calculate technical indicators from historical OHLCV data.
+
+Returns a dict of indicator values for a single symbol.
+If history is unavailable or too short, returns an empty indicator dict
+with missing=True so downstream can label it correctly.
 """
 
 import os
@@ -66,20 +70,31 @@ def _atr(df: pd.DataFrame, period: int = 14) -> float | None:
 def _rsi_divergence(close: pd.Series, rsi_series: pd.Series, lookback: int = 10) -> str:
     if len(close) < lookback or len(rsi_series.dropna()) < lookback:
         return "none"
+
     price_recent = close.iloc[-lookback:]
     rsi_recent = rsi_series.iloc[-lookback:]
-    half = lookback // 2
-    price_low1 = price_recent.iloc[:half].min()
-    price_low2 = price_recent.iloc[half:].min()
-    rsi_low1 = rsi_recent.iloc[:half].min()
-    rsi_low2 = rsi_recent.iloc[half:].min()
-    price_high1 = price_recent.iloc[:half].max()
-    price_high2 = price_recent.iloc[half:].max()
-    rsi_high1 = rsi_recent.iloc[:half].max()
-    rsi_high2 = rsi_recent.iloc[half:].max()
-    if (price_low2 < price_low1 * 0.995) and (rsi_low2 > rsi_low1 + 2):
+
+    price_first_half = price_recent.iloc[:lookback // 2]
+    price_second_half = price_recent.iloc[lookback // 2:]
+    rsi_first_half = rsi_recent.iloc[:lookback // 2]
+    rsi_second_half = rsi_recent.iloc[lookback // 2:]
+
+    price_low1 = price_first_half.min()
+    price_low2 = price_second_half.min()
+    rsi_low1 = rsi_first_half.min()
+    rsi_low2 = rsi_second_half.min()
+
+    price_high1 = price_first_half.max()
+    price_high2 = price_second_half.max()
+    rsi_high1 = rsi_first_half.max()
+    rsi_high2 = rsi_second_half.max()
+
+    bullish = (price_low2 < price_low1 * 0.995) and (rsi_low2 > rsi_low1 + 2)
+    bearish = (price_high2 > price_high1 * 1.005) and (rsi_high2 < rsi_high1 - 2)
+
+    if bullish:
         return "bullish"
-    if (price_high2 > price_high1 * 1.005) and (rsi_high2 < rsi_high1 - 2):
+    if bearish:
         return "bearish"
     return "none"
 
@@ -88,20 +103,25 @@ def _trend_score(df: pd.DataFrame) -> int:
     close = df["close"]
     n = min(20, len(close))
     score = 0
+
     ma20 = close.rolling(n).mean().iloc[-1]
     latest = close.iloc[-1]
+
     if latest > ma20:
         score += 1
+
     if len(close) >= 50:
         ma50 = close.rolling(50).mean().iloc[-1]
         if latest > ma50:
             score += 1
+
     ma20_series = close.rolling(n).mean()
-    lb = min(5, len(ma20_series.dropna()))
-    if lb >= 2:
-        slope = ma20_series.iloc[-1] - ma20_series.iloc[-lb]
+    lookback = min(5, len(ma20_series.dropna()))
+    if lookback >= 2:
+        slope = ma20_series.iloc[-1] - ma20_series.iloc[-lookback]
         if slope > 0:
             score += 1
+
     if len(close) >= 10:
         recent = close.iloc[-5:]
         prior = close.iloc[-10:-5]
@@ -109,12 +129,76 @@ def _trend_score(df: pd.DataFrame) -> int:
             score += 1
         if recent.min() > prior.min():
             score += 1
+
     high_n = close.iloc[-n:].max()
     low_n = close.iloc[-n:].min()
     mid = (high_n + low_n) / 2
     if latest > mid:
         score += 1
+
     return score
+
+
+def _volume_profile(df: pd.DataFrame, bins: int = 20, value_area_pct: float = 0.70):
+    """
+    Volume Profile over last 20 bars.
+    Returns (poc, vah, val, poc_position).
+    """
+    if "volume" not in df.columns:
+        return None, None, None, "unknown"
+
+    last = df.tail(20).copy()
+    last = last.dropna(subset=["close", "volume"])
+    if len(last) < 5:
+        return None, None, None, "unknown"
+
+    price_min = last["close"].min()
+    price_max = last["close"].max()
+    if price_max == price_min:
+        return None, None, None, "unknown"
+
+    bin_edges = np.linspace(price_min, price_max, bins + 1)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    vol_per_bin = np.zeros(bins)
+    for _, row in last.iterrows():
+        idx = min(int((row["close"] - price_min) / (price_max - price_min) * bins), bins - 1)
+        vol_per_bin[idx] += row["volume"]
+
+    poc_idx = int(np.argmax(vol_per_bin))
+    poc = round(float(bin_centers[poc_idx]), 2)
+
+    total_vol = vol_per_bin.sum()
+    target_vol = total_vol * value_area_pct
+
+    lo = hi = poc_idx
+    captured = vol_per_bin[poc_idx]
+    while captured < target_vol:
+        expand_lo = (lo > 0)
+        expand_hi = (hi < bins - 1)
+        if not expand_lo and not expand_hi:
+            break
+        add_lo = vol_per_bin[lo - 1] if expand_lo else 0
+        add_hi = vol_per_bin[hi + 1] if expand_hi else 0
+        if add_hi >= add_lo:
+            hi += 1
+            captured += vol_per_bin[hi]
+        else:
+            lo -= 1
+            captured += vol_per_bin[lo]
+
+    vah = round(float(bin_edges[hi + 1]), 2)
+    val = round(float(bin_edges[lo]), 2)
+
+    latest_close = float(df["close"].iloc[-1])
+    if latest_close > poc * 1.005:
+        poc_position = "above"
+    elif latest_close < poc * 0.995:
+        poc_position = "below"
+    else:
+        poc_position = "at"
+
+    return poc, vah, val, poc_position
 
 
 def calculate_indicators(symbol: str) -> dict:
@@ -137,6 +221,10 @@ def calculate_indicators(symbol: str) -> dict:
         "target_1": None,
         "risk_reward": None,
         "stale": False,
+        "poc": None,
+        "vah": None,
+        "val": None,
+        "poc_position": "unknown",
     }
 
     df = load_history(symbol)
@@ -176,14 +264,23 @@ def calculate_indicators(symbol: str) -> dict:
     support = round(low20, 2)
     resistance = round(high20, 2)
 
+    poc, vah, val, poc_position = _volume_profile(df)
+
     atr_val = _atr(df)
     if atr_val and atr_val > 0:
-        stop_loss = round(latest_close - 1.5 * atr_val, 2)
+        atr_stop = round(latest_close - 1.5 * atr_val, 2)
     else:
-        stop_loss = round(support * 0.97, 2)
+        atr_stop = round(support * 0.97, 2)
+
+    if val is not None and val > atr_stop and val < latest_close:
+        stop_loss = val
+    else:
+        stop_loss = atr_stop
 
     range_20 = high20 - low20
-    if resistance > latest_close * 1.01:
+    if vah is not None and vah > latest_close * 1.01:
+        target_1 = vah
+    elif resistance > latest_close * 1.01:
         target_1 = resistance
     else:
         target_1 = round(latest_close + range_20 * 0.618, 2)
@@ -202,8 +299,8 @@ def calculate_indicators(symbol: str) -> dict:
         avg_gain = gain.rolling(period).mean()
         avg_loss = loss.rolling(period).mean()
         rs = avg_gain / avg_loss.replace(0, np.nan)
-        rsi_full = 100 - (100 / (1 + rs))
-        divergence = _rsi_divergence(close, rsi_full)
+        rsi_series = 100 - (100 / (1 + rs))
+        divergence = _rsi_divergence(close, rsi_series)
 
     return {
         "symbol": symbol,
@@ -224,4 +321,8 @@ def calculate_indicators(symbol: str) -> dict:
         "target_1": target_1,
         "risk_reward": risk_reward,
         "stale": stale,
+        "poc": poc,
+        "vah": vah,
+        "val": val,
+        "poc_position": poc_position,
     }

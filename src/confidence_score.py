@@ -9,7 +9,8 @@ Score breakdown (max 100):
   Volume ratio            → up to +10
   Sector alignment        → up to +10
   Risk/Reward ratio       → up to +10
-  RSI Divergence          → up to +8 / down to -8
+  RSI Divergence          → ±8
+  Volume Profile (POC)    → up to +8 / down to -5
 """
 
 from dataclasses import dataclass, field
@@ -32,6 +33,7 @@ def calculate_confidence(
     risk_reward: float | None,
     missing: bool = False,
     rsi_divergence: str = "none",
+    poc_position: str = "unknown",
 ) -> ConfidenceResult:
 
     if missing:
@@ -40,6 +42,7 @@ def calculate_confidence(
     score = 50
     factors = []
 
+    # --- Smart money (±20 / -15) ---
     score += smart_money_bonus
     if smart_money_bonus >= 15:
         factors.append(f"پول هوشمند: +{smart_money_bonus} (تجمیع پنهان)")
@@ -48,12 +51,14 @@ def calculate_confidence(
     elif smart_money_bonus < 0:
         factors.append(f"پول هوشمند: {smart_money_bonus} (توزیع پنهان)")
 
+    # --- Queue (±15) ---
     score += queue_bonus
     if queue_bonus > 0:
         factors.append(f"تحلیل صف: +{queue_bonus}")
     elif queue_bonus < 0:
         factors.append(f"تحلیل صف: {queue_bonus}")
 
+    # --- RSI zone (0 to +15) ---
     if rsi is not None:
         if 45 <= rsi < 60:
             rsi_pts = 15
@@ -74,11 +79,13 @@ def calculate_confidence(
             rsi_pts = 0
         score += rsi_pts
 
+    # --- Trend score (0 to +20) ---
     if trend_score is not None:
         trend_pts = min(trend_score * 3, 20)
         score += trend_pts
         factors.append(f"روند {trend_score}/6: +{trend_pts}")
 
+    # --- Volume ratio (0 to +10) ---
     if volume_ratio is not None:
         if volume_ratio >= 2.0:
             vol_pts = 10
@@ -94,12 +101,14 @@ def calculate_confidence(
         if vol_pts != 0:
             factors.append(f"حجم نسبی {volume_ratio:.1f}x: {'+' if vol_pts > 0 else ''}{vol_pts}")
 
+    # --- Sector alignment (±10) ---
     score += sector_bonus
     if sector_bonus > 0:
         factors.append(f"سکتور پیشرو: +{sector_bonus}")
     elif sector_bonus < 0:
         factors.append(f"سکتور عقب‌مانده: {sector_bonus}")
 
+    # --- Risk/Reward (0 to +10) ---
     if risk_reward is not None and risk_reward > 0:
         if risk_reward >= 3.0:
             rr_pts = 10
@@ -113,12 +122,24 @@ def calculate_confidence(
         if rr_pts > 0:
             factors.append(f"ریسک/ریوارد {risk_reward:.1f}: +{rr_pts}")
 
+    # --- RSI Divergence (±8) ---
     if rsi_divergence == "bullish":
         score += 8
         factors.append("واگرایی مثبت RSI: +8")
     elif rsi_divergence == "bearish":
         score -= 8
         factors.append("واگرایی منفی RSI: -8")
+
+    # --- Volume Profile POC position (±8) ---
+    if poc_position == "above":
+        score += 8
+        factors.append("قیمت بالای POC: +8 (قدرت)")
+    elif poc_position == "below":
+        score -= 5
+        factors.append("قیمت زیر POC: -5 (ضعف)")
+    elif poc_position == "at":
+        score += 5
+        factors.append("قیمت روی POC: +5 (ناحیه ارزش)")
 
     score = max(0, min(100, score))
 

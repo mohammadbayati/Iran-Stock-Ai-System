@@ -32,7 +32,7 @@ def main():
     run([python_exe, "scraper/screen_top10.py"])
     run([python_exe, "scraper/fetch_history.py"])
     run([python_exe, "scraper/calculate_indicators.py"])
-    run([python_exe, "scraper/merge_decision_report.py"])
+    run([python_exe, "scraper/merge_decision_report_pro.py"])
     run_optional([python_exe, "scraper/claude_analyze_top10.py"])
     run([python_exe, "scraper/send_telegram_report.py"])
 
@@ -41,7 +41,6 @@ def main():
     print("  output/top10_initial.csv")
     print("  data/indicators.csv")
     print("  output/decision_report.csv")
-    print("  output/claude_strategy_report.txt")
     print("Telegram report sent.")
 
 

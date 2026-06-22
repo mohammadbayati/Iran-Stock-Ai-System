@@ -1,8 +1,5 @@
 """
 Pro Persian Telegram Report Builder.
-
-Groups by decision label, shows full per-symbol intelligence block,
-includes market mood header and sector heatmap.
 """
 
 import os
@@ -40,6 +37,12 @@ ORDER = [
     LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT, LABEL_MISSING,
 ]
 
+POC_FA = {
+    "above": "بالای POC ✅",
+    "below": "زیر POC ⚠️",
+    "at":    "روی POC 🎯",
+}
+
 
 def _fmt(val, suffix="", fmt=".1f") -> str:
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -71,15 +74,28 @@ def _symbol_block(row: pd.Series) -> str:
             f"  📉 بازده ۵ روزه: {_fmt(row.get('return_5d_percent'), suffix='%')}",
         ]
 
+        # Volume Profile
+        poc = row.get("poc")
+        vah = row.get("vah")
+        val = row.get("val")
+        poc_pos = row.get("poc_position", "unknown")
+        if poc and not pd.isna(poc):
+            poc_txt = POC_FA.get(poc_pos, "")
+            lines.append(
+                f"  📦 POC: {_fmt(poc, fmt='.0f')}  |  VAH: {_fmt(vah, fmt='.0f')}  |  VAL: {_fmt(val, fmt='.0f')}  {poc_txt}"
+            )
+
         rr_raw = row.get("risk_reward")
         rr = f"{float(rr_raw):.1f}" if rr_raw and not pd.isna(rr_raw) and float(rr_raw) > 0.05 else "—"
         atr = row.get("atr")
         div = row.get("rsi_divergence", "none")
+
         lines += [
             f"  ─",
             f"  🛑 حد ضرر: {_fmt(row.get('stop_loss'), fmt='.0f')}  |  🎯 هدف: {_fmt(row.get('target_1'), fmt='.0f')}",
             f"  ⚖️ ریسک/ریوارد: {rr}" + (f"  |  ATR: {_fmt(atr, fmt='.0f')}" if atr and not pd.isna(atr) else ""),
         ]
+
         if div == "bullish":
             lines.append("  📐 واگرایی مثبت RSI (سیگنال برگشت صعودی)")
         elif div == "bearish":
@@ -130,7 +146,7 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
 
     entry_count = len(df[df["decision_label"] == LABEL_ENTRY_CANDIDATE])
     missing_count = len(df[df["missing"].astype(str).str.lower() == "true"])
-    high_conf = len(df[df.get("confidence_score", 0) >= 70]) if "confidence_score" in df.columns else 0
+    high_conf = len(df[df["confidence_score"] >= 70]) if "confidence_score" in df.columns else 0
 
     stats = (
         f"\n─────────────────────\n"
