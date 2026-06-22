@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import (
     INDICATORS_CSV, DECISION_REPORT_CSV, SYMBOLS_CSV, OUTPUT_DIR, DATA_DIR
 )
-from src.decision_engine import classify, rsi_status, LABEL_ENTRY_CANDIDATE, LABEL_TECH_WATCH, LABEL_WATCH
+from src.decision_engine import classify, rsi_status
 from src.smart_money import analyze_smart_money
 from src.queue_analyzer import analyze_queue
 from src.sector_engine import get_sector, calculate_sector_strengths, format_sector_heatmap
@@ -36,11 +36,12 @@ def run():
     sector_heatmap = format_sector_heatmap(sector_strengths)
 
     mood = calculate_market_mood(symbols_df)
+    fear_greed = mood.get("fear_greed", 50)
     market_header = format_market_header(mood, sector_heatmap)
 
-    fear_greed = mood.get("fear_greed", 50)
-
     sym_lookup = {str(r["symbol"]): r.to_dict() for _, r in symbols_df.iterrows()}
+
+    from src.decision_engine import LABEL_ENTRY_CANDIDATE, LABEL_TECH_WATCH, LABEL_WATCH
 
     rows = []
     for _, ind_row in indicators.iterrows():
@@ -48,13 +49,13 @@ def run():
         live = sym_lookup.get(symbol, {})
 
         sm = analyze_smart_money(live)
-        q = analyze_queue(live)
+        q  = analyze_queue(live)
 
         sector = get_sector(symbol)
         sec = sector_strengths.get(sector)
         sector_bonus = sec.confidence_bonus if sec else 0
 
-        poc_position = str(ind_row.get("poc_position", "unknown")) if not ind_row["missing"] else "unknown"
+        poc_pos = str(ind_row.get("poc_position", "unknown")) if not ind_row["missing"] else "unknown"
 
         conf = calculate_confidence(
             smart_money_bonus=sm.confidence_bonus,
@@ -66,7 +67,7 @@ def run():
             risk_reward=ind_row.get("risk_reward") if not ind_row["missing"] else None,
             missing=bool(ind_row["missing"]),
             rsi_divergence=str(ind_row.get("rsi_divergence", "none")) if not ind_row["missing"] else "none",
-            poc_position=poc_position,
+            poc_position=poc_pos,
         )
 
         ind_dict = ind_row.to_dict()
@@ -74,7 +75,7 @@ def run():
 
         label, reasons = classify(ind_dict)
 
-        # --- Fear & Greed Filter ---
+        # Fear & Greed market filter
         if fear_greed < 35 and label == LABEL_ENTRY_CANDIDATE:
             label = LABEL_TECH_WATCH
             reasons = [f"بازار در ترس ({fear_greed}/100) — کاندید ورود به واچ تبدیل شد"] + reasons
@@ -108,7 +109,6 @@ def run():
     update_outcomes(result)
 
     print("\n--- Pro Decision Summary ---")
-    print(f"Fear & Greed: {fear_greed}/100 {mood['fg_label']}")
     cols = ["symbol", "confidence_score", "confidence_grade", "decision_label", "smart_money_signal", "queue_signal"]
     print(result[cols].sort_values("confidence_score", ascending=False).to_string(index=False))
     print()
