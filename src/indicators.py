@@ -206,6 +206,49 @@ def _volume_profile(df: pd.DataFrame, bins: int = 10) -> dict:
     return {"poc": poc, "vah": vah, "val": val, "poc_position": poc_position}
 
 
+def _swing_points(df: pd.DataFrame, window: int = 5, lookback: int = 60) -> dict:
+    """
+    Find most recent swing high (resistance) and swing low (support).
+
+    Swing High: bar whose high is the highest among window bars on each side.
+    Swing Low:  bar whose low  is the lowest  among window bars on each side.
+
+    Uses last lookback bars. Falls back to range high/low if none found.
+    """
+    df_s = df.tail(lookback).reset_index(drop=True) if len(df) > lookback else df.reset_index(drop=True)
+    has_hl = "high" in df_s.columns and "low" in df_s.columns
+
+    highs = df_s["high"] if has_hl else df_s["close"]
+    lows = df_s["low"] if has_hl else df_s["close"]
+
+    swing_highs = []
+    swing_lows = []
+    n = len(df_s)
+
+    for i in range(window, n - window):
+        left_h = highs.iloc[i - window:i]
+        right_h = highs.iloc[i + 1:i + window + 1]
+        if highs.iloc[i] >= left_h.max() and highs.iloc[i] >= right_h.max():
+            swing_highs.append(float(highs.iloc[i]))
+
+        left_l = lows.iloc[i - window:i]
+        right_l = lows.iloc[i + 1:i + window + 1]
+        if lows.iloc[i] <= left_l.min() and lows.iloc[i] <= right_l.min():
+            swing_lows.append(float(lows.iloc[i]))
+
+    latest_close = float(df_s["close"].iloc[-1])
+    fallback_high = float(highs.max())
+    fallback_low = float(lows.min())
+
+    resistance_candidates = [p for p in swing_highs if p >= latest_close * 0.99]
+    resistance = round(min(resistance_candidates), 2) if resistance_candidates else round(fallback_high, 2)
+
+    support_candidates = [p for p in swing_lows if p <= latest_close * 1.01]
+    support = round(max(support_candidates), 2) if support_candidates else round(fallback_low, 2)
+
+    return {"support": support, "resistance": resistance}
+
+
 def _bollinger_bands(close: pd.Series, period: int = 20, std_mult: float = 2.0) -> dict:
     if len(close) < period:
         return {"bb_upper": None, "bb_middle": None, "bb_lower": None, "bb_squeeze": False, "bb_pct": None}
@@ -349,8 +392,9 @@ def calculate_indicators(symbol: str) -> dict:
     dist_high = round((high20 - latest_close) / high20 * 100, 2) if high20 else None
     dist_low = round((latest_close - low20) / low20 * 100, 2) if low20 else None
 
-    support = round(low20, 2)
-    resistance = round(high20, 2)
+    sp = _swing_points(df)
+    support = sp["support"]
+    resistance = sp["resistance"]
 
     atr_val = _atr(df)
     if atr_val and atr_val > 0:
@@ -358,10 +402,10 @@ def calculate_indicators(symbol: str) -> dict:
     else:
         stop_loss = round(support * 0.97, 2)
 
-    range_20 = high20 - low20
     if resistance > latest_close * 1.01:
         target_1 = resistance
     else:
+        range_20 = high20 - low20
         target_1 = round(latest_close + range_20 * 0.618, 2)
 
     risk = latest_close - stop_loss
