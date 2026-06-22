@@ -28,6 +28,19 @@ class QueueSignal:
     detail: str
 
 
+def _estimate_from_change(change_pct: float) -> QueueSignal:
+    """Fallback when no real queue data — estimate from price change."""
+    if change_pct > 4.5:
+        return QueueSignal("estimated_buy_limit", f"احتمال صف خرید (تغییر قیمت: {change_pct:.1f}%)", 12, "")
+    if change_pct < -4.5:
+        return QueueSignal("estimated_sell_limit", f"احتمال صف فروش (تغییر قیمت: {change_pct:.1f}%)", -12, "")
+    if change_pct > 2.0:
+        return QueueSignal("estimated_buy_pressure", f"فشار خرید تخمینی (تغییر قیمت: {change_pct:.1f}%)", 6, "")
+    if change_pct < -2.0:
+        return QueueSignal("estimated_sell_pressure", f"فشار فروش تخمینی (تغییر قیمت: {change_pct:.1f}%)", -6, "")
+    return QueueSignal("unknown", "داده صف موجود نیست", 0, "")
+
+
 def analyze_queue(row: dict) -> QueueSignal:
     best_buy_price  = _safe(row.get("best_buy_price"))
     best_sell_price = _safe(row.get("best_sell_price"))
@@ -37,16 +50,9 @@ def analyze_queue(row: dict) -> QueueSignal:
     prev_close      = _safe(row.get("previous_close"))
     change_pct      = _safe(row.get("close_price_change_percent"))
 
-    if prev_close <= 0 or last_price <= 0:
-        if change_pct > 4.5:
-            return QueueSignal("estimated_buy_limit", "احتمال صف خرید (تغییر قیمت: {:.1f}%)".format(change_pct), 12, "")
-        if change_pct < -4.5:
-            return QueueSignal("estimated_sell_limit", "احتمال صف فروش (تغییر قیمت: {:.1f}%)".format(change_pct), -12, "")
-        if change_pct > 2.0:
-            return QueueSignal("estimated_buy_pressure", "فشار خرید تخمینی (تغییر قیمت: {:.1f}%)".format(change_pct), 6, "")
-        if change_pct < -2.0:
-            return QueueSignal("estimated_sell_pressure", "فشار فروش تخمینی (تغییر قیمت: {:.1f}%)".format(change_pct), -6, "")
-        return QueueSignal("unknown", "داده صف موجود نیست", 0, "")
+    # اگه داده صف واقعی نداریم → تخمین از تغییر قیمت
+    if prev_close <= 0 or last_price <= 0 or (best_buy_vol == 0 and best_sell_vol == 0):
+        return _estimate_from_change(change_pct)
 
     upper_limit = prev_close * (1 + PRICE_LIMIT_PCT)
     lower_limit = prev_close * (1 - PRICE_LIMIT_PCT)
