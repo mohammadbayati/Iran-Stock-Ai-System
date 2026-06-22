@@ -41,7 +41,7 @@ def _rsi(series: pd.Series, period: int = 14) -> float | None:
     val = rsi_series.iloc[-1]
     if np.isnan(val):
         return None
-    if val < 1.0 or val > 99.0:
+    if val < 0.1 or val > 99.9:
         return None
     return round(float(val), 2)
 
@@ -131,7 +131,7 @@ def _trend_score(df: pd.DataFrame) -> int:
 
 
 def _volume_profile(df: pd.DataFrame, bins: int = 20, value_area_pct: float = 0.70):
-    """Returns (poc, vah, val, poc_position)."""
+    """Returns (poc, vah, val, poc_position). Uses last 60 bars only."""
     try:
         if "high" not in df.columns or "low" not in df.columns or len(df) < 5:
             return None, None, None, "unknown"
@@ -261,7 +261,9 @@ def calculate_indicators(symbol: str) -> dict:
     else:
         atr_stop = round(support * 0.97, 2)
 
-    poc, vah, val, poc_position = _volume_profile(df)
+    # Volume profile — فقط ۶۰ روز اخیر
+    df_vp = df.tail(60) if len(df) > 60 else df
+    poc, vah, val, poc_position = _volume_profile(df_vp)
 
     if val is not None and val > atr_stop and val < latest_close:
         stop_loss = val
