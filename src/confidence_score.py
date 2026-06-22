@@ -2,14 +2,15 @@
 Layer 5 — Unified Confidence Score (0-100)
 
 Score breakdown (max 100):
-  Smart money signal      → up to +20 / down to -15
-  Queue intelligence      → up to +15 / down to -15
-  RSI zone                → up to +15
-  Trend score             → up to +20
-  Volume ratio            → up to +10
-  Sector alignment        → up to +10
-  Risk/Reward ratio       → up to +10
+  Smart money signal         → up to +20 / down to -15
+  Queue intelligence         → up to +15 / down to -15
+  RSI zone                   → up to +15
+  Trend score                → up to +20
+  Volume ratio               → up to +10
+  Sector alignment           → up to +10
+  Risk/Reward ratio          → up to +10
   Faz 2 (MACD/BB/weekly/POC) → up to +16
+  Faz 4 candlestick          → up to +10
 """
 
 from dataclasses import dataclass, field
@@ -38,6 +39,8 @@ def calculate_confidence(
     bb_pct: float | None = None,
     weekly_trend: str | None = None,
     weekly_rsi: float | None = None,
+    candle_pattern: str = "none",
+    candle_bullish: bool | None = None,
 ) -> ConfidenceResult:
 
     if missing:
@@ -167,6 +170,23 @@ def calculate_confidence(
         elif weekly_rsi > 80:
             score -= 3
             factors.append(f"RSI هفتگی اشباع خرید ({weekly_rsi:.0f}): -3")
+
+    CANDLE_FA = {
+        "hammer": "چکش: +8",
+        "inverted_hammer": "چکش معکوس: +6",
+        "bullish_engulfing": "پوشش صعودی: +8",
+        "bearish_engulfing": "پوشش نزولی: -6",
+        "morning_star": "ستاره صبح: +10",
+        "doji": "دوجی (بلاتکلیفی): +2",
+    }
+    candle_scores = {
+        "hammer": 8, "inverted_hammer": 6, "bullish_engulfing": 8,
+        "bearish_engulfing": -6, "morning_star": 10, "doji": 2,
+    }
+    if candle_pattern in candle_scores:
+        pts = candle_scores[candle_pattern]
+        score += pts
+        factors.append(f"کندل {CANDLE_FA[candle_pattern]}")
 
     score = max(0, min(100, score))
 

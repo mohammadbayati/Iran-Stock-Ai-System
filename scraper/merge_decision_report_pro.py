@@ -17,7 +17,7 @@ from src.queue_analyzer import analyze_queue
 from src.sector_engine import get_sector, calculate_sector_strengths, format_sector_heatmap
 from src.confidence_score import calculate_confidence
 from src.market_mood import calculate_market_mood, format_market_header
-from src.signal_tracker import log_signals, update_outcomes, get_accuracy_summary
+from src.signal_tracker import log_signals, update_outcomes, get_accuracy_summary, get_status_changes, format_status_changes
 
 
 def run():
@@ -59,6 +59,8 @@ def run():
         bb_p = float(ind_row["bb_pct"]) if not_missing and pd.notna(ind_row.get("bb_pct")) else None
         w_trend = str(ind_row.get("weekly_trend")) if not_missing and pd.notna(ind_row.get("weekly_trend")) else None
         w_rsi = float(ind_row["weekly_rsi"]) if not_missing and pd.notna(ind_row.get("weekly_rsi")) else None
+        c_pattern = str(ind_row.get("candle_pattern", "none")) if not_missing else "none"
+        c_bullish = bool(ind_row["candle_bullish"]) if not_missing and pd.notna(ind_row.get("candle_bullish")) else None
 
         conf = calculate_confidence(
             smart_money_bonus=sm.confidence_bonus,
@@ -76,6 +78,8 @@ def run():
             bb_pct=bb_p,
             weekly_trend=w_trend,
             weekly_rsi=w_rsi,
+            candle_pattern=c_pattern,
+            candle_bullish=c_bullish,
         )
 
         ind_dict = ind_row.to_dict()
@@ -105,6 +109,11 @@ def run():
     result.to_csv(DECISION_REPORT_CSV, index=False, encoding="utf-8-sig")
     print(f"[pro_decision] Saved to {DECISION_REPORT_CSV}")
 
+    changes = get_status_changes(result)
+    change_alert = format_status_changes(changes)
+    if change_alert:
+        print("\n" + change_alert)
+
     log_signals(result)
     update_outcomes(result)
 
@@ -113,6 +122,9 @@ def run():
     print(result[cols].sort_values("confidence_score", ascending=False).to_string(index=False))
     print()
     print(get_accuracy_summary())
+
+    if change_alert:
+        market_header = market_header + "\n\n" + change_alert
 
     header_path = os.path.join(DATA_DIR, "market_header.txt")
     with open(header_path, "w", encoding="utf-8") as f:

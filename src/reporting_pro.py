@@ -1,8 +1,5 @@
 """
 Pro Persian Telegram Report Builder.
-
-Groups by decision label, shows full per-symbol intelligence block,
-includes market mood header and sector heatmap.
 """
 
 import os
@@ -40,6 +37,15 @@ ORDER = [
     LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT, LABEL_MISSING,
 ]
 
+CANDLE_FA = {
+    "hammer": "🔨 چکش (برگشت صعودی)",
+    "inverted_hammer": "🔨 چکش معکوس (برگشت صعودی)",
+    "bullish_engulfing": "🟢 پوشش صعودی",
+    "bearish_engulfing": "🔴 پوشش نزولی",
+    "morning_star": "⭐ ستاره صبح (برگشت صعودی)",
+    "doji": "〰️ دوجی (بلاتکلیفی)",
+}
+
 
 def _fmt(val, suffix="", fmt=".1f") -> str:
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -75,18 +81,16 @@ def _symbol_block(row: pd.Series) -> str:
         rr = f"{float(rr_raw):.1f}" if rr_raw and not pd.isna(rr_raw) and float(rr_raw) > 0.05 else "—"
         atr = row.get("atr")
         div = row.get("rsi_divergence", "none")
-        div_txt = ""
         if div == "bullish":
-            div_txt = "  📐 واگرایی مثبت RSI (سیگنال برگشت صعودی)\n"
+            lines.append("  📐 واگرایی مثبت RSI (سیگنال برگشت صعودی)")
         elif div == "bearish":
-            div_txt = "  📐 واگرایی منفی RSI (سیگنال برگشت نزولی)\n"
+            lines.append("  📐 واگرایی منفی RSI (سیگنال برگشت نزولی)")
+
         lines += [
             f"  ─",
             f"  🛑 حد ضرر: {_fmt(row.get('stop_loss'), fmt='.0f')}  |  🎯 هدف: {_fmt(row.get('target_1'), fmt='.0f')}",
             f"  ⚖️ ریسک/ریوارد: {rr}" + (f"  |  ATR: {_fmt(atr, fmt='.0f')}" if atr and not pd.isna(atr) else ""),
         ]
-        if div_txt:
-            lines.append(div_txt.rstrip())
 
         sm = row.get("smart_money_fa", "")
         if sm and str(sm) != "nan":
@@ -115,6 +119,11 @@ def _symbol_block(row: pd.Series) -> str:
             faz2_parts.append(f"هفتگی{arrow}{w_rsi_txt}")
         if faz2_parts:
             lines.append(f"  📡 {' | '.join(faz2_parts)}")
+
+        candle = row.get("candle_pattern", "")
+        if candle and str(candle) not in ("nan", "none", ""):
+            candle_txt = CANDLE_FA.get(candle, candle)
+            lines.append(f"  🕯 {candle_txt}")
 
         sector = row.get("sector", "")
         sec_status = row.get("sector_status", "")

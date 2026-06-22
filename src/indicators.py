@@ -13,7 +13,7 @@ from datetime import datetime
 
 from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
 
-MINIMUM_BARS = 15  # minimum bars needed for calculations
+MINIMUM_BARS = 15
 
 
 def load_history(symbol: str) -> pd.DataFrame | None:
@@ -207,14 +207,6 @@ def _volume_profile(df: pd.DataFrame, bins: int = 10) -> dict:
 
 
 def _swing_points(df: pd.DataFrame, window: int = 5, lookback: int = 60) -> dict:
-    """
-    Find most recent swing high (resistance) and swing low (support).
-
-    Swing High: bar whose high is the highest among window bars on each side.
-    Swing Low:  bar whose low  is the lowest  among window bars on each side.
-
-    Uses last lookback bars. Falls back to range high/low if none found.
-    """
     df_s = df.tail(lookback).reset_index(drop=True) if len(df) > lookback else df.reset_index(drop=True)
     has_hl = "high" in df_s.columns and "low" in df_s.columns
 
@@ -300,6 +292,85 @@ def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> 
     return {"macd_line": ml, "macd_signal": sl, "macd_hist": hl, "macd_crossover": crossover}
 
 
+def _candlestick_patterns(df: pd.DataFrame) -> dict:
+    """
+    Detect bullish/bearish candlestick patterns on the last 3 bars.
+
+    Patterns: hammer, inverted_hammer, bullish_engulfing,
+              bearish_engulfing, morning_star, doji
+    """
+    result = {"candle_pattern": "none", "candle_bullish": None}
+
+    required = {"open", "high", "low", "close"}
+    if not required.issubset(df.columns):
+        return result
+    if len(df) < 3:
+        return result
+
+    df_c = df.tail(3).reset_index(drop=True)
+    o = df_c["open"].astype(float)
+    h = df_c["high"].astype(float)
+    l = df_c["low"].astype(float)
+    c = df_c["close"].astype(float)
+
+    o0, h0, l0, c0 = o.iloc[-1], h.iloc[-1], l.iloc[-1], c.iloc[-1]
+    o1, h1, l1, c1 = o.iloc[-2], h.iloc[-2], l.iloc[-2], c.iloc[-2]
+    o2, h2, l2, c2 = o.iloc[-3], h.iloc[-3], l.iloc[-3], c.iloc[-3]
+
+    body0 = abs(c0 - o0)
+    body1 = abs(c1 - o1)
+    range0 = h0 - l0 if h0 - l0 > 0 else 0.001
+    range1 = h1 - l1 if h1 - l1 > 0 else 0.001
+
+    upper_shadow0 = h0 - max(o0, c0)
+    lower_shadow0 = min(o0, c0) - l0
+
+    # Doji
+    if body0 < 0.10 * range0:
+        result["candle_pattern"] = "doji"
+        result["candle_bullish"] = None
+        return result
+
+    # Hammer
+    if (lower_shadow0 >= 2 * body0 and
+            upper_shadow0 <= 0.3 * body0 and
+            min(o0, c0) > l0 + range0 * 0.5):
+        result["candle_pattern"] = "hammer"
+        result["candle_bullish"] = True
+        return result
+
+    # Inverted Hammer
+    if (upper_shadow0 >= 2 * body0 and
+            lower_shadow0 <= 0.3 * body0 and
+            max(o0, c0) < h0 - range0 * 0.5):
+        result["candle_pattern"] = "inverted_hammer"
+        result["candle_bullish"] = True
+        return result
+
+    # Bullish Engulfing
+    if c1 < o1 and c0 > o0 and o0 < c1 and c0 > o1:
+        result["candle_pattern"] = "bullish_engulfing"
+        result["candle_bullish"] = True
+        return result
+
+    # Bearish Engulfing
+    if c1 > o1 and c0 < o0 and o0 > c1 and c0 < o1:
+        result["candle_pattern"] = "bearish_engulfing"
+        result["candle_bullish"] = False
+        return result
+
+    # Morning Star
+    bar2_bearish = c2 < o2 and abs(c2 - o2) > 0.5 * (h2 - l2)
+    bar1_small = abs(c1 - o1) < 0.3 * (h1 - l1 if h1 - l1 > 0 else 0.001)
+    bar0_bullish = c0 > o0 and abs(c0 - o0) > 0.5 * range0
+    if bar2_bearish and bar1_small and bar0_bullish and c0 > (o2 + c2) / 2:
+        result["candle_pattern"] = "morning_star"
+        result["candle_bullish"] = True
+        return result
+
+    return result
+
+
 def _weekly_trend(df: pd.DataFrame) -> dict:
     result = {"weekly_rsi": None, "weekly_trend": None}
     if "date" not in df.columns:
@@ -356,6 +427,8 @@ def calculate_indicators(symbol: str) -> dict:
         "macd_crossover": "none",
         "weekly_rsi": None,
         "weekly_trend": None,
+        "candle_pattern": "none",
+        "candle_bullish": None,
     }
 
     df = load_history(symbol)
@@ -425,6 +498,7 @@ def calculate_indicators(symbol: str) -> dict:
     bb = _bollinger_bands(close)
     macd = _macd(close)
     weekly = _weekly_trend(df)
+    candle = _candlestick_patterns(df)
 
     if vp["val"] and vp["val"] > stop_loss and vp["val"] < latest_close:
         stop_loss = round(vp["val"], 2)
@@ -466,4 +540,6 @@ def calculate_indicators(symbol: str) -> dict:
         "macd_crossover": macd["macd_crossover"],
         "weekly_rsi": weekly["weekly_rsi"],
         "weekly_trend": weekly["weekly_trend"],
+        "candle_pattern": candle["candle_pattern"],
+        "candle_bullish": candle["candle_bullish"],
     }
