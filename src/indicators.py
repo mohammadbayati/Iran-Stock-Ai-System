@@ -140,7 +140,8 @@ def calculate_indicators(symbol: str) -> dict:
     support = round(low20, 2)
     resistance = round(high20, 2)
     stop_loss = round(min(support * 0.97, latest_close * 0.95), 2)
-    target_1 = resistance
+    range_20 = high20 - low20
+    target_1 = resistance if resistance > latest_close * 1.01 else round(latest_close + range_20 * 0.618, 2)
     risk = latest_close - stop_loss
     reward = target_1 - latest_close
     risk_reward = round(reward / risk, 2) if risk > 0 and reward > 0 else None
