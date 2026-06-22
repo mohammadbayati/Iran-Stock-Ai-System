@@ -31,10 +31,18 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
     except (ValueError, TypeError):
         trade_value = 0.0
 
-    no_queue_data = (buyer_power == 0.0 or buyer_power == 1.0) and flow == 0.0
+    no_queue_data = (buyer_power == 0.0 or buyer_power == 1.0 or buyer_power == 2.0) and flow == 0.0
 
     if no_queue_data:
-        if change_pct > 2.0 and trade_value > 10e9:
+        if change_pct > 3.0 and trade_value > 5e9:
+            return SmartMoneySignal(
+                signal="price_volume_bullish",
+                strength=60,
+                description_fa="رشد با حجم بالا",
+                is_bullish=True,
+                confidence_bonus=8,
+            )
+        elif change_pct > 1.0 and trade_value > 10e9:
             return SmartMoneySignal(
                 signal="price_volume_bullish",
                 strength=50,
@@ -42,7 +50,23 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
                 is_bullish=True,
                 confidence_bonus=5,
             )
-        elif change_pct < -2.0 and trade_value > 10e9:
+        elif change_pct > 0.0 and trade_value > 20e9:
+            return SmartMoneySignal(
+                signal="price_volume_bullish",
+                strength=40,
+                description_fa="جریان مثبت با ارزش بالا",
+                is_bullish=True,
+                confidence_bonus=3,
+            )
+        elif change_pct < -3.0 and trade_value > 5e9:
+            return SmartMoneySignal(
+                signal="price_volume_bearish",
+                strength=60,
+                description_fa="افت با حجم بالا",
+                is_bullish=False,
+                confidence_bonus=-8,
+            )
+        elif change_pct < -1.0 and trade_value > 10e9:
             return SmartMoneySignal(
                 signal="price_volume_bearish",
                 strength=50,
@@ -58,10 +82,18 @@ def analyze_smart_money(row: dict) -> SmartMoneySignal:
                 is_bullish=True,
                 confidence_bonus=3,
             )
+        elif trade_value > 5e9:
+            return SmartMoneySignal(
+                signal="no_queue_active",
+                strength=20,
+                description_fa="بدون داده صف — معامله فعال",
+                is_bullish=change_pct >= 0,
+                confidence_bonus=1,
+            )
         return SmartMoneySignal(
             signal="no_data",
             strength=0,
-            description_fa="داده صف در دسترس نیست",
+            description_fa="داده کافی در دسترس نیست",
             is_bullish=False,
             confidence_bonus=0,
         )
