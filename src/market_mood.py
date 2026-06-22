@@ -4,6 +4,7 @@ Layer 3 — Market Mood Calculator
 
 import pandas as pd
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 
 @dataclass
@@ -27,6 +28,11 @@ def _safe_float(val) -> float:
         return 0.0
 
 
+def _tehran_now() -> str:
+    tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
+    return tehran.strftime("%Y-%m-%d  %H:%M")
+
+
 def calculate_market_mood(df: pd.DataFrame) -> MarketMood:
     if df.empty:
         return MarketMood("unknown", "نامشخص", "❓", "داده کافی نیست", 0, 0, 0, 1.0, 0.0, 1.0)
@@ -41,21 +47,17 @@ def calculate_market_mood(df: pd.DataFrame) -> MarketMood:
     negative = (df["_chg"] < 0).sum()
     total = len(df)
 
-    # جریان پول: اگر همه صفر است از تغییر قیمت × ارزش معامله استفاده کن
     total_flow = df["_flow"].sum()
     if abs(total_flow) < 1e9:
-        # فرمت جدید TSETMC — برآورد از قیمت و حجم
         df["_estimated_flow"] = df["_chg"] * df["_val"] / 100
         total_flow = df["_estimated_flow"].sum()
 
     buyer_power_avg = df["_bp"].mean()
-    # buyer_power همه 1.0 است در فرمت جدید — از نسبت مثبت/منفی استفاده کن
     if abs(buyer_power_avg - 1.0) < 0.05:
         buyer_power_avg = round(positive / max(negative, 1), 2)
 
     ad_ratio = positive / max(negative, 1)
 
-    # تشخیص حالت بازار
     bullish = ad_ratio >= 1.5 and total_flow > 0
     bearish = ad_ratio <= 0.7 or total_flow < -50e9
 
@@ -88,7 +90,7 @@ def format_market_header(mood: MarketMood, sector_heatmap: str = "") -> str:
 
     lines = [
         "📊 *گزارش سیستم کمک‌تصمیم بورس تهران*",
-        f"🕐 {{datetime}}",
+        f"🕐 {_tehran_now()}",
         "─────────────────────",
         f"{mood.emoji} *حالت بازار: {mood.mood_fa}*",
         f"  {mood.description_fa}",
