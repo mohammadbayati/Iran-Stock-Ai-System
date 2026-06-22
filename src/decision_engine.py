@@ -39,12 +39,10 @@ def classify(row: dict) -> tuple[str, list[str]]:
     if stale:
         reasons.append("⚠️ داده تاریخچه قدیمی است")
 
-    # حجم بسیار پایین — فارغ از هر چیز دیگری فقط رصد
     if vol_ratio is not None and vol_ratio < 0.3:
         reasons.append(f"حجم نسبی={vol_ratio:.2f}x — حجم معاملات بسیار پایین")
         return LABEL_WATCH, reasons
 
-    # RSI ناموجود ولی trend/volume داریم
     if rsi is None:
         vol_ok = vol_ratio is not None and vol_ratio >= ENTRY_CANDIDATE_VOL_RATIO
         if trend >= ENTRY_CANDIDATE_TREND and vol_ok:
@@ -53,7 +51,6 @@ def classify(row: dict) -> tuple[str, list[str]]:
         reasons.append("RSI ناقص — داده ناکافی برای تحلیل کامل")
         return LABEL_WATCH, reasons
 
-    # --- Overbought ---
     if rsi >= OVERBOUGHT_RSI:
         reasons.append(f"RSI={rsi} ≥ {OVERBOUGHT_RSI} → اشباع خرید")
         return LABEL_OVERBOUGHT, reasons
@@ -64,7 +61,6 @@ def classify(row: dict) -> tuple[str, list[str]]:
         reasons.append(f"RSI={rsi} ≥ {PULLBACK_RSI_LOW}، قیمت نزدیک سقف ۲۰ روزه، بازده ۵ روزه {return_5d}%")
         return LABEL_OVERBOUGHT, reasons
 
-    # --- Pullback zone ---
     if PULLBACK_RSI_LOW <= rsi < PULLBACK_RSI_HIGH:
         reasons.append(f"RSI={rsi} در محدوده {PULLBACK_RSI_LOW}-{PULLBACK_RSI_HIGH} → صبر برای پولبک")
         return LABEL_PULLBACK, reasons
