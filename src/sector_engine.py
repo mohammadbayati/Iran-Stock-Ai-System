@@ -95,7 +95,7 @@ SECTOR_MAP = {
     # صندوق ETF و اهرمی
     "اهرم": "ETF", "کمند": "ETF", "طلا": "ETF",
     "سکه": "ETF", "کیان": "ETF", "توان": "ETF",
-    "فیروزه": "ETF", "امین": "ETF",
+    "فیروزه": "ETF", "امین": "ETF", "بیدار": "ETF",
     # پیمانکاری و ساختمان
     "ثاباد": "ساختمان", "ثفارس": "ساختمان", "ثمسکن": "ساختمان",
     "ثنوسا": "ساختمان", "ثالوند": "ساختمان", "ثشاهد": "ساختمان",
@@ -112,13 +112,13 @@ DEFAULT_SECTOR = "سایر"
 class SectorStrength:
     sector: str
     symbol_count: int
-    avg_flow: float          # average real_money_flow
+    avg_flow: float
     avg_buyer_power: float
     avg_change_pct: float
     total_flow: float
-    status: str              # "leading" / "neutral" / "lagging"
+    status: str
     status_fa: str
-    confidence_bonus: int    # applied to all symbols in this sector
+    confidence_bonus: int
 
 
 def get_sector(symbol: str) -> str:
@@ -126,10 +126,6 @@ def get_sector(symbol: str) -> str:
 
 
 def calculate_sector_strengths(df: pd.DataFrame) -> dict[str, SectorStrength]:
-    """
-    df: full symbols dataframe with real_money_flow, buyer_power, close_price_change_percent
-    Returns: dict of sector_name → SectorStrength
-    """
     df = df.copy()
     df["sector"] = df["symbol"].apply(get_sector)
 
@@ -150,7 +146,6 @@ def calculate_sector_strengths(df: pd.DataFrame) -> dict[str, SectorStrength]:
         avg_chg = group["_chg"].mean()
         total_flow = group["_flow"].sum()
 
-        # Classify sector
         if avg_flow > 5e9 and avg_bp >= 1.2 and avg_chg > 0:
             status = "leading"
             status_fa = "🟢 پیشرو"
@@ -180,7 +175,6 @@ def calculate_sector_strengths(df: pd.DataFrame) -> dict[str, SectorStrength]:
 
 
 def format_sector_heatmap(sector_strengths: dict) -> str:
-    """Returns a Persian text block for the Telegram report header."""
     lines = ["🗺 نقشه گردش سکتور امروز:"]
 
     leading = [s for s in sector_strengths.values() if s.status == "leading"]
