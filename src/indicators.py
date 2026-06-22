@@ -11,20 +11,24 @@ from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
 
 MINIMUM_BARS = 15
 
+_AR2FA = str.maketrans({"ك": "ک", "ي": "ی", "ة": "ه", "ى": "ی"})
+
 
 def load_history(symbol: str) -> pd.DataFrame | None:
-    path = os.path.join(HISTORY_DIR, f"{symbol}.csv")
-    if not os.path.exists(path):
-        return None
-    try:
-        df = pd.read_csv(path)
-        df.columns = [c.lower().strip() for c in df.columns]
-        if "close" not in df.columns:
-            return None
-        df = df.dropna(subset=["close"]).reset_index(drop=True)
-        return df
-    except Exception:
-        return None
+    normalized = symbol.translate(_AR2FA).strip()
+    for name in [normalized, symbol]:
+        path = os.path.join(HISTORY_DIR, f"{name}.csv")
+        if os.path.exists(path):
+            try:
+                df = pd.read_csv(path)
+                df.columns = [c.lower().strip() for c in df.columns]
+                if "close" not in df.columns:
+                    return None
+                df = df.dropna(subset=["close"]).reset_index(drop=True)
+                return df
+            except Exception:
+                return None
+    return None
 
 
 def _rsi(series: pd.Series, period: int = 14) -> float | None:
