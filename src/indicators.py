@@ -1,5 +1,9 @@
 """
 Calculate technical indicators from historical OHLCV data.
+
+Returns a dict of indicator values for a single symbol.
+If history is unavailable or too short, returns an empty indicator dict
+with missing=True so downstream can label it correctly.
 """
 
 import os
@@ -9,7 +13,7 @@ from datetime import datetime
 
 from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
 
-MINIMUM_BARS = 15
+MINIMUM_BARS = 15  # minimum bars needed for calculations
 
 
 def load_history(symbol: str) -> pd.DataFrame | None:
@@ -35,21 +39,26 @@ def _rsi(series: pd.Series, period: int = 14) -> float | None:
     loss = (-delta).clip(lower=0)
     avg_gain = gain.rolling(period).mean()
     avg_loss = loss.rolling(period).mean()
-
     last_gain = avg_gain.iloc[-1]
     last_loss = avg_loss.iloc[-1]
-
     if pd.isna(last_gain) or pd.isna(last_loss):
         return None
-    # تمام روزها مثبت → avg_loss=0 → RSI=100
     if last_loss == 0:
         return 100.0 if last_gain > 0 else 50.0
-    # تمام روزها منفی → avg_gain=0 → RSI=0
     if last_gain == 0:
         return 0.0
-
     rs = last_gain / last_loss
     return round(float(100 - (100 / (1 + rs))), 2)
+
+
+def _rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
+    delta = series.diff()
+    gain = delta.clip(lower=0)
+    loss = (-delta).clip(lower=0)
+    avg_gain = gain.rolling(period).mean()
+    avg_loss = loss.rolling(period).mean()
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    return 100 - (100 / (1 + rs))
 
 
 def _atr(df: pd.DataFrame, period: int = 14) -> float | None:
@@ -70,26 +79,22 @@ def _atr(df: pd.DataFrame, period: int = 14) -> float | None:
     return round(float(atr), 2) if not np.isnan(atr) else None
 
 
-def _rsi_divergence(close: pd.Series, rsi_series: pd.Series, lookback: int = 10) -> str:
-    if len(close) < lookback or len(rsi_series.dropna()) < lookback:
+def _rsi_divergence(close: pd.Series, rsi_s: pd.Series, lookback: int = 10) -> str:
+    if len(close) < lookback or len(rsi_s.dropna()) < lookback:
         return "none"
 
     price_recent = close.iloc[-lookback:]
-    rsi_recent = rsi_series.iloc[-lookback:]
+    rsi_recent = rsi_s.iloc[-lookback:]
 
-    half = lookback // 2
-    price_low1  = price_recent.iloc[:half].min()
-    price_low2  = price_recent.iloc[half:].min()
-    rsi_low1    = rsi_recent.iloc[:half].min()
-    rsi_low2    = rsi_recent.iloc[half:].min()
+    price_first_half = price_recent.iloc[:lookback // 2]
+    price_second_half = price_recent.iloc[lookback // 2:]
+    rsi_first_half = rsi_recent.iloc[:lookback // 2]
+    rsi_second_half = rsi_recent.iloc[lookback // 2:]
 
-    price_high1 = price_recent.iloc[:half].max()
-    price_high2 = price_recent.iloc[half:].max()
-    rsi_high1   = rsi_recent.iloc[:half].max()
-    rsi_high2   = rsi_recent.iloc[half:].max()
-
-    bullish = (price_low2 < price_low1 * 0.995) and (rsi_low2 > rsi_low1 + 2)
-    bearish = (price_high2 > price_high1 * 1.005) and (rsi_high2 < rsi_high1 - 2)
+    bullish = (price_second_half.min() < price_first_half.min() * 0.995) and \
+              (rsi_second_half.min() > rsi_first_half.min() + 2)
+    bearish = (price_second_half.max() > price_first_half.max() * 1.005) and \
+              (rsi_second_half.max() < rsi_first_half.max() - 2)
 
     if bullish:
         return "bullish"
@@ -117,85 +122,160 @@ def _trend_score(df: pd.DataFrame) -> int:
     ma20_series = close.rolling(n).mean()
     lookback = min(5, len(ma20_series.dropna()))
     if lookback >= 2:
-        if ma20_series.iloc[-1] > ma20_series.iloc[-lookback]:
+        slope = ma20_series.iloc[-1] - ma20_series.iloc[-lookback]
+        if slope > 0:
             score += 1
 
     if len(close) >= 10:
         recent = close.iloc[-5:]
-        prior  = close.iloc[-10:-5]
+        prior = close.iloc[-10:-5]
         if recent.max() > prior.max():
             score += 1
         if recent.min() > prior.min():
             score += 1
 
     high_n = close.iloc[-n:].max()
-    low_n  = close.iloc[-n:].min()
-    if latest > (high_n + low_n) / 2:
+    low_n = close.iloc[-n:].min()
+    mid = (high_n + low_n) / 2
+    if latest > mid:
         score += 1
 
     return score
 
 
-def _volume_profile(df: pd.DataFrame, bins: int = 20, value_area_pct: float = 0.70):
-    """Returns (poc, vah, val, poc_position). Uses last 60 bars only."""
-    try:
-        if "high" not in df.columns or "low" not in df.columns or len(df) < 5:
-            return None, None, None, "unknown"
+def _volume_profile(df: pd.DataFrame, bins: int = 10) -> dict:
+    df_vp = df.tail(60) if len(df) > 60 else df
+    if "volume" not in df_vp.columns or df_vp["volume"].isna().all():
+        return {"poc": None, "vah": None, "val": None, "poc_position": "unknown"}
 
-        price_min = float(df["low"].min())
-        price_max = float(df["high"].max())
-        if price_min >= price_max:
-            return None, None, None, "unknown"
+    close = df_vp["close"].dropna()
+    volume = df_vp["volume"].dropna()
+    if len(close) < 5 or len(volume) < 5:
+        return {"poc": None, "vah": None, "val": None, "poc_position": "unknown"}
 
-        bin_edges = np.linspace(price_min, price_max, bins + 1)
-        vol_per_bin = np.zeros(bins)
+    price_min = close.min()
+    price_max = close.max()
+    if price_max <= price_min:
+        return {"poc": None, "vah": None, "val": None, "poc_position": "unknown"}
 
-        for _, row in df.iterrows():
-            lo  = float(row.get("low",  row["close"]))
-            hi  = float(row.get("high", row["close"]))
-            vol = float(row.get("volume", 0) or 0)
-            if hi <= lo or vol <= 0:
-                continue
-            for i in range(bins):
-                overlap_lo = max(lo, bin_edges[i])
-                overlap_hi = min(hi, bin_edges[i + 1])
-                if overlap_hi > overlap_lo:
-                    vol_per_bin[i] += vol * (overlap_hi - overlap_lo) / (hi - lo)
+    bin_edges = np.linspace(price_min, price_max, bins + 1)
+    bin_vols = np.zeros(bins)
+    bin_midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-        total_vol = vol_per_bin.sum()
-        if total_vol <= 0:
-            return None, None, None, "unknown"
+    for price, vol in zip(close, volume):
+        idx = min(int((price - price_min) / (price_max - price_min) * bins), bins - 1)
+        bin_vols[idx] += vol
 
-        poc_bin = int(np.argmax(vol_per_bin))
-        poc = round(float((bin_edges[poc_bin] + bin_edges[poc_bin + 1]) / 2), 2)
+    poc_idx = int(np.argmax(bin_vols))
+    poc = round(float(bin_midpoints[poc_idx]), 2)
 
-        target_vol = total_vol * value_area_pct
-        sorted_indices = list(np.argsort(vol_per_bin)[::-1])
-        included = []
-        captured = 0.0
-        for idx in sorted_indices:
-            included.append(idx)
-            captured += vol_per_bin[idx]
-            if captured >= target_vol:
-                break
+    total_vol = bin_vols.sum()
+    target_vol = total_vol * 0.70
 
-        lo_bin = min(included)
-        hi_bin = max(included)
-        val = round(float(bin_edges[lo_bin]), 2)
-        vah = round(float(bin_edges[min(hi_bin + 1, bins)]), 2)
+    val_idx = poc_idx
+    vah_idx = poc_idx
+    captured = bin_vols[poc_idx]
 
-        latest_close = float(df["close"].iloc[-1])
-        if latest_close > poc * 1.005:
-            poc_position = "above"
-        elif latest_close < poc * 0.995:
-            poc_position = "below"
+    while captured < target_vol:
+        can_go_low = val_idx > 0
+        can_go_high = vah_idx < bins - 1
+        if not can_go_low and not can_go_high:
+            break
+        add_low = bin_vols[val_idx - 1] if can_go_low else -1
+        add_high = bin_vols[vah_idx + 1] if can_go_high else -1
+        if add_low >= add_high and can_go_low:
+            val_idx -= 1
+            captured += bin_vols[val_idx]
+        elif can_go_high:
+            vah_idx += 1
+            captured += bin_vols[vah_idx]
         else:
-            poc_position = "at"
+            break
 
-        return poc, vah, val, poc_position
+    val = round(float(bin_midpoints[val_idx]), 2)
+    vah = round(float(bin_midpoints[vah_idx]), 2)
 
+    latest_close = float(close.iloc[-1])
+    if latest_close > poc * 1.01:
+        poc_position = "above"
+    elif latest_close < poc * 0.99:
+        poc_position = "below"
+    else:
+        poc_position = "at"
+
+    return {"poc": poc, "vah": vah, "val": val, "poc_position": poc_position}
+
+
+def _bollinger_bands(close: pd.Series, period: int = 20, std_mult: float = 2.0) -> dict:
+    if len(close) < period:
+        return {"bb_upper": None, "bb_middle": None, "bb_lower": None, "bb_squeeze": False, "bb_pct": None}
+    sma = close.rolling(period).mean()
+    std = close.rolling(period).std()
+    upper = sma + std_mult * std
+    lower = sma - std_mult * std
+    bb_upper = round(float(upper.iloc[-1]), 2)
+    bb_middle = round(float(sma.iloc[-1]), 2)
+    bb_lower = round(float(lower.iloc[-1]), 2)
+    bandwidth = (bb_upper - bb_lower) / bb_middle if bb_middle > 0 else None
+    squeeze = bandwidth is not None and bandwidth < 0.10
+    latest = float(close.iloc[-1])
+    bb_pct = round((latest - bb_lower) / (bb_upper - bb_lower), 3) if (bb_upper - bb_lower) > 0 else None
+    return {
+        "bb_upper": bb_upper,
+        "bb_middle": bb_middle,
+        "bb_lower": bb_lower,
+        "bb_squeeze": squeeze,
+        "bb_pct": bb_pct,
+    }
+
+
+def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> dict:
+    if len(close) < slow + signal:
+        return {"macd_line": None, "macd_signal": None, "macd_hist": None, "macd_crossover": "none"}
+    ema_fast = close.ewm(span=fast, adjust=False).mean()
+    ema_slow = close.ewm(span=slow, adjust=False).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+    hist = macd_line - signal_line
+
+    ml = round(float(macd_line.iloc[-1]), 4)
+    sl = round(float(signal_line.iloc[-1]), 4)
+    hl = round(float(hist.iloc[-1]), 4)
+
+    if len(macd_line) >= 2:
+        prev_diff = float(macd_line.iloc[-2]) - float(signal_line.iloc[-2])
+        curr_diff = float(macd_line.iloc[-1]) - float(signal_line.iloc[-1])
+        if prev_diff < 0 and curr_diff >= 0:
+            crossover = "bullish"
+        elif prev_diff > 0 and curr_diff <= 0:
+            crossover = "bearish"
+        else:
+            crossover = "none"
+    else:
+        crossover = "none"
+
+    return {"macd_line": ml, "macd_signal": sl, "macd_hist": hl, "macd_crossover": crossover}
+
+
+def _weekly_trend(df: pd.DataFrame) -> dict:
+    result = {"weekly_rsi": None, "weekly_trend": None}
+    if "date" not in df.columns:
+        return result
+    try:
+        dfw = df.copy()
+        dfw["date"] = pd.to_datetime(dfw["date"])
+        dfw = dfw.set_index("date")
+        weekly = dfw["close"].resample("W").last().dropna()
+        if len(weekly) < 15:
+            return result
+        w_rsi = _rsi(weekly)
+        result["weekly_rsi"] = w_rsi
+        if len(weekly) >= 5:
+            slope = float(weekly.iloc[-1]) - float(weekly.iloc[-4])
+            result["weekly_trend"] = "up" if slope > 0 else "down"
     except Exception:
-        return None, None, None, "unknown"
+        pass
+    return result
 
 
 def calculate_indicators(symbol: str) -> dict:
@@ -217,11 +297,22 @@ def calculate_indicators(symbol: str) -> dict:
         "stop_loss": None,
         "target_1": None,
         "risk_reward": None,
+        "stale": False,
         "poc": None,
         "vah": None,
         "val": None,
         "poc_position": "unknown",
-        "stale": False,
+        "bb_upper": None,
+        "bb_middle": None,
+        "bb_lower": None,
+        "bb_squeeze": False,
+        "bb_pct": None,
+        "macd_line": None,
+        "macd_signal": None,
+        "macd_hist": None,
+        "macd_crossover": "none",
+        "weekly_rsi": None,
+        "weekly_trend": None,
     }
 
     df = load_history(symbol)
@@ -245,64 +336,57 @@ def calculate_indicators(symbol: str) -> dict:
 
     n = min(20, len(close))
     high20 = float(close.iloc[-n:].max())
-    low20  = float(close.iloc[-n:].min())
+    low20 = float(close.iloc[-n:].min())
     close_5d_ago = float(close.iloc[-6]) if len(close) >= 6 else None
 
     vol_ratio = None
     if len(volume.dropna()) >= n:
-        avg_vol  = float(volume.iloc[-n:].mean())
+        avg_vol = float(volume.iloc[-n:].mean())
         last_vol = float(volume.iloc[-1])
         vol_ratio = round(last_vol / avg_vol, 2) if avg_vol > 0 else None
 
     return_5d = round((latest_close / close_5d_ago - 1) * 100, 2) if close_5d_ago else None
     dist_high = round((high20 - latest_close) / high20 * 100, 2) if high20 else None
-    dist_low  = round((latest_close - low20) / low20 * 100, 2) if low20 else None
+    dist_low = round((latest_close - low20) / low20 * 100, 2) if low20 else None
 
-    support    = round(low20, 2)
+    support = round(low20, 2)
     resistance = round(high20, 2)
 
     atr_val = _atr(df)
     if atr_val and atr_val > 0:
-        atr_stop = round(latest_close - 1.5 * atr_val, 2)
+        stop_loss = round(latest_close - 1.5 * atr_val, 2)
     else:
-        atr_stop = round(support * 0.97, 2)
-
-    # Volume profile — فقط ۶۰ روز اخیر
-    df_vp = df.tail(60) if len(df) > 60 else df
-    poc, vah, val, poc_position = _volume_profile(df_vp)
-
-    if val is not None and val > atr_stop and val < latest_close:
-        stop_loss = val
-    else:
-        stop_loss = atr_stop
+        stop_loss = round(support * 0.97, 2)
 
     range_20 = high20 - low20
-    if vah is not None and vah > latest_close * 1.01:
-        target_1 = vah
-    elif resistance > latest_close * 1.01:
+    if resistance > latest_close * 1.01:
         target_1 = resistance
     else:
         target_1 = round(latest_close + range_20 * 0.618, 2)
 
-    risk   = latest_close - stop_loss
+    risk = latest_close - stop_loss
     reward = target_1 - latest_close
     if risk > 0 and reward > 0:
-        risk_reward = round(min(reward / risk, 10.0), 2)
+        risk_reward = min(round(reward / risk, 2), 10.0)
     else:
         risk_reward = None
 
     rsi_val = _rsi(close)
     divergence = "none"
-    if rsi_val is not None and len(close) >= 20:
-        period = min(14, len(close) - 1)
-        delta    = close.diff()
-        gain     = delta.clip(lower=0)
-        loss     = (-delta).clip(lower=0)
-        avg_gain = gain.rolling(period).mean()
-        avg_loss = loss.rolling(period).mean()
-        rs = avg_gain / avg_loss.replace(0, np.nan)
-        rsi_series = 100 - (100 / (1 + rs))
-        divergence = _rsi_divergence(close, rsi_series)
+    if len(close) >= 20:
+        rsi_s = _rsi_series(close)
+        divergence = _rsi_divergence(close, rsi_s)
+
+    vp = _volume_profile(df)
+    bb = _bollinger_bands(close)
+    macd = _macd(close)
+    weekly = _weekly_trend(df)
+
+    if vp["val"] and vp["val"] > stop_loss and vp["val"] < latest_close:
+        stop_loss = round(vp["val"], 2)
+        risk = latest_close - stop_loss
+        if risk > 0 and reward > 0:
+            risk_reward = min(round(reward / risk, 2), 10.0)
 
     return {
         "symbol": symbol,
@@ -319,12 +403,23 @@ def calculate_indicators(symbol: str) -> dict:
         "support": support,
         "resistance": resistance,
         "atr": atr_val,
-        "stop_loss": round(stop_loss, 2),
-        "target_1": round(target_1, 2),
+        "stop_loss": stop_loss,
+        "target_1": target_1,
         "risk_reward": risk_reward,
-        "poc": poc,
-        "vah": vah,
-        "val": val,
-        "poc_position": poc_position,
         "stale": stale,
+        "poc": vp["poc"],
+        "vah": vp["vah"],
+        "val": vp["val"],
+        "poc_position": vp["poc_position"],
+        "bb_upper": bb["bb_upper"],
+        "bb_middle": bb["bb_middle"],
+        "bb_lower": bb["bb_lower"],
+        "bb_squeeze": bb["bb_squeeze"],
+        "bb_pct": bb["bb_pct"],
+        "macd_line": macd["macd_line"],
+        "macd_signal": macd["macd_signal"],
+        "macd_hist": macd["macd_hist"],
+        "macd_crossover": macd["macd_crossover"],
+        "weekly_rsi": weekly["weekly_rsi"],
+        "weekly_trend": weekly["weekly_trend"],
     }

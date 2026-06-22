@@ -1,5 +1,8 @@
 """
 Pro Persian Telegram Report Builder.
+
+Groups by decision label, shows full per-symbol intelligence block,
+includes market mood header and sector heatmap.
 """
 
 import os
@@ -37,12 +40,6 @@ ORDER = [
     LABEL_VOLUME, LABEL_WATCH, LABEL_OVERBOUGHT, LABEL_MISSING,
 ]
 
-POC_FA = {
-    "above": "بالای POC ✅",
-    "below": "زیر POC ⚠️",
-    "at":    "روی POC 🎯",
-}
-
 
 def _fmt(val, suffix="", fmt=".1f") -> str:
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -74,32 +71,22 @@ def _symbol_block(row: pd.Series) -> str:
             f"  📉 بازده ۵ روزه: {_fmt(row.get('return_5d_percent'), suffix='%')}",
         ]
 
-        # Volume Profile
-        poc = row.get("poc")
-        vah = row.get("vah")
-        val = row.get("val")
-        poc_pos = row.get("poc_position", "unknown")
-        if poc and not pd.isna(poc):
-            poc_txt = POC_FA.get(poc_pos, "")
-            lines.append(
-                f"  📦 POC: {_fmt(poc, fmt='.0f')}  |  VAH: {_fmt(vah, fmt='.0f')}  |  VAL: {_fmt(val, fmt='.0f')}  {poc_txt}"
-            )
-
         rr_raw = row.get("risk_reward")
         rr = f"{float(rr_raw):.1f}" if rr_raw and not pd.isna(rr_raw) and float(rr_raw) > 0.05 else "—"
         atr = row.get("atr")
         div = row.get("rsi_divergence", "none")
-
+        div_txt = ""
+        if div == "bullish":
+            div_txt = "  📐 واگرایی مثبت RSI (سیگنال برگشت صعودی)\n"
+        elif div == "bearish":
+            div_txt = "  📐 واگرایی منفی RSI (سیگنال برگشت نزولی)\n"
         lines += [
             f"  ─",
             f"  🛑 حد ضرر: {_fmt(row.get('stop_loss'), fmt='.0f')}  |  🎯 هدف: {_fmt(row.get('target_1'), fmt='.0f')}",
             f"  ⚖️ ریسک/ریوارد: {rr}" + (f"  |  ATR: {_fmt(atr, fmt='.0f')}" if atr and not pd.isna(atr) else ""),
         ]
-
-        if div == "bullish":
-            lines.append("  📐 واگرایی مثبت RSI (سیگنال برگشت صعودی)")
-        elif div == "bearish":
-            lines.append("  📐 واگرایی منفی RSI (سیگنال برگشت نزولی)")
+        if div_txt:
+            lines.append(div_txt.rstrip())
 
         sm = row.get("smart_money_fa", "")
         if sm and str(sm) != "nan":
@@ -110,6 +97,24 @@ def _symbol_block(row: pd.Series) -> str:
         if q and str(q) != "nan":
             detail = f" ({qd})" if qd and str(qd) != "nan" else ""
             lines.append(f"  📋 {q}{detail}")
+
+        faz2_parts = []
+        macd_x = row.get("macd_crossover", "")
+        if macd_x == "bullish":
+            faz2_parts.append("MACD↑صعودی")
+        elif macd_x == "bearish":
+            faz2_parts.append("MACD↓نزولی")
+        bb_sq = str(row.get("bb_squeeze", "")).lower()
+        if bb_sq == "true":
+            faz2_parts.append("BB🔄فشردگی")
+        w_trend = row.get("weekly_trend", "")
+        w_rsi = row.get("weekly_rsi", "")
+        if w_trend and str(w_trend) != "nan":
+            arrow = "↑" if w_trend == "up" else "↓"
+            w_rsi_txt = f" RSI-W:{float(w_rsi):.0f}" if w_rsi and str(w_rsi) != "nan" else ""
+            faz2_parts.append(f"هفتگی{arrow}{w_rsi_txt}")
+        if faz2_parts:
+            lines.append(f"  📡 {' | '.join(faz2_parts)}")
 
         sector = row.get("sector", "")
         sec_status = row.get("sector_status", "")
@@ -146,7 +151,7 @@ def build_pro_report(df: pd.DataFrame, market_header: str = "") -> list[str]:
 
     entry_count = len(df[df["decision_label"] == LABEL_ENTRY_CANDIDATE])
     missing_count = len(df[df["missing"].astype(str).str.lower() == "true"])
-    high_conf = len(df[df["confidence_score"] >= 70]) if "confidence_score" in df.columns else 0
+    high_conf = len(df[df.get("confidence_score", 0) >= 70]) if "confidence_score" in df.columns else 0
 
     stats = (
         f"\n─────────────────────\n"

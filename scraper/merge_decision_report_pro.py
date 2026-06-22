@@ -36,12 +36,9 @@ def run():
     sector_heatmap = format_sector_heatmap(sector_strengths)
 
     mood = calculate_market_mood(symbols_df)
-    fear_greed = mood.get("fear_greed", 50)
     market_header = format_market_header(mood, sector_heatmap)
 
     sym_lookup = {str(r["symbol"]): r.to_dict() for _, r in symbols_df.iterrows()}
-
-    from src.decision_engine import LABEL_ENTRY_CANDIDATE, LABEL_TECH_WATCH, LABEL_WATCH
 
     rows = []
     for _, ind_row in indicators.iterrows():
@@ -49,39 +46,42 @@ def run():
         live = sym_lookup.get(symbol, {})
 
         sm = analyze_smart_money(live)
-        q  = analyze_queue(live)
+        q = analyze_queue(live)
 
         sector = get_sector(symbol)
         sec = sector_strengths.get(sector)
         sector_bonus = sec.confidence_bonus if sec else 0
 
-        poc_pos = str(ind_row.get("poc_position", "unknown")) if not ind_row["missing"] else "unknown"
+        not_missing = not ind_row["missing"]
+        poc_pos = str(ind_row.get("poc_position", "unknown")) if not_missing else "unknown"
+        macd_x = str(ind_row.get("macd_crossover", "none")) if not_missing else "none"
+        bb_sq = bool(ind_row.get("bb_squeeze", False)) if not_missing else False
+        bb_p = float(ind_row["bb_pct"]) if not_missing and pd.notna(ind_row.get("bb_pct")) else None
+        w_trend = str(ind_row.get("weekly_trend")) if not_missing and pd.notna(ind_row.get("weekly_trend")) else None
+        w_rsi = float(ind_row["weekly_rsi"]) if not_missing and pd.notna(ind_row.get("weekly_rsi")) else None
 
         conf = calculate_confidence(
             smart_money_bonus=sm.confidence_bonus,
             queue_bonus=q.confidence_bonus,
-            rsi=ind_row.get("rsi") if not ind_row["missing"] else None,
-            trend_score=int(ind_row["trend_score"]) if not ind_row["missing"] and pd.notna(ind_row.get("trend_score")) else None,
-            volume_ratio=ind_row.get("volume_ratio_20") if not ind_row["missing"] else None,
+            rsi=ind_row.get("rsi") if not_missing else None,
+            trend_score=int(ind_row["trend_score"]) if not_missing and pd.notna(ind_row.get("trend_score")) else None,
+            volume_ratio=ind_row.get("volume_ratio_20") if not_missing else None,
             sector_bonus=sector_bonus,
-            risk_reward=ind_row.get("risk_reward") if not ind_row["missing"] else None,
+            risk_reward=ind_row.get("risk_reward") if not_missing else None,
             missing=bool(ind_row["missing"]),
-            rsi_divergence=str(ind_row.get("rsi_divergence", "none")) if not ind_row["missing"] else "none",
+            rsi_divergence=str(ind_row.get("rsi_divergence", "none")) if not_missing else "none",
             poc_position=poc_pos,
+            macd_crossover=macd_x,
+            bb_squeeze=bb_sq,
+            bb_pct=bb_p,
+            weekly_trend=w_trend,
+            weekly_rsi=w_rsi,
         )
 
         ind_dict = ind_row.to_dict()
         ind_dict["initial_score"] = conf.score
 
         label, reasons = classify(ind_dict)
-
-        # Fear & Greed market filter
-        if fear_greed < 35 and label == LABEL_ENTRY_CANDIDATE:
-            label = LABEL_TECH_WATCH
-            reasons = [f"بازار در ترس ({fear_greed}/100) — کاندید ورود به واچ تبدیل شد"] + reasons
-        elif fear_greed < 20 and label == LABEL_TECH_WATCH:
-            label = LABEL_WATCH
-            reasons = [f"بازار در ترس شدید ({fear_greed}/100) — واچ تکنیکال به رصد تبدیل شد"] + reasons
 
         rows.append({
             **ind_dict,
