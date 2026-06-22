@@ -60,7 +60,7 @@ def _entry_block(row: pd.Series) -> str:
 
     rr_raw = row.get("risk_reward")
     try:
-        rr = f"{float(rr_raw):.1f}" if rr_raw and not pd.isna(rr_raw) and float(rr_raw) > 0.1 else "—"
+        rr = f"{float(rr_raw):.1f}" if rr_raw and not pd.isna(rr_raw) and float(rr_raw) > 0.05 else "—"
     except Exception:
         rr = "—"
 
