@@ -24,7 +24,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 # --- Screening thresholds ---
-TOP_N = 35
+TOP_N = 30
 MIN_SCORE = 0
 
 # --- Decision engine thresholds ---
