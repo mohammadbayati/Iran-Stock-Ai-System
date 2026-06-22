@@ -1,8 +1,5 @@
 """
 Deterministic decision engine.
-
-Rules are explicit and documented. No heuristic guessing.
-If technical data is missing → Missing Technical Data, always.
 """
 
 from config.settings import (
@@ -41,6 +38,11 @@ def classify(row: dict) -> tuple[str, list[str]]:
 
     if stale:
         reasons.append("⚠️ داده تاریخچه قدیمی است")
+
+    # حجم بسیار پایین — فارغ از هر چیز دیگری فقط رصد
+    if vol_ratio is not None and vol_ratio < 0.3:
+        reasons.append(f"حجم نسبی={vol_ratio:.2f}x — حجم معاملات بسیار پایین")
+        return LABEL_WATCH, reasons
 
     # RSI ناموجود ولی trend/volume داریم
     if rsi is None:
