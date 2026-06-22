@@ -3,7 +3,6 @@ Calculate technical indicators from historical OHLCV data.
 """
 
 import os
-import math
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -40,8 +39,6 @@ def _rsi(series: pd.Series, period: int = 14) -> float | None:
     rsi_series = 100 - (100 / (1 + rs))
     val = rsi_series.iloc[-1]
     if np.isnan(val):
-        return None
-    if val < 0.1 or val > 99.9:
         return None
     return round(float(val), 2)
 
