@@ -35,12 +35,21 @@ def _rsi(series: pd.Series, period: int = 14) -> float | None:
     loss = (-delta).clip(lower=0)
     avg_gain = gain.rolling(period).mean()
     avg_loss = loss.rolling(period).mean()
-    rs = avg_gain / avg_loss.replace(0, np.nan)
-    rsi_series = 100 - (100 / (1 + rs))
-    val = rsi_series.iloc[-1]
-    if np.isnan(val):
+
+    last_gain = avg_gain.iloc[-1]
+    last_loss = avg_loss.iloc[-1]
+
+    if pd.isna(last_gain) or pd.isna(last_loss):
         return None
-    return round(float(val), 2)
+    # تمام روزها مثبت → avg_loss=0 → RSI=100
+    if last_loss == 0:
+        return 100.0 if last_gain > 0 else 50.0
+    # تمام روزها منفی → avg_gain=0 → RSI=0
+    if last_gain == 0:
+        return 0.0
+
+    rs = last_gain / last_loss
+    return round(float(100 - (100 / (1 + rs))), 2)
 
 
 def _atr(df: pd.DataFrame, period: int = 14) -> float | None:
