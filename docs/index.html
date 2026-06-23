@@ -47,7 +47,7 @@
 <body>
 <header>
   <h1>📈 داشبورد بازار سهام ایران</h1>
-  <small>آخرین به‌روزرسانی: 2026-06-23 07:34 | <span class="refresh-badge">🔄 هر ۱۵ دقیقه</span></small>
+  <small>آخرین به‌روزرسانی: 2026-06-23 07:39 | <span class="refresh-badge">🔄 هر ۱۵ دقیقه</span></small>
 </header>
 
 <div class="top-bar">
@@ -67,7 +67,7 @@
     <option value="C">C</option>
     <option value="D">D</option>
   </select>
-  <select id="filter-sector"><option value="">همه سکتورها</option><option value="سایر">سایر (7)</option><option value="پتروشیمی">پتروشیمی (5)</option><option value="بانک">بانک (4)</option><option value="سرمایه‌گذاری">سرمایه‌گذاری (3)</option><option value="خودرو">خودرو (3)</option><option value="فلزات">فلزات (3)</option><option value="دارو">دارو (2)</option><option value="ETF">ETF (1)</option><option value="سیمان">سیمان (1)</option><option value="شیمیایی">شیمیایی (1)</option></select>
+  <select id="filter-sector"><option value="">همه سکتورها</option><option value="سایر">سایر (7)</option><option value="پتروشیمی">پتروشیمی (5)</option><option value="بانک">بانک (5)</option><option value="خودرو">خودرو (3)</option><option value="سرمایه‌گذاری">سرمایه‌گذاری (2)</option><option value="فلزات">فلزات (2)</option><option value="ETF">ETF (2)</option><option value="دارو">دارو (2)</option><option value="شیمیایی">شیمیایی (1)</option><option value="سیمان">سیمان (1)</option></select>
   <button class="btn" onclick="exportCSV()">⬇️ خروجی Excel</button>
 </div>
 
@@ -80,7 +80,7 @@
   <div class="stat-card"><div class="num" style="color:#94a3b8">30</div><div class="lbl">کل</div></div>
 </div>
 
-<div class="chips"><span class="chip">سایر <b>7</b></span><span class="chip">پتروشیمی <b>5</b></span><span class="chip">بانک <b>4</b></span><span class="chip">سرمایه‌گذاری <b>3</b></span><span class="chip">خودرو <b>3</b></span><span class="chip">فلزات <b>3</b></span><span class="chip">دارو <b>2</b></span><span class="chip">ETF <b>1</b></span><span class="chip">سیمان <b>1</b></span><span class="chip">شیمیایی <b>1</b></span></div>
+<div class="chips"><span class="chip">سایر <b>7</b></span><span class="chip">پتروشیمی <b>5</b></span><span class="chip">بانک <b>5</b></span><span class="chip">خودرو <b>3</b></span><span class="chip">سرمایه‌گذاری <b>2</b></span><span class="chip">فلزات <b>2</b></span><span class="chip">ETF <b>2</b></span><span class="chip">دارو <b>2</b></span><span class="chip">شیمیایی <b>1</b></span><span class="chip">سیمان <b>1</b></span></div>
 
 <div class="table-wrap">
 <table id="main-table">
@@ -115,20 +115,6 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="7300,7510,7730,7960,8190,8430,8680,8940,9200,9470,9190,9480,9760,10050,10350,10660,10970,11290,11620,11590"></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="سرمایه‌گذاری"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سرمایه‌گذاری&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;69.81&quot;, &quot;close&quot;: &quot;2049.0&quot;, &quot;support&quot;: &quot;1693.0&quot;, &quot;resistance&quot;: &quot;2175.0&quot;, &quot;stop_loss&quot;: &quot;1959.75&quot;, &quot;target_1&quot;: &quot;2175.0&quot;, &quot;rr&quot;: &quot;1.41&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
-  <td><b style="color:#6b7280"></b></td>
-  <td><span style="color:#6b7280;font-weight:600"></span></td>
-  <td></td>
-  <td>سرمایه‌گذاری</td>
-  <td>100</td>
-  <td>69.81</td>
-  <td>2049.0</td>
-  <td>—</td>
-  <td></td>
-  <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="1641,1689,1740,1771,1824,1801,1789,1745,1728,1760,1708,1759,1811,1828,1882,1938,1996,2053,2113,2049"></canvas></td>
-</tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;55.02&quot;, &quot;close&quot;: &quot;12560.0&quot;, &quot;support&quot;: &quot;11580.0&quot;, &quot;resistance&quot;: &quot;13040.0&quot;, &quot;stop_loss&quot;: &quot;11885.0&quot;, &quot;target_1&quot;: &quot;13040.0&quot;, &quot;rr&quot;: &quot;0.71&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
@@ -142,6 +128,20 @@
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="12290,12360,12730,12400,12350,12140,11760,11550,11250,11150,10800,10530,10350,10470,10380,10500,11620,11890,12200,12560"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سرمایه‌گذاری"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سرمایه‌گذاری&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;69.81&quot;, &quot;close&quot;: &quot;2049.0&quot;, &quot;support&quot;: &quot;1693.0&quot;, &quot;resistance&quot;: &quot;2175.0&quot;, &quot;stop_loss&quot;: &quot;1959.75&quot;, &quot;target_1&quot;: &quot;2175.0&quot;, &quot;rr&quot;: &quot;1.41&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سرمایه‌گذاری</td>
+  <td>100</td>
+  <td>69.81</td>
+  <td>2049.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="1641,1689,1740,1771,1824,1801,1789,1745,1728,1760,1708,1759,1811,1828,1882,1938,1996,2053,2113,2049"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;94.39&quot;, &quot;close&quot;: &quot;9160.0&quot;, &quot;support&quot;: &quot;6480.0&quot;, &quot;resistance&quot;: &quot;9160.0&quot;, &quot;stop_loss&quot;: &quot;8779.65&quot;, &quot;target_1&quot;: &quot;11440.42&quot;, &quot;rr&quot;: &quot;6.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
@@ -171,6 +171,20 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="15320,14710,14580,14840,15000,15000,14640,14690,14710,14800,15080,15500,15000,15470,15930,16400,15930,15880,15450,15030"></canvas></td>
 </tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;39&quot;, &quot;rsi&quot;: &quot;73.42&quot;, &quot;close&quot;: &quot;695.0&quot;, &quot;support&quot;: &quot;546.0&quot;, &quot;resistance&quot;: &quot;733.0&quot;, &quot;stop_loss&quot;: &quot;658.68&quot;, &quot;target_1&quot;: &quot;733.0&quot;, &quot;rr&quot;: &quot;1.05&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>بانک</td>
+  <td>39</td>
+  <td>73.42</td>
+  <td>695.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="527,542,558,572,589,591,603,589,600,611,593,610,628,644,663,682,700,722,715,695"></canvas></td>
+</tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;49&quot;, &quot;rsi&quot;: &quot;0.34&quot;, &quot;close&quot;: &quot;12920.0&quot;, &quot;support&quot;: &quot;12840.0&quot;, &quot;resistance&quot;: &quot;595660.0&quot;, &quot;stop_loss&quot;: &quot;-40587.15&quot;, &quot;target_1&quot;: &quot;595660.0&quot;, &quot;rr&quot;: &quot;10.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;2.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
@@ -198,20 +212,6 @@
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="508,514,535,540,556,540,532,522,512,528,513,528,543,545,561,577,560,574,585,570"></canvas></td>
-</tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="ETF"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;ETF&quot;, &quot;confidence&quot;: &quot;60&quot;, &quot;rsi&quot;: &quot;80.34&quot;, &quot;close&quot;: &quot;32819.0&quot;, &quot;support&quot;: &quot;20110.0&quot;, &quot;resistance&quot;: &quot;35000.0&quot;, &quot;stop_loss&quot;: &quot;30822.71&quot;, &quot;target_1&quot;: &quot;35000.0&quot;, &quot;rr&quot;: &quot;1.09&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
-  <td><b style="color:#6b7280"></b></td>
-  <td><span style="color:#6b7280;font-weight:600"></span></td>
-  <td></td>
-  <td>ETF</td>
-  <td>60</td>
-  <td>80.34</td>
-  <td>32819.0</td>
-  <td>—</td>
-  <td></td>
-  <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="19493,20272,21082,21779,22650,23556,24488,24686,25824,26414,25358,26498,27557,28659,29805,30997,32236,33525,34763,32819"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;61&quot;, &quot;rsi&quot;: &quot;78.88&quot;, &quot;close&quot;: &quot;22070.0&quot;, &quot;support&quot;: &quot;13680.0&quot;, &quot;resistance&quot;: &quot;23640.0&quot;, &quot;stop_loss&quot;: &quot;21037.15&quot;, &quot;target_1&quot;: &quot;23640.0&quot;, &quot;rr&quot;: &quot;1.52&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
@@ -241,6 +241,34 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="991,1020,1050,1081,1113,1146,1178,1147,1189,1207,1171,1206,1242,1278,1316,1355,1387,1434,1364,1326"></canvas></td>
 </tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;70&quot;, &quot;rsi&quot;: &quot;80.35&quot;, &quot;close&quot;: &quot;53027.0&quot;, &quot;support&quot;: &quot;34926.0&quot;, &quot;resistance&quot;: &quot;57243.0&quot;, &quot;stop_loss&quot;: &quot;49880.64&quot;, &quot;target_1&quot;: &quot;57243.0&quot;, &quot;rr&quot;: &quot;1.34&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>70</td>
+  <td>80.35</td>
+  <td>53027.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="31661,32927,34244,35580,37003,38483,40021,41230,42678,43486,41747,43586,45329,47142,49027,50988,53027,55142,55996,53027"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="ETF"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;ETF&quot;, &quot;confidence&quot;: &quot;60&quot;, &quot;rsi&quot;: &quot;80.34&quot;, &quot;close&quot;: &quot;32819.0&quot;, &quot;support&quot;: &quot;20110.0&quot;, &quot;resistance&quot;: &quot;35000.0&quot;, &quot;stop_loss&quot;: &quot;30822.71&quot;, &quot;target_1&quot;: &quot;35000.0&quot;, &quot;rr&quot;: &quot;1.09&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>ETF</td>
+  <td>60</td>
+  <td>80.34</td>
+  <td>32819.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="19493,20272,21082,21779,22650,23556,24488,24686,25824,26414,25358,26498,27557,28659,29805,30997,32236,33525,34763,32819"></canvas></td>
+</tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;63&quot;, &quot;rsi&quot;: &quot;91.75&quot;, &quot;close&quot;: &quot;642.0&quot;, &quot;support&quot;: &quot;447.0&quot;, &quot;resistance&quot;: &quot;662.0&quot;, &quot;stop_loss&quot;: &quot;615.21&quot;, &quot;target_1&quot;: &quot;662.0&quot;, &quot;rr&quot;: &quot;0.75&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
@@ -256,20 +284,6 @@
   <td><canvas class="sparkline" width="80" height="30" data-spark="409,421,433,444,457,470,484,497,510,525,510,527,542,558,574,591,608,626,644,642"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;70&quot;, &quot;rsi&quot;: &quot;80.35&quot;, &quot;close&quot;: &quot;53027.0&quot;, &quot;support&quot;: &quot;34926.0&quot;, &quot;resistance&quot;: &quot;57243.0&quot;, &quot;stop_loss&quot;: &quot;49880.64&quot;, &quot;target_1&quot;: &quot;57243.0&quot;, &quot;rr&quot;: &quot;1.34&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
-  <td><b style="color:#6b7280"></b></td>
-  <td><span style="color:#6b7280;font-weight:600"></span></td>
-  <td></td>
-  <td>سایر</td>
-  <td>70</td>
-  <td>80.35</td>
-  <td>53027.0</td>
-  <td>—</td>
-  <td></td>
-  <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="31661,32927,34244,35580,37003,38483,40021,41230,42678,43486,41747,43586,45329,47142,49027,50988,53027,55142,55996,53027"></canvas></td>
-</tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;46516.0&quot;, &quot;support&quot;: &quot;23300.0&quot;, &quot;resistance&quot;: &quot;46516.0&quot;, &quot;stop_loss&quot;: &quot;44430.14&quot;, &quot;target_1&quot;: &quot;61521.66&quot;, &quot;rr&quot;: &quot;7.19&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
@@ -283,19 +297,19 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="22235,23124,24048,25009,26009,27049,28130,29255,30425,31642,32907,34222,35350,36764,38234,39763,41353,43007,44727,46516"></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;54&quot;, &quot;rsi&quot;: &quot;38.4&quot;, &quot;close&quot;: &quot;2400.0&quot;, &quot;support&quot;: &quot;2371.0&quot;, &quot;resistance&quot;: &quot;2727.0&quot;, &quot;stop_loss&quot;: &quot;2283.96&quot;, &quot;target_1&quot;: &quot;2727.0&quot;, &quot;rr&quot;: &quot;2.82&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;2.0&quot;}')">
+<tr style="background:transparent" data-label="" data-grade="" data-sector="ETF"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;ETF&quot;, &quot;confidence&quot;: &quot;53&quot;, &quot;rsi&quot;: &quot;78.89&quot;, &quot;close&quot;: &quot;45944.0&quot;, &quot;support&quot;: &quot;30090.0&quot;, &quot;resistance&quot;: &quot;49131.0&quot;, &quot;stop_loss&quot;: &quot;43164.71&quot;, &quot;target_1&quot;: &quot;49131.0&quot;, &quot;rr&quot;: &quot;1.15&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
   <td></td>
-  <td>فلزات</td>
-  <td>54</td>
-  <td>38.4</td>
-  <td>2400.0</td>
+  <td>ETF</td>
+  <td>53</td>
+  <td>78.89</td>
+  <td>45944.0</td>
   <td>—</td>
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="2411,2485,2513,2648,2704,2623,2587,2510,2442,2516,2436,2503,2433,2509,2584,2661,2582,2548,2472,2400"></canvas></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="28237,29366,30540,31512,32772,34082,35445,35276,36935,37649,36144,37641,39146,40709,42337,44030,45791,47622,48603,45944"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;98&quot;, &quot;rsi&quot;: &quot;63.2&quot;, &quot;close&quot;: &quot;58650.0&quot;, &quot;support&quot;: &quot;48430.0&quot;, &quot;resistance&quot;: &quot;66600.0&quot;, &quot;stop_loss&quot;: &quot;54105.0&quot;, &quot;target_1&quot;: &quot;66600.0&quot;, &quot;rr&quot;: &quot;1.75&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
@@ -311,33 +325,33 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="51420,53140,52330,52400,51000,49470,48350,47190,48280,46140,45450,44430,45260,44840,45600,64890,62180,62000,59990,58650"></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
+<tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;54&quot;, &quot;rsi&quot;: &quot;38.4&quot;, &quot;close&quot;: &quot;2400.0&quot;, &quot;support&quot;: &quot;2371.0&quot;, &quot;resistance&quot;: &quot;2727.0&quot;, &quot;stop_loss&quot;: &quot;2283.96&quot;, &quot;target_1&quot;: &quot;2727.0&quot;, &quot;rr&quot;: &quot;2.82&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;2.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
   <td></td>
-  <td>سایر</td>
-  <td>0</td>
-  <td></td>
-  <td></td>
+  <td>فلزات</td>
+  <td>54</td>
+  <td>38.4</td>
+  <td>2400.0</td>
   <td>—</td>
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="2411,2485,2513,2648,2704,2623,2587,2510,2442,2516,2436,2503,2433,2509,2584,2661,2582,2548,2472,2400"></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
+<tr style="background:transparent" data-label="" data-grade="" data-sector="خودرو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;خودرو&quot;, &quot;confidence&quot;: &quot;86&quot;, &quot;rsi&quot;: &quot;78.32&quot;, &quot;close&quot;: &quot;1410.0&quot;, &quot;support&quot;: &quot;1176.0&quot;, &quot;resistance&quot;: &quot;1458.0&quot;, &quot;stop_loss&quot;: &quot;1347.11&quot;, &quot;target_1&quot;: &quot;1458.0&quot;, &quot;rr&quot;: &quot;0.76&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
   <td></td>
-  <td>سایر</td>
-  <td>0</td>
-  <td></td>
-  <td></td>
+  <td>خودرو</td>
+  <td>86</td>
+  <td>78.32</td>
+  <td>1410.0</td>
   <td>—</td>
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="1078,1106,1142,1157,1191,1188,1170,1148,1152,1169,1134,1168,1203,1232,1268,1306,1345,1381,1420,1410"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;76&quot;, &quot;rsi&quot;: &quot;85.06&quot;, &quot;close&quot;: &quot;4828.0&quot;, &quot;support&quot;: &quot;2803.0&quot;, &quot;resistance&quot;: &quot;5088.0&quot;, &quot;stop_loss&quot;: &quot;4608.25&quot;, &quot;target_1&quot;: &quot;5088.0&quot;, &quot;rr&quot;: &quot;1.18&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
@@ -353,19 +367,19 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="3070,3162,3256,3353,3453,3556,3662,3771,3884,4000,3880,4052,4173,4298,4426,4558,4694,4834,4979,4828"></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="سیمان"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سیمان&quot;, &quot;confidence&quot;: &quot;83&quot;, &quot;rsi&quot;: &quot;90.34&quot;, &quot;close&quot;: &quot;62990.0&quot;, &quot;support&quot;: &quot;41720.0&quot;, &quot;resistance&quot;: &quot;65210.0&quot;, &quot;stop_loss&quot;: &quot;60338.21&quot;, &quot;target_1&quot;: &quot;65210.0&quot;, &quot;rr&quot;: &quot;0.84&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+<tr style="background:transparent" data-label="" data-grade="" data-sector="دارو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;دارو&quot;, &quot;confidence&quot;: &quot;93&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;14780.0&quot;, &quot;support&quot;: &quot;8850.0&quot;, &quot;resistance&quot;: &quot;14780.0&quot;, &quot;stop_loss&quot;: &quot;14241.07&quot;, &quot;target_1&quot;: &quot;18673.4&quot;, &quot;rr&quot;: &quot;7.22&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
   <td></td>
-  <td>سیمان</td>
-  <td>83</td>
-  <td>90.34</td>
-  <td>62990.0</td>
+  <td>دارو</td>
+  <td>93</td>
+  <td>100.0</td>
+  <td>14780.0</td>
   <td>—</td>
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="38370,39520,40700,41920,43170,44460,45790,47160,48570,50020,51520,53060,54650,56280,57960,59690,61480,63320,65210,62990"></canvas></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="8480,8730,8990,9250,9520,9800,10090,10390,10700,11020,11350,11690,12040,12400,12770,13150,13540,13940,14350,14780"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="شیمیایی"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;شیمیایی&quot;, &quot;confidence&quot;: &quot;84&quot;, &quot;rsi&quot;: &quot;95.15&quot;, &quot;close&quot;: &quot;7040.0&quot;, &quot;support&quot;: &quot;3112.0&quot;, &quot;resistance&quot;: &quot;7330.0&quot;, &quot;stop_loss&quot;: &quot;6748.56&quot;, &quot;target_1&quot;: &quot;7330.0&quot;, &quot;rr&quot;: &quot;1.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
@@ -381,6 +395,20 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="4305,4434,4567,4704,4845,4990,5139,5293,5450,5610,5770,5850,6020,6200,6380,6570,6760,6960,7150,7040"></canvas></td>
 </tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سیمان"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سیمان&quot;, &quot;confidence&quot;: &quot;83&quot;, &quot;rsi&quot;: &quot;90.34&quot;, &quot;close&quot;: &quot;62990.0&quot;, &quot;support&quot;: &quot;41720.0&quot;, &quot;resistance&quot;: &quot;65210.0&quot;, &quot;stop_loss&quot;: &quot;60338.21&quot;, &quot;target_1&quot;: &quot;65210.0&quot;, &quot;rr&quot;: &quot;0.84&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سیمان</td>
+  <td>83</td>
+  <td>90.34</td>
+  <td>62990.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="38370,39520,40700,41920,43170,44460,45790,47160,48570,50020,51520,53060,54650,56280,57960,59690,61480,63320,65210,62990"></canvas></td>
+</tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="دارو"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;دارو&quot;, &quot;confidence&quot;: &quot;92&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;3700.0&quot;, &quot;support&quot;: &quot;3554.0&quot;, &quot;resistance&quot;: &quot;4529.0&quot;, &quot;stop_loss&quot;: &quot;3689.3&quot;, &quot;target_1&quot;: &quot;4529.0&quot;, &quot;rr&quot;: &quot;10.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
   <td><b style="color:#6b7280"></b></td>
@@ -394,20 +422,6 @@
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="3219,2180,2245,2312,2381,2452,2525,2600,2678,2758,2840,2925,3012,3102,3195,3290,3388,3489,3593,3700"></canvas></td>
-</tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="خودرو"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;خودرو&quot;, &quot;confidence&quot;: &quot;86&quot;, &quot;rsi&quot;: &quot;78.32&quot;, &quot;close&quot;: &quot;1410.0&quot;, &quot;support&quot;: &quot;1176.0&quot;, &quot;resistance&quot;: &quot;1458.0&quot;, &quot;stop_loss&quot;: &quot;1347.11&quot;, &quot;target_1&quot;: &quot;1458.0&quot;, &quot;rr&quot;: &quot;0.76&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
-  <td><b style="color:#6b7280"></b></td>
-  <td><span style="color:#6b7280;font-weight:600"></span></td>
-  <td></td>
-  <td>خودرو</td>
-  <td>86</td>
-  <td>78.32</td>
-  <td>1410.0</td>
-  <td>—</td>
-  <td></td>
-  <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="1078,1106,1142,1157,1191,1188,1170,1148,1152,1169,1134,1168,1203,1232,1268,1306,1345,1381,1420,1410"></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="خودرو"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;خودرو&quot;, &quot;confidence&quot;: &quot;97&quot;, &quot;rsi&quot;: &quot;75.09&quot;, &quot;close&quot;: &quot;1978.0&quot;, &quot;support&quot;: &quot;1779.0&quot;, &quot;resistance&quot;: &quot;1975.0&quot;, &quot;stop_loss&quot;: &quot;1878.04&quot;, &quot;target_1&quot;: &quot;2303.07&quot;, &quot;rr&quot;: &quot;3.25&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
@@ -451,33 +465,19 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="دارو"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;دارو&quot;, &quot;confidence&quot;: &quot;93&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;14780.0&quot;, &quot;support&quot;: &quot;8850.0&quot;, &quot;resistance&quot;: &quot;14780.0&quot;, &quot;stop_loss&quot;: &quot;14241.07&quot;, &quot;target_1&quot;: &quot;18673.4&quot;, &quot;rr&quot;: &quot;7.22&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
   <td></td>
-  <td>دارو</td>
-  <td>93</td>
-  <td>100.0</td>
-  <td>14780.0</td>
+  <td>سایر</td>
+  <td>0</td>
+  <td></td>
+  <td></td>
   <td>—</td>
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="8480,8730,8990,9250,9520,9800,10090,10390,10700,11020,11350,11690,12040,12400,12770,13150,13540,13940,14350,14780"></canvas></td>
-</tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;79&quot;, &quot;rsi&quot;: &quot;82.83&quot;, &quot;close&quot;: &quot;10930.0&quot;, &quot;support&quot;: &quot;7780.0&quot;, &quot;resistance&quot;: &quot;11280.0&quot;, &quot;stop_loss&quot;: &quot;10411.43&quot;, &quot;target_1&quot;: &quot;11280.0&quot;, &quot;rr&quot;: &quot;0.67&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
-  <td><b style="color:#6b7280"></b></td>
-  <td><span style="color:#6b7280;font-weight:600"></span></td>
-  <td></td>
-  <td>فلزات</td>
-  <td>79</td>
-  <td>82.83</td>
-  <td>10930.0</td>
-  <td>—</td>
-  <td></td>
-  <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="7480,7690,7810,8040,8280,8520,8770,9030,9300,9570,9290,9560,9840,10130,10430,10740,10450,10990,10960,10930"></canvas></td>
+  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
 </tr>
 <tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
     onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
@@ -507,19 +507,19 @@
   <td><span style="color:#9ca3af">—</span></td>
   <td><canvas class="sparkline" width="80" height="30" data-spark="2907,2994,3083,3175,3270,3368,3469,3572,3679,3784,3700,3850,3965,4083,4205,4331,4460,4593,4725,4595"></canvas></td>
 </tr>
-<tr style="background:transparent" data-label="" data-grade="" data-sector="سرمایه‌گذاری"
-    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سرمایه‌گذاری&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;91.72&quot;, &quot;close&quot;: &quot;6000.0&quot;, &quot;support&quot;: &quot;4422.0&quot;, &quot;resistance&quot;: &quot;6080.0&quot;, &quot;stop_loss&quot;: &quot;5741.35&quot;, &quot;target_1&quot;: &quot;6080.0&quot;, &quot;rr&quot;: &quot;0.31&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;hammer&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
   <td><b style="color:#6b7280"></b></td>
   <td><span style="color:#6b7280;font-weight:600"></span></td>
   <td></td>
-  <td>سرمایه‌گذاری</td>
-  <td>100</td>
-  <td>91.72</td>
-  <td>6000.0</td>
+  <td>سایر</td>
+  <td>0</td>
+  <td></td>
+  <td></td>
   <td>—</td>
   <td></td>
   <td><span style="color:#9ca3af">—</span></td>
-  <td><canvas class="sparkline" width="80" height="30" data-spark="3908,4025,4145,4261,4388,4519,4652,4764,4802,4881,4734,4876,5022,5170,5320,5470,5630,5770,5920,6000"></canvas></td>
+  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
 </tr>
   </tbody>
 </table>
