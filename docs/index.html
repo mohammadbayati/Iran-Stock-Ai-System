@@ -9,18 +9,15 @@
 :root{--bg:#0d1117;--paper:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;font-size:13px;min-height:100vh}
-/* ── Header ── */
 .header{background:#161b22;border-bottom:1px solid #30363d;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100}
 .header h1{color:#58a6ff;font-size:16px;white-space:nowrap}
 .header-meta{color:var(--muted);font-size:11px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 #countdown{background:#0d1b36;padding:2px 10px;border-radius:10px;color:#58a6ff}
-/* ── KPI ── */
 .kpi-bar{display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap;background:#0d1117;border-bottom:1px solid #21262d}
 .kpi{border-radius:8px;padding:10px 16px;text-align:center;min-width:110px;flex:1;transition:filter .15s}
-.kpi:hover{filter:brightness(1.2)}
+.kpi[onclick]{cursor:pointer}.kpi[onclick]:hover{filter:brightness(1.2)}
 .kpi-val{font-size:26px;font-weight:700;line-height:1.1}
 .kpi-lbl{font-size:10px;color:var(--muted);margin-top:3px}
-/* ── Top Picks ── */
 .top-picks{padding:10px 16px;border-bottom:1px solid #21262d;display:none}
 .top-picks h2{color:#ffd700;font-size:13px;margin-bottom:8px}
 .picks-row{display:flex;gap:8px;flex-wrap:wrap}
@@ -29,7 +26,6 @@ body{background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;
 .pick-sym{color:#fff;font-weight:700;font-size:14px}
 .pick-score{color:#00c853;font-size:12px}
 .pick-grade{font-size:11px;color:#aaa}
-/* ── Controls ── */
 .controls{padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#0d1117;border-bottom:1px solid #21262d}
 input,select{background:#161b22;border:1px solid #30363d;color:var(--text);padding:5px 9px;border-radius:6px;font-size:12px;font-family:Tahoma,Arial,sans-serif}
 input:focus,select:focus{outline:1px solid #58a6ff;border-color:#58a6ff}
@@ -38,25 +34,21 @@ input:focus,select:focus{outline:1px solid #58a6ff;border-color:#58a6ff}
 .tag-btn{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;white-space:nowrap;font-family:Tahoma,Arial,sans-serif}
 .tag-btn.on{background:#1f6feb;border-color:#1f6feb;color:#fff}
 .tag-btn.danger.on{background:#b91c1c;border-color:#b91c1c}
-/* ── Table ── */
 .tbl-wrap{overflow-x:auto;padding:0 16px 16px}
 table{width:100%;border-collapse:collapse;min-width:700px}
 th{background:#161b22;color:#58a6ff;padding:7px 8px;text-align:center;position:sticky;top:52px;z-index:9;cursor:pointer;user-select:none;border-bottom:2px solid #30363d;font-size:12px;white-space:nowrap}
 th:hover{background:#1c2128}
-th .sort-arrow{color:#484f58;margin-right:2px}
+th .arr{color:#484f58;margin-right:2px}
 td{padding:6px 8px;border-bottom:1px solid #1c2128;vertical-align:middle}
 tr.row{cursor:pointer}
 tr.row:hover td{background:#1c2128}
 tr.row.is-missing td{opacity:.55}
-tr.row.is-stale td{opacity:.7}
-tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-size:11px}
+tr.row.is-stale td{opacity:.72}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;white-space:nowrap}
 .rsi-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:#1c2128}
 .score-bar-wrap{background:#21262d;border-radius:3px;height:4px;margin-top:3px;overflow:hidden}
 .score-bar{height:4px;border-radius:3px}
-.change-icon{font-size:13px;vertical-align:middle;margin-right:2px}
 .spark{display:block}
-/* ── Drawer ── */
 #drawerOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500}
 #drawerOverlay.open{display:flex;justify-content:flex-start}
 #drawer{background:#161b22;border-left:1px solid #30363d;width:400px;max-width:96vw;height:100%;overflow-y:auto;padding:20px;direction:rtl;position:relative}
@@ -68,9 +60,7 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
 .dl dt{color:#8b949e}
 .dl dd{color:#e6edf3;font-weight:600}
 .warn-box{border-radius:6px;padding:8px 12px;font-size:12px;margin-top:8px}
-/* ── Disclaimer ── */
 .disclaimer{text-align:center;color:#484f58;font-size:10px;padding:14px 16px;border-top:1px solid #21262d;line-height:1.7}
-/* ── Responsive ── */
 @media(max-width:600px){
   .kpi{min-width:80px;padding:8px 10px}.kpi-val{font-size:20px}
   #drawer{width:100vw}
@@ -81,11 +71,10 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
 </head>
 <body>
 
-<!-- ── Header ── -->
 <div class="header">
   <h1>🇮🇷 Iran Stock AI Dashboard</h1>
   <div class="header-meta">
-    <span>آخرین بروزرسانی: <b style="color:#e6edf3">2026-06-23 12:16</b></span>
+    <span>آخرین بروزرسانی: <b style="color:#e6edf3">2026-06-23 12:20</b></span>
     <span>|</span>
     <span id="countdown">...</span>
     <span style="color:#30363d">|</span>
@@ -95,29 +84,28 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
   </div>
 </div>
 
-<!-- ── KPI Cards ── -->
 <div class="kpi-bar">
   <div class="kpi" style="background:#0d1b2a;border:1px solid #1f3a5f">
     <div class="kpi-val" style="color:#90caf9">30</div>
     <div class="kpi-lbl">📊 کل نمادها</div>
   </div>
-  <div class="kpi" style="background:#003300;border:1px solid #00c85355;cursor:pointer" onclick="kpiFilter('entry')">
+  <div class="kpi" style="background:#003300;border:1px solid #00c85355" onclick="kpiFilter('entry')">
     <div class="kpi-val" style="color:#00c853">5</div>
     <div class="kpi-lbl">🟢 کاندید ورود</div>
   </div>
-  <div class="kpi" style="background:#1a1400;border:1px solid #ffd74055;cursor:pointer" onclick="kpiFilter('highc')">
+  <div class="kpi" style="background:#1a1400;border:1px solid #ffd74055" onclick="kpiFilter('highc')">
     <div class="kpi-val" style="color:#ffd740">17</div>
     <div class="kpi-lbl">⭐ High Confidence</div>
   </div>
-  <div class="kpi" style="background:#1a0000;border:1px solid #ff525255;cursor:pointer" onclick="kpiFilter('overbought')">
+  <div class="kpi" style="background:#1a0000;border:1px solid #ff525255" onclick="kpiFilter('overbought')">
     <div class="kpi-val" style="color:#ff5252">12</div>
     <div class="kpi-lbl">🔴 اشباع خرید</div>
   </div>
-  <div class="kpi" style="background:#1a0e00;border:1px solid #ff910055;cursor:pointer" onclick="kpiFilter('conflict')">
+  <div class="kpi" style="background:#1a0e00;border:1px solid #ff910055" onclick="kpiFilter('conflict')">
     <div class="kpi-val" style="color:#ff9100">8</div>
     <div class="kpi-lbl">⚠️ Risk Conflict</div>
   </div>
-  <div class="kpi" style="background:#1c2529;border:1px solid #78909c55;cursor:pointer" onclick="kpiFilter('missing')">
+  <div class="kpi" style="background:#1c2529;border:1px solid #78909c55" onclick="kpiFilter('missing')">
     <div class="kpi-val" style="color:#78909c">3</div>
     <div class="kpi-lbl">📉 داده ناقص (10%)</div>
   </div>
@@ -127,13 +115,11 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
   </div>
 </div>
 
-<!-- ── Top Picks ── -->
 <div class="top-picks" id="topPicksBar">
   <h2>🏆 بهترین فرصت‌های امروز</h2>
   <div class="picks-row" id="topPicksRow"></div>
 </div>
 
-<!-- ── Controls ── -->
 <div class="controls">
   <input type="text" id="q" placeholder="🔍 نماد..." oninput="render()" style="width:100px">
   <select id="fLabel" onchange="render()">
@@ -168,20 +154,19 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
   <button class="btn" onclick="exportCSV()">📥 Excel</button>
 </div>
 
-<!-- ── Table ── -->
 <div class="tbl-wrap">
 <table>
 <thead>
 <tr>
-  <th onclick="sortBy('sym',0)"><span class="sort-arrow" id="arr0"></span>نماد</th>
-  <th onclick="sortBy('label_fa',1)"><span class="sort-arrow" id="arr1"></span>وضعیت</th>
-  <th onclick="sortBy('grade',2)"><span class="sort-arrow" id="arr2"></span>رتبه</th>
-  <th onclick="sortBy('score',3)"><span class="sort-arrow" id="arr3"></span>امتیاز</th>
-  <th onclick="sortBy('rsi',4)"><span class="sort-arrow" id="arr4"></span>RSI</th>
-  <th onclick="sortBy('price',5)"><span class="sort-arrow" id="arr5"></span>قیمت</th>
-  <th onclick="sortBy('sector',6)"><span class="sort-arrow" id="arr6"></span>سکتور</th>
-  <th onclick="sortBy('vol',7)"><span class="sort-arrow" id="arr7"></span>حجم×</th>
-  <th onclick="sortBy('sm',8)"><span class="sort-arrow" id="arr8"></span>پول هوشمند</th>
+  <th onclick="sortBy('sym',0)"><span class="arr" id="arr0"></span>نماد</th>
+  <th onclick="sortBy('label_fa',1)"><span class="arr" id="arr1"></span>وضعیت</th>
+  <th onclick="sortBy('grade',2)"><span class="arr" id="arr2"></span>رتبه</th>
+  <th onclick="sortBy('score',3)"><span class="arr" id="arr3"></span>امتیاز</th>
+  <th onclick="sortBy('rsi',4)"><span class="arr" id="arr4"></span>RSI</th>
+  <th onclick="sortBy('price',5)"><span class="arr" id="arr5"></span>قیمت</th>
+  <th onclick="sortBy('sector',6)"><span class="arr" id="arr6"></span>سکتور</th>
+  <th onclick="sortBy('vol',7)"><span class="arr" id="arr7"></span>حجم×</th>
+  <th onclick="sortBy('sm',8)"><span class="arr" id="arr8"></span>پول هوشمند</th>
   <th>نمودار</th>
 </tr>
 </thead>
@@ -190,7 +175,6 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
 <div id="emptyMsg" style="display:none;text-align:center;padding:40px;color:#484f58">نتیجه‌ای یافت نشد</div>
 </div>
 
-<!-- ── Drawer (single, reused) ── -->
 <div id="drawerOverlay" onclick="closeDrawer(event)">
   <div id="drawer">
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
@@ -198,7 +182,6 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
   </div>
 </div>
 
-<!-- ── Disclaimer ── -->
 <div class="disclaimer">
   ⚠️ این داشبورد صرفاً ابزار تحلیل تکنیکال است و <b>توصیه خرید یا فروش</b> محسوب نمی‌شود.<br>
   تصمیم‌گیری مالی کاملاً مسئولیت کاربر است و سیستم هیچ ضمانتی در قبال نتایج ارائه نمی‌دهد.<br>
@@ -206,9 +189,8 @@ tr.row.is-conflict td:first-child::after{content:'⚠️';margin-right:4px;font-
 </div>
 
 <script>
-const DATA = [{"sym": "شستا", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "69.81", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "2049.0", "sector": "سرمایه‌گذاری", "sm": "aligned_bullish", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (58) | score=100, trend=6.0, RSI=69.81, volume_ratio=1.42", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=70: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 1.4x: +4 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.91): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (58): +2", "close_20d": "1641,1689,1740,1771,1824,1801,1789,1745,1728,1760,1708,1759,1811,1828,1882,1938,1996,2053,2113,2049", "trend": "6.0", "vol": "1.42", "support": "1693.0", "resistance": "2175.0", "stop_loss": "1959.75", "target_1": "2175.0", "rr": "1.41", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "فارس", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "55.02", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "12560.0", "sector": "پتروشیمی", "sm": "aligned_bullish", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (67) | score=100, trend=6.0, RSI=55.02, volume_ratio=5.53", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=55: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | سکتور پیشرو: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.80): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (67): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "12290,12360,12730,12400,12350,12140,11760,11550,11250,11150,10800,10530,10350,10470,10380,10500,11620,11890,12200,12560", "trend": "6.0", "vol": "5.53", "support": "11580.0", "resistance": "13040.0", "stop_loss": "11885.0", "target_1": "13040.0", "rr": "0.71", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شپنا", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "94.39", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "9160.0", "sector": "پتروشیمی", "sm": "aligned_bullish", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 3.0%)", "reasons": "RSI=94.39 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +10 | تحلیل صف: +6 | RSI=94: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 6.3x: +10 | سکتور پیشرو: +10 | ریسک/ریوارد 6.0: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "5470,5630,5790,5960,6130,6310,6490,6680,6880,7080,6900,7270,7480,7700,7930,8160,8400,8650,8900,9160", "trend": "6.0", "vol": "6.35", "support": "6480.0", "resistance": "9160.0", "stop_loss": "8779.65", "target_1": "11440.42", "rr": "6.0", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "نارنج اهرم", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "100.0", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "46516.0", "sector": "سایر", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 3.9%)", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (69): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "22235,23124,24048,25009,26009,27049,28130,29255,30425,31642,32907,34222,35350,36764,38234,39763,41353,43007,44727,46516", "trend": "6.0", "vol": "5.45", "support": "23300.0", "resistance": "46516.0", "stop_loss": "44430.14", "target_1": "61521.66", "rr": "7.19", "missing": false, "stale": true, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "ورنا", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "50.3", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "5480.0", "sector": "سایر", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.6%)", "reasons": "score=100, trend=4.0, RSI=50.3, volume_ratio=1.55", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=50: +15 (ایده‌آل) | روند 4/6: +12 | حجم نسبی 1.6x: +7 | ریسک/ریوارد 6.5: +10 | قیمت بالای POC: +8 (قدرت) | روند هفتگی نزولی: -4", "close_20d": "5597,5430,5375,5470,5620,5470,5360,5200,5050,5130,5030,5080,5280,5270,5400,5570,5410,5530,5610,5480", "trend": "4.0", "vol": "1.55", "support": "4980.0", "resistance": "7320.0", "stop_loss": "5198.21", "target_1": "7320.0", "rr": "6.53", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "نوری", "label": "Watch - Needs Volume Confirmation", "label_fa": "تماشا — حجم", "label_color": "#ffab40", "label_bg": "#332200", "grade": "A", "grade_color": "#69f0ae", "score": 98.0, "rsi": "63.2", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "58650.0", "sector": "پتروشیمی", "sm": "hidden_accumulation", "sm_fa": "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "volume_ratio=0.65 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (62)", "factors": "پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | RSI=63: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 0.7x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 1.8: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "51420,53140,52330,52400,51000,49470,48350,47190,48280,46140,45450,44430,45260,44840,45600,64890,62180,62000,59990,58650", "trend": "6.0", "vol": "0.65", "support": "48430.0", "resistance": "66600.0", "stop_loss": "54105.0", "target_1": "66600.0", "rr": "1.75", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "خساپا", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 93.0, "rsi": "58.33", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "570.0", "sector": "خودرو", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (53) | score=93, trend=6.0, RSI=58.33, volume_ratio=1.61", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=58: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 1.6x: +7 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.6: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (53): +2", "close_20d": "508,514,535,540,556,540,532,522,512,528,513,528,543,545,561,577,560,574,585,570", "trend": "6.0", "vol": "1.61", "support": "523.0", "resistance": "568.0", "stop_loss": "540.64", "target_1": "617.59", "rr": "1.62", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شسپا", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 93.0, "rsi": "100.0", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "14780.0", "sector": "دارو", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 9.6x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.94): -4 | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "8480,8730,8990,9250,9520,9800,10090,10390,10700,11020,11350,11690,12040,12400,12770,13150,13540,13940,14350,14780", "trend": "6.0", "vol": "9.62", "support": "8850.0", "resistance": "14780.0", "stop_loss": "14241.07", "target_1": "18673.4", "rr": "7.22", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "دلقما", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 92.0, "rsi": "100.0", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "3700.0", "sector": "دارو", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 10.0x: +10 | ریسک/ریوارد 10.0: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.93): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (50): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "3219,2180,2245,2312,2381,2452,2525,2600,2678,2758,2840,2925,3012,3102,3195,3290,3388,3489,3593,3700", "trend": "6.0", "vol": "10.04", "support": "3554.0", "resistance": "4529.0", "stop_loss": "3689.3", "target_1": "4529.0", "rr": "10.0", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "وغدیر", "label": "Watch - Needs Volume Confirmation", "label_fa": "تماشا — حجم", "label_color": "#ffab40", "label_bg": "#332200", "grade": "A", "grade_color": "#69f0ae", "score": 91.0, "rsi": "50.33", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "15030.0", "sector": "سرمایه‌گذاری", "sm": "aligned_bullish", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "trend_score=3.0 < 4 → روند ضعیف | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (61) | حجم نسبی=1.14 → نیاز به تایید حجم", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=50: +15 (ایده‌آل) | روند 3/6: +9 | سکتور پیشرو: +10 | ریسک/ریوارد 2.0: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "15320,14710,14580,14840,15000,15000,14640,14690,14710,14800,15080,15500,15000,15470,15930,16400,15930,15880,15450,15030", "trend": "3.0", "vol": "1.14", "support": "14220.0", "resistance": "14950.0", "stop_loss": "14455.0", "target_1": "16154.76", "rr": "1.96", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "خبهمن", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "A", "grade_color": "#69f0ae", "score": 87.0, "rsi": "75.09", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "1978.0", "sector": "خودرو", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.5%)", "reasons": "RSI=75.09 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=75: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.4x: +10 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 3.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4", "close_20d": "1495,1523,1584,1619,1667,1708,1718,1703,1740,1763,1711,1762,1814,1824,1878,1934,1910,2021,2015,1978", "trend": "6.0", "vol": "2.41", "support": "1779.0", "resistance": "1975.0", "stop_loss": "1878.04", "target_1": "2303.07", "rr": "3.25", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شبندر", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 86.0, "rsi": "91.8", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "11590.0", "sector": "پتروشیمی", "sm": "aligned_bullish", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=91.8 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.9x: +10 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4", "close_20d": "7300,7510,7730,7960,8190,8430,8680,8940,9200,9470,9190,9480,9760,10050,10350,10660,10970,11290,11620,11590", "trend": "6.0", "vol": "3.86", "support": "7590.0", "resistance": "11960.0", "stop_loss": "11115.35", "target_1": "11960.0", "rr": "0.78", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "وخارزم", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 86.0, "rsi": "85.06", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "4828.0", "sector": "بانک", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.1%)", "reasons": "RSI=85.06 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=85: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.85): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (59): +2", "close_20d": "3070,3162,3256,3353,3453,3556,3662,3771,3884,4000,3880,4052,4173,4298,4426,4558,4694,4834,4979,4828", "trend": "6.0", "vol": "2.95", "support": "2803.0", "resistance": "5088.0", "stop_loss": "4608.25", "target_1": "5088.0", "rr": "1.18", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "شمواد", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 84.0, "rsi": "95.15", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "7040.0", "sector": "شیمیایی", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.9%)", "reasons": "RSI=95.15 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=95: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.1x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.87): -4 | روند هفتگی صعودی: +4 | RSI هفتگی اشباع خرید (89): -3", "close_20d": "4305,4434,4567,4704,4845,4990,5139,5293,5450,5610,5770,5850,6020,6200,6380,6570,6760,6960,7150,7040", "trend": "6.0", "vol": "4.07", "support": "3112.0", "resistance": "7330.0", "stop_loss": "6748.56", "target_1": "7330.0", "rr": "1.0", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "وبملت", "label": "Watch - Needs Volume Confirmation", "label_fa": "تماشا — حجم", "label_color": "#ffab40", "label_bg": "#332200", "grade": "A", "grade_color": "#69f0ae", "score": 83.0, "rsi": "66.98", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "1326.0", "sector": "بانک", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "volume_ratio=1.0 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=67: +8 (مناسب) | روند 6/6: +18 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4", "close_20d": "991,1020,1050,1081,1113,1146,1178,1147,1189,1207,1171,1206,1242,1278,1316,1355,1387,1434,1364,1326", "trend": "6.0", "vol": "1.0", "support": "1218.0", "resistance": "1358.0", "stop_loss": "1259.57", "target_1": "1358.0", "rr": "0.48", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "سمازن", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 83.0, "rsi": "90.34", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "62990.0", "sector": "سیمان", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "RSI=90.34 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | RSI=90: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.4x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2", "close_20d": "38370,39520,40700,41920,43170,44460,45790,47160,48570,50020,51520,53060,54650,56280,57960,59690,61480,63320,65210,62990", "trend": "6.0", "vol": "4.43", "support": "41720.0", "resistance": "65210.0", "stop_loss": "60338.21", "target_1": "65210.0", "rr": "0.84", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "خودرو", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 80.0, "rsi": "67.16", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "576.0", "sector": "خودرو", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | score=80, trend=6.0, RSI=67.16, volume_ratio=1.53", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=67: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 1.5x: +7 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.9: +4 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.93): -4 | روند هفتگی صعودی: +4", "close_20d": "464,477,487,505,515,530,522,518,507,506,516,501,516,531,535,551,567,562,572,576", "trend": "6.0", "vol": "1.53", "support": "573.0", "resistance": "631.0", "stop_loss": "547.71", "target_1": "631.0", "rr": "1.94", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "خاور", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "B", "grade_color": "#ffd740", "score": 76.0, "rsi": "78.32", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "1410.0", "sector": "خودرو", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.4%)", "reasons": "RSI=78.32 ≥ 70، قیمت نزدیک سقف ۲۰ روزه، بازده ۵ روزه 11.2%", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=78: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.1x: +10 | سکتور عقب‌مانده: -10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.97): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (54): +2", "close_20d": "1078,1106,1142,1157,1191,1188,1170,1148,1152,1169,1134,1168,1203,1232,1268,1306,1345,1381,1420,1410", "trend": "6.0", "vol": "2.09", "support": "1176.0", "resistance": "1458.0", "stop_loss": "1347.11", "target_1": "1458.0", "rr": "0.76", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "موج", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "B", "grade_color": "#ffd740", "score": 70.0, "rsi": "80.35", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "53027.0", "sector": "سایر", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=80.35 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.8x: +7 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.81): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2", "close_20d": "31661,32927,34244,35580,37003,38483,40021,41230,42678,43486,41747,43586,45329,47142,49027,50988,53027,55142,55996,53027", "trend": "6.0", "vol": "1.8", "support": "34926.0", "resistance": "57243.0", "stop_loss": "49880.64", "target_1": "57243.0", "rr": "1.34", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "وتجارت", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "B", "grade_color": "#ffd740", "score": 68.0, "rsi": "91.75", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "642.0", "sector": "بانک", "sm": "neutral", "sm_fa": "بدون سیگنال واضح", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=91.75 ≥ 80 → اشباع خرید", "factors": "تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (55): +2", "close_20d": "409,421,433,444,457,470,484,497,510,525,510,527,542,558,574,591,608,626,644,642", "trend": "6.0", "vol": "3.03", "support": "447.0", "resistance": "662.0", "stop_loss": "615.21", "target_1": "662.0", "rr": "0.75", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "فملی", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "C", "grade_color": "#ff9100", "score": 61.0, "rsi": "78.88", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "22070.0", "sector": "فلزات", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=78.88 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=79: -10 (اشباع خرید) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.5: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "15080,15530,15990,16460,16950,17450,17970,18500,19040,19410,18830,19450,20030,20630,21240,21870,22520,23180,22380,22070", "trend": "6.0", "vol": "0.83", "support": "13680.0", "resistance": "23640.0", "stop_loss": "21037.15", "target_1": "23640.0", "rr": "1.52", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "بیدار", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "C", "grade_color": "#ff9100", "score": 60.0, "rsi": "80.34", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "32819.0", "sector": "ETF", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=80.34 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.5x: +7 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2", "close_20d": "19493,20272,21082,21779,22650,23556,24488,24686,25824,26414,25358,26498,27557,28659,29805,30997,32236,33525,34763,32819", "trend": "6.0", "vol": "1.54", "support": "20110.0", "resistance": "35000.0", "stop_loss": "30822.71", "target_1": "35000.0", "rr": "1.09", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "وبصادر", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "C", "grade_color": "#ff9100", "score": 59.0, "rsi": "73.42", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "695.0", "sector": "بانک", "sm": "aligned_bullish", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=73.42 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=73: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.4x: +4 | قیمت زیر POC: -5 (ضعف) | قیمت نزدیک باند بالا (BB%=0.82): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (52): +2", "close_20d": "527,542,558,572,589,591,603,589,600,611,593,610,628,644,663,682,700,722,715,695", "trend": "6.0", "vol": "1.42", "support": "546.0", "resistance": "733.0", "stop_loss": "658.68", "target_1": "733.0", "rr": "1.05", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "کچاد", "label": "Watch Only", "label_fa": "نگهداری", "label_color": "#40c4ff", "label_bg": "#002233", "grade": "C", "grade_color": "#ff9100", "score": 54.0, "rsi": "38.4", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "2400.0", "sector": "فلزات", "sm": "hidden_accumulation", "sm_fa": "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=38.4 خارج از محدوده ایده‌آل (45-70)", "factors": "پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 2.8: +7 | قیمت زیر POC: -5 (ضعف) | قیمت نزدیک باند پایین (BB%=0.13): +3 | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "2411,2485,2513,2648,2704,2623,2587,2510,2442,2516,2436,2503,2433,2509,2584,2661,2582,2548,2472,2400", "trend": "2.0", "vol": "0.51", "support": "2371.0", "resistance": "2727.0", "stop_loss": "2283.96", "target_1": "2727.0", "rr": "2.82", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "اهرم", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "C", "grade_color": "#ff9100", "score": 53.0, "rsi": "78.89", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "45944.0", "sector": "ETF", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=78.89 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=79: -10 (اشباع خرید) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.82): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (59): +2", "close_20d": "28237,29366,30540,31512,32772,34082,35445,35276,36935,37649,36144,37641,39146,40709,42337,44030,45791,47622,48603,45944", "trend": "6.0", "vol": "1.12", "support": "30090.0", "resistance": "49131.0", "stop_loss": "43164.71", "target_1": "49131.0", "rr": "1.15", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شپدیس", "label": "Watch Only", "label_fa": "نگهداری", "label_color": "#40c4ff", "label_bg": "#002233", "grade": "D", "grade_color": "#78909c", "score": 49.0, "rsi": "0.34", "rsi_band": "اشباع فروش", "rsi_color": "#40c4ff", "price": "12920.0", "sector": "پتروشیمی", "sm": "neutral", "sm_fa": "بدون سیگنال واضح", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=0.34 خارج از محدوده ایده‌آل (45-70)", "factors": "تحلیل صف: -10 | RSI=0: -5 (اشباع فروش) | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 10.0: +10 | قیمت زیر POC: -5 (ضعف) | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "525730,513370,499800,512960,498400,507320,13250,13210,13120,13310,12920,13200,12870,13260,13610,14040,13640,13680,13270,12920", "trend": "2.0", "vol": "0.53", "support": "12840.0", "resistance": "595660.0", "stop_loss": "-40587.15", "target_1": "595660.0", "rr": "10.0", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "کگل", "label": "Watch Only", "label_fa": "نگهداری", "label_color": "#40c4ff", "label_bg": "#002233", "grade": "D", "grade_color": "#78909c", "score": 39.0, "rsi": "39.9", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "2047.0", "sector": "معدن", "sm": "retail_driven_down", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "sell_queue_dominant", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=39.9 خارج از محدوده ایده‌آل (45-70)", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | روند 2/6: +6 | حجم نسبی 0.4x: -5 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 10.0: +10 | قیمت زیر POC: -5 (ضعف) | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "1978,1995,2135,2218,2279,2211,2191,2127,2064,2134,2069,2130,2067,2132,2195,2260,2199,2173,2109,2047", "trend": "2.0", "vol": "0.41", "support": "2064.0", "resistance": "2347.0", "stop_loss": "2019.1", "target_1": "2347.0", "rr": "10.0", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شيراز", "label": "Missing Technical Data", "label_fa": "داده ناقص", "label_color": "#78909c", "label_bg": "#1c2529", "grade": "F", "grade_color": "#78909c", "score": 0.0, "rsi": "", "rsi_band": "نامشخص", "rsi_color": "#78909c", "price": "", "sector": "سایر", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "factors": "داده تکنیکال موجود نیست", "close_20d": "", "trend": "", "vol": "", "support": "", "resistance": "", "stop_loss": "", "target_1": "", "rr": "", "missing": true, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "سينرژي", "label": "Missing Technical Data", "label_fa": "داده ناقص", "label_color": "#78909c", "label_bg": "#1c2529", "grade": "F", "grade_color": "#78909c", "score": 0.0, "rsi": "", "rsi_band": "نامشخص", "rsi_color": "#78909c", "price": "", "sector": "سایر", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 3.1%)", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "factors": "داده تکنیکال موجود نیست", "close_20d": "", "trend": "", "vol": "", "support": "", "resistance": "", "stop_loss": "", "target_1": "", "rr": "", "missing": true, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "سپيد", "label": "Missing Technical Data", "label_fa": "داده ناقص", "label_color": "#78909c", "label_bg": "#1c2529", "grade": "F", "grade_color": "#78909c", "score": 0.0, "rsi": "", "rsi_band": "نامشخص", "rsi_color": "#78909c", "price": "", "sector": "سایر", "sm": "price_volume_bullish", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.1%)", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "factors": "داده تکنیکال موجود نیست", "close_20d": "", "trend": "", "vol": "", "support": "", "resistance": "", "stop_loss": "", "target_1": "", "rr": "", "missing": true, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}];
+const DATA = [{"sym": "شستا", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "69.81", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "2049.0", "sector": "سرمایه‌گذاری", "sm": "همسو صعودی", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (58) | score=100, trend=6.0, RSI=69.81, volume_ratio=1.42", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=70: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 1.4x: +4 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.91): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (58): +2", "close_20d": "1641,1689,1740,1771,1824,1801,1789,1745,1728,1760,1708,1759,1811,1828,1882,1938,1996,2053,2113,2049", "trend": "6.0", "vol": "1.42", "support": "1693.0", "resistance": "2175.0", "stop_loss": "1959.75", "target_1": "2175.0", "rr": "1.41", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "فارس", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "55.02", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "12560.0", "sector": "پتروشیمی", "sm": "همسو صعودی", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (67) | score=100, trend=6.0, RSI=55.02, volume_ratio=5.53", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=55: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | سکتور پیشرو: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.80): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (67): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "12290,12360,12730,12400,12350,12140,11760,11550,11250,11150,10800,10530,10350,10470,10380,10500,11620,11890,12200,12560", "trend": "6.0", "vol": "5.53", "support": "11580.0", "resistance": "13040.0", "stop_loss": "11885.0", "target_1": "13040.0", "rr": "0.71", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شپنا", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "94.39", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "9160.0", "sector": "پتروشیمی", "sm": "همسو صعودی", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 3.0%)", "reasons": "RSI=94.39 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +10 | تحلیل صف: +6 | RSI=94: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 6.3x: +10 | سکتور پیشرو: +10 | ریسک/ریوارد 6.0: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "5470,5630,5790,5960,6130,6310,6490,6680,6880,7080,6900,7270,7480,7700,7930,8160,8400,8650,8900,9160", "trend": "6.0", "vol": "6.35", "support": "6480.0", "resistance": "9160.0", "stop_loss": "8779.65", "target_1": "11440.42", "rr": "6.0", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "نارنج اهرم", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "100.0", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "46516.0", "sector": "سایر", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 3.9%)", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (69): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "22235,23124,24048,25009,26009,27049,28130,29255,30425,31642,32907,34222,35350,36764,38234,39763,41353,43007,44727,46516", "trend": "6.0", "vol": "5.45", "support": "23300.0", "resistance": "46516.0", "stop_loss": "44430.14", "target_1": "61521.66", "rr": "7.19", "missing": false, "stale": true, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "ورنا", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 100.0, "rsi": "50.3", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "5480.0", "sector": "سایر", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.6%)", "reasons": "score=100, trend=4.0, RSI=50.3, volume_ratio=1.55", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=50: +15 (ایده‌آل) | روند 4/6: +12 | حجم نسبی 1.6x: +7 | ریسک/ریوارد 6.5: +10 | قیمت بالای POC: +8 (قدرت) | روند هفتگی نزولی: -4", "close_20d": "5597,5430,5375,5470,5620,5470,5360,5200,5050,5130,5030,5080,5280,5270,5400,5570,5410,5530,5610,5480", "trend": "4.0", "vol": "1.55", "support": "4980.0", "resistance": "7320.0", "stop_loss": "5198.21", "target_1": "7320.0", "rr": "6.53", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "نوری", "label": "Watch - Needs Volume Confirmation", "label_fa": "تماشا — حجم", "label_color": "#ffab40", "label_bg": "#332200", "grade": "A", "grade_color": "#69f0ae", "score": 98.0, "rsi": "63.2", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "58650.0", "sector": "پتروشیمی", "sm": "تجمع پنهان", "sm_fa": "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "volume_ratio=0.65 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (62)", "factors": "پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | RSI=63: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 0.7x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 1.8: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "51420,53140,52330,52400,51000,49470,48350,47190,48280,46140,45450,44430,45260,44840,45600,64890,62180,62000,59990,58650", "trend": "6.0", "vol": "0.65", "support": "48430.0", "resistance": "66600.0", "stop_loss": "54105.0", "target_1": "66600.0", "rr": "1.75", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "خساپا", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 93.0, "rsi": "58.33", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "570.0", "sector": "خودرو", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (53) | score=93, trend=6.0, RSI=58.33, volume_ratio=1.61", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=58: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 1.6x: +7 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.6: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (53): +2", "close_20d": "508,514,535,540,556,540,532,522,512,528,513,528,543,545,561,577,560,574,585,570", "trend": "6.0", "vol": "1.61", "support": "523.0", "resistance": "568.0", "stop_loss": "540.64", "target_1": "617.59", "rr": "1.62", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شسپا", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 93.0, "rsi": "100.0", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "14780.0", "sector": "دارو", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 9.6x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.94): -4 | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "8480,8730,8990,9250,9520,9800,10090,10390,10700,11020,11350,11690,12040,12400,12770,13150,13540,13940,14350,14780", "trend": "6.0", "vol": "9.62", "support": "8850.0", "resistance": "14780.0", "stop_loss": "14241.07", "target_1": "18673.4", "rr": "7.22", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "دلقما", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 92.0, "rsi": "100.0", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "3700.0", "sector": "دارو", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 10.0x: +10 | ریسک/ریوارد 10.0: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.93): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (50): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "3219,2180,2245,2312,2381,2452,2525,2600,2678,2758,2840,2925,3012,3102,3195,3290,3388,3489,3593,3700", "trend": "6.0", "vol": "10.04", "support": "3554.0", "resistance": "4529.0", "stop_loss": "3689.3", "target_1": "4529.0", "rr": "10.0", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "وغدیر", "label": "Watch - Needs Volume Confirmation", "label_fa": "تماشا — حجم", "label_color": "#ffab40", "label_bg": "#332200", "grade": "A", "grade_color": "#69f0ae", "score": 91.0, "rsi": "50.33", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "15030.0", "sector": "سرمایه‌گذاری", "sm": "همسو صعودی", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "trend_score=3.0 < 4 → روند ضعیف | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (61) | حجم نسبی=1.14 → نیاز به تایید حجم", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=50: +15 (ایده‌آل) | روند 3/6: +9 | سکتور پیشرو: +10 | ریسک/ریوارد 2.0: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "15320,14710,14580,14840,15000,15000,14640,14690,14710,14800,15080,15500,15000,15470,15930,16400,15930,15880,15450,15030", "trend": "3.0", "vol": "1.14", "support": "14220.0", "resistance": "14950.0", "stop_loss": "14455.0", "target_1": "16154.76", "rr": "1.96", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "خبهمن", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "A", "grade_color": "#69f0ae", "score": 87.0, "rsi": "75.09", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "1978.0", "sector": "خودرو", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.5%)", "reasons": "RSI=75.09 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=75: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.4x: +10 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 3.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4", "close_20d": "1495,1523,1584,1619,1667,1708,1718,1703,1740,1763,1711,1762,1814,1824,1878,1934,1910,2021,2015,1978", "trend": "6.0", "vol": "2.41", "support": "1779.0", "resistance": "1975.0", "stop_loss": "1878.04", "target_1": "2303.07", "rr": "3.25", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شبندر", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 86.0, "rsi": "91.8", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "11590.0", "sector": "پتروشیمی", "sm": "همسو صعودی", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=91.8 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.9x: +10 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4", "close_20d": "7300,7510,7730,7960,8190,8430,8680,8940,9200,9470,9190,9480,9760,10050,10350,10660,10970,11290,11620,11590", "trend": "6.0", "vol": "3.86", "support": "7590.0", "resistance": "11960.0", "stop_loss": "11115.35", "target_1": "11960.0", "rr": "0.78", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "وخارزم", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 86.0, "rsi": "85.06", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "4828.0", "sector": "بانک", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.1%)", "reasons": "RSI=85.06 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=85: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.85): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (59): +2", "close_20d": "3070,3162,3256,3353,3453,3556,3662,3771,3884,4000,3880,4052,4173,4298,4426,4558,4694,4834,4979,4828", "trend": "6.0", "vol": "2.95", "support": "2803.0", "resistance": "5088.0", "stop_loss": "4608.25", "target_1": "5088.0", "rr": "1.18", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "شمواد", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 84.0, "rsi": "95.15", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "7040.0", "sector": "شیمیایی", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.9%)", "reasons": "RSI=95.15 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=95: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.1x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.87): -4 | روند هفتگی صعودی: +4 | RSI هفتگی اشباع خرید (89): -3", "close_20d": "4305,4434,4567,4704,4845,4990,5139,5293,5450,5610,5770,5850,6020,6200,6380,6570,6760,6960,7150,7040", "trend": "6.0", "vol": "4.07", "support": "3112.0", "resistance": "7330.0", "stop_loss": "6748.56", "target_1": "7330.0", "rr": "1.0", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "وبملت", "label": "Watch - Needs Volume Confirmation", "label_fa": "تماشا — حجم", "label_color": "#ffab40", "label_bg": "#332200", "grade": "A", "grade_color": "#69f0ae", "score": 83.0, "rsi": "66.98", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "1326.0", "sector": "بانک", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "volume_ratio=1.0 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=67: +8 (مناسب) | روند 6/6: +18 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4", "close_20d": "991,1020,1050,1081,1113,1146,1178,1147,1189,1207,1171,1206,1242,1278,1316,1355,1387,1434,1364,1326", "trend": "6.0", "vol": "1.0", "support": "1218.0", "resistance": "1358.0", "stop_loss": "1259.57", "target_1": "1358.0", "rr": "0.48", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "سمازن", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "A", "grade_color": "#69f0ae", "score": 83.0, "rsi": "90.34", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "62990.0", "sector": "سیمان", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "RSI=90.34 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | RSI=90: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.4x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2", "close_20d": "38370,39520,40700,41920,43170,44460,45790,47160,48570,50020,51520,53060,54650,56280,57960,59690,61480,63320,65210,62990", "trend": "6.0", "vol": "4.43", "support": "41720.0", "resistance": "65210.0", "stop_loss": "60338.21", "target_1": "65210.0", "rr": "0.84", "missing": false, "stale": false, "conflict": true, "change": "", "prev_label_fa": ""}, {"sym": "خودرو", "label": "Entry Candidate", "label_fa": "ورود قوی", "label_color": "#00c853", "label_bg": "#003300", "grade": "A", "grade_color": "#69f0ae", "score": 80.0, "rsi": "67.16", "rsi_band": "میانه", "rsi_color": "#ffd740", "price": "576.0", "sector": "خودرو", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "💡 روند هفتگی صعودی | score=80, trend=6.0, RSI=67.16, volume_ratio=1.53", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=67: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 1.5x: +7 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.9: +4 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.93): -4 | روند هفتگی صعودی: +4", "close_20d": "464,477,487,505,515,530,522,518,507,506,516,501,516,531,535,551,567,562,572,576", "trend": "6.0", "vol": "1.53", "support": "573.0", "resistance": "631.0", "stop_loss": "547.71", "target_1": "631.0", "rr": "1.94", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "خاور", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "B", "grade_color": "#ffd740", "score": 76.0, "rsi": "78.32", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "1410.0", "sector": "خودرو", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.4%)", "reasons": "RSI=78.32 ≥ 70، قیمت نزدیک سقف ۲۰ روزه، بازده ۵ روزه 11.2%", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=78: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.1x: +10 | سکتور عقب‌مانده: -10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.97): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (54): +2", "close_20d": "1078,1106,1142,1157,1191,1188,1170,1148,1152,1169,1134,1168,1203,1232,1268,1306,1345,1381,1420,1410", "trend": "6.0", "vol": "2.09", "support": "1176.0", "resistance": "1458.0", "stop_loss": "1347.11", "target_1": "1458.0", "rr": "0.76", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "موج", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "B", "grade_color": "#ffd740", "score": 70.0, "rsi": "80.35", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "53027.0", "sector": "سایر", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=80.35 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.8x: +7 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.81): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2", "close_20d": "31661,32927,34244,35580,37003,38483,40021,41230,42678,43486,41747,43586,45329,47142,49027,50988,53027,55142,55996,53027", "trend": "6.0", "vol": "1.8", "support": "34926.0", "resistance": "57243.0", "stop_loss": "49880.64", "target_1": "57243.0", "rr": "1.34", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "وتجارت", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "B", "grade_color": "#ffd740", "score": 68.0, "rsi": "91.75", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "642.0", "sector": "بانک", "sm": "خنثی", "sm_fa": "بدون سیگنال واضح", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=91.75 ≥ 80 → اشباع خرید", "factors": "تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (55): +2", "close_20d": "409,421,433,444,457,470,484,497,510,525,510,527,542,558,574,591,608,626,644,642", "trend": "6.0", "vol": "3.03", "support": "447.0", "resistance": "662.0", "stop_loss": "615.21", "target_1": "662.0", "rr": "0.75", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "فملی", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "C", "grade_color": "#ff9100", "score": 61.0, "rsi": "78.88", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "22070.0", "sector": "فلزات", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=78.88 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=79: -10 (اشباع خرید) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.5: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "15080,15530,15990,16460,16950,17450,17970,18500,19040,19410,18830,19450,20030,20630,21240,21870,22520,23180,22380,22070", "trend": "6.0", "vol": "0.83", "support": "13680.0", "resistance": "23640.0", "stop_loss": "21037.15", "target_1": "23640.0", "rr": "1.52", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "بیدار", "label": "Avoid Entry Now - Overbought", "label_fa": "خروج / اشباع", "label_color": "#ff5252", "label_bg": "#330000", "grade": "C", "grade_color": "#ff9100", "score": 60.0, "rsi": "80.34", "rsi_band": "اشباع خرید شدید", "rsi_color": "#ff5252", "price": "32819.0", "sector": "ETF", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=80.34 ≥ 80 → اشباع خرید", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.5x: +7 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2", "close_20d": "19493,20272,21082,21779,22650,23556,24488,24686,25824,26414,25358,26498,27557,28659,29805,30997,32236,33525,34763,32819", "trend": "6.0", "vol": "1.54", "support": "20110.0", "resistance": "35000.0", "stop_loss": "30822.71", "target_1": "35000.0", "rr": "1.09", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "وبصادر", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "C", "grade_color": "#ff9100", "score": 59.0, "rsi": "73.42", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "695.0", "sector": "بانک", "sm": "همسو صعودی", "sm_fa": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=73.42 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=73: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.4x: +4 | قیمت زیر POC: -5 (ضعف) | قیمت نزدیک باند بالا (BB%=0.82): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (52): +2", "close_20d": "527,542,558,572,589,591,603,589,600,611,593,610,628,644,663,682,700,722,715,695", "trend": "6.0", "vol": "1.42", "support": "546.0", "resistance": "733.0", "stop_loss": "658.68", "target_1": "733.0", "rr": "1.05", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "کچاد", "label": "Watch Only", "label_fa": "نگهداری", "label_color": "#40c4ff", "label_bg": "#002233", "grade": "C", "grade_color": "#ff9100", "score": 54.0, "rsi": "38.4", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "2400.0", "sector": "فلزات", "sm": "تجمع پنهان", "sm_fa": "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=38.4 خارج از محدوده ایده‌آل (45-70)", "factors": "پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 2.8: +7 | قیمت زیر POC: -5 (ضعف) | قیمت نزدیک باند پایین (BB%=0.13): +3 | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "2411,2485,2513,2648,2704,2623,2587,2510,2442,2516,2436,2503,2433,2509,2584,2661,2582,2548,2472,2400", "trend": "2.0", "vol": "0.51", "support": "2371.0", "resistance": "2727.0", "stop_loss": "2283.96", "target_1": "2727.0", "rr": "2.82", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "اهرم", "label": "Wait for Pullback", "label_fa": "تماشا — پولبک", "label_color": "#ffd740", "label_bg": "#332e00", "grade": "C", "grade_color": "#ff9100", "score": 53.0, "rsi": "78.89", "rsi_band": "اشباع خرید", "rsi_color": "#ff9100", "price": "45944.0", "sector": "ETF", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=78.89 در محدوده 70-80 → صبر برای پولبک", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=79: -10 (اشباع خرید) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.82): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (59): +2", "close_20d": "28237,29366,30540,31512,32772,34082,35445,35276,36935,37649,36144,37641,39146,40709,42337,44030,45791,47622,48603,45944", "trend": "6.0", "vol": "1.12", "support": "30090.0", "resistance": "49131.0", "stop_loss": "43164.71", "target_1": "49131.0", "rr": "1.15", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شپدیس", "label": "Watch Only", "label_fa": "نگهداری", "label_color": "#40c4ff", "label_bg": "#002233", "grade": "D", "grade_color": "#78909c", "score": 49.0, "rsi": "0.34", "rsi_band": "اشباع فروش", "rsi_color": "#40c4ff", "price": "12920.0", "sector": "پتروشیمی", "sm": "خنثی", "sm_fa": "بدون سیگنال واضح", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=0.34 خارج از محدوده ایده‌آل (45-70)", "factors": "تحلیل صف: -10 | RSI=0: -5 (اشباع فروش) | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 10.0: +10 | قیمت زیر POC: -5 (ضعف) | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "525730,513370,499800,512960,498400,507320,13250,13210,13120,13310,12920,13200,12870,13260,13610,14040,13640,13680,13270,12920", "trend": "2.0", "vol": "0.53", "support": "12840.0", "resistance": "595660.0", "stop_loss": "-40587.15", "target_1": "595660.0", "rr": "10.0", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "کگل", "label": "Watch Only", "label_fa": "نگهداری", "label_color": "#40c4ff", "label_bg": "#002233", "grade": "D", "grade_color": "#78909c", "score": 39.0, "rsi": "39.9", "rsi_band": "محدوده ایده‌آل", "rsi_color": "#00c853", "price": "2047.0", "sector": "معدن", "sm": "خرده‌فروش نزولی", "sm_fa": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "q": "غلبه صف فروش", "q_fa": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "reasons": "RSI=39.9 خارج از محدوده ایده‌آل (45-70)", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | روند 2/6: +6 | حجم نسبی 0.4x: -5 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 10.0: +10 | قیمت زیر POC: -5 (ضعف) | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "close_20d": "1978,1995,2135,2218,2279,2211,2191,2127,2064,2134,2069,2130,2067,2132,2195,2260,2199,2173,2109,2047", "trend": "2.0", "vol": "0.41", "support": "2064.0", "resistance": "2347.0", "stop_loss": "2019.1", "target_1": "2347.0", "rr": "10.0", "missing": false, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "سينرژي", "label": "Missing Technical Data", "label_fa": "داده ناقص", "label_color": "#78909c", "label_bg": "#1c2529", "grade": "F", "grade_color": "#78909c", "score": 0.0, "rsi": "", "rsi_band": "نامشخص", "rsi_color": "#78909c", "price": "", "sector": "سایر", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 3.1%)", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "factors": "داده تکنیکال موجود نیست", "close_20d": "", "trend": "", "vol": "", "support": "", "resistance": "", "stop_loss": "", "target_1": "", "rr": "", "missing": true, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "شيراز", "label": "Missing Technical Data", "label_fa": "داده ناقص", "label_color": "#78909c", "label_bg": "#1c2529", "grade": "F", "grade_color": "#78909c", "score": 0.0, "rsi": "", "rsi_band": "نامشخص", "rsi_color": "#78909c", "price": "", "sector": "سایر", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "unknown", "q_fa": "داده صف موجود نیست", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "factors": "داده تکنیکال موجود نیست", "close_20d": "", "trend": "", "vol": "", "support": "", "resistance": "", "stop_loss": "", "target_1": "", "rr": "", "missing": true, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}, {"sym": "سپيد", "label": "Missing Technical Data", "label_fa": "داده ناقص", "label_color": "#78909c", "label_bg": "#1c2529", "grade": "F", "grade_color": "#78909c", "score": 0.0, "rsi": "", "rsi_band": "نامشخص", "rsi_color": "#78909c", "price": "", "sector": "سایر", "sm": "حجم و قیمت صعودی", "sm_fa": "رشد با حجم بالا", "q": "estimated_buy_pressure", "q_fa": "فشار خرید تخمینی (تغییر قیمت: 2.1%)", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "factors": "داده تکنیکال موجود نیست", "close_20d": "", "trend": "", "vol": "", "support": "", "resistance": "", "stop_loss": "", "target_1": "", "rr": "", "missing": true, "stale": false, "conflict": false, "change": "", "prev_label_fa": ""}];
 
-// ── Countdown ────────────────────────────────────────────────────────────────
 var _secs=900;
 (function tick(){
   var m=Math.floor(_secs/60),s=_secs%60;
@@ -216,19 +198,16 @@ var _secs=900;
   if(_secs>0)_secs--;setTimeout(tick,1000);
 })();
 
-// ── State ────────────────────────────────────────────────────────────────────
-var _tags={}, _sortKey='score', _sortAsc=false, _kpiFilter=null;
+var _tags={},_sortKey='score',_sortAsc=false,_kpiFilter=null;
 
 function toggleTag(t){
-  _tags[t]=!_tags[t];
-  _kpiFilter=null;
+  _tags[t]=!_tags[t];_kpiFilter=null;
   document.getElementById('btn'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('on',_tags[t]);
   render();
 }
 
 function kpiFilter(type){
   _kpiFilter=_kpiFilter===type?null:type;
-  // Reset manual filters when KPI card clicked
   document.getElementById('fLabel').value='';
   document.getElementById('fGrade').value='';
   Object.keys(_tags).forEach(function(t){
@@ -239,7 +218,6 @@ function kpiFilter(type){
   render();
 }
 
-// ── Filter & Sort ─────────────────────────────────────────────────────────────
 function filtered(){
   var q=(document.getElementById('q').value||'').toLowerCase();
   var fL=document.getElementById('fLabel').value;
@@ -247,19 +225,19 @@ function filtered(){
   var fS=document.getElementById('fSector').value;
   var fR=document.getElementById('fRsi').value;
   return DATA.filter(function(d){
-    if(q && !d.sym.toLowerCase().includes(q) && !d.sector.toLowerCase().includes(q)) return false;
-    if(fL && d.label_fa!==fL) return false;
-    if(fG && d.grade!==fG) return false;
-    if(fS && d.sector!==fS) return false;
-    if(fR && d.rsi_band!==fR) return false;
-    if(_tags.complete && d.missing) return false;
-    if(_tags.conflict && !d.conflict) return false;
-    if(_tags.changes && !d.change) return false;
-    if(_kpiFilter==='entry' && d.label!=='Entry Candidate') return false;
-    if(_kpiFilter==='highc' && d.score<80) return false;
-    if(_kpiFilter==='overbought' && d.label!=='Avoid Entry Now - Overbought') return false;
-    if(_kpiFilter==='conflict' && !d.conflict) return false;
-    if(_kpiFilter==='missing' && !d.missing) return false;
+    if(q&&!d.sym.toLowerCase().includes(q)&&!d.sector.toLowerCase().includes(q))return false;
+    if(fL&&d.label_fa!==fL)return false;
+    if(fG&&d.grade!==fG)return false;
+    if(fS&&d.sector!==fS)return false;
+    if(fR&&d.rsi_band!==fR)return false;
+    if(_tags.complete&&d.missing)return false;
+    if(_tags.conflict&&!d.conflict)return false;
+    if(_tags.changes&&!d.change)return false;
+    if(_kpiFilter==='entry'&&d.label!=='Entry Candidate')return false;
+    if(_kpiFilter==='highc'&&d.score<80)return false;
+    if(_kpiFilter==='overbought'&&d.label!=='Avoid Entry Now - Overbought')return false;
+    if(_kpiFilter==='conflict'&&!d.conflict)return false;
+    if(_kpiFilter==='missing'&&!d.missing)return false;
     return true;
   });
 }
@@ -267,39 +245,37 @@ function filtered(){
 function sorted(arr){
   return arr.slice().sort(function(a,b){
     var av=a[_sortKey],bv=b[_sortKey];
-    if(typeof av==='number'&&typeof bv==='number') return _sortAsc?av-bv:bv-av;
+    if(typeof av==='number'&&typeof bv==='number')return _sortAsc?av-bv:bv-av;
     av=String(av||'');bv=String(bv||'');
     return _sortAsc?av.localeCompare(bv,'fa'):bv.localeCompare(av,'fa');
   });
 }
 
 function sortBy(key,col){
-  if(_sortKey===key)_sortAsc=!_sortAsc; else{_sortKey=key;_sortAsc=false;}
-  document.querySelectorAll('.sort-arrow').forEach(function(el){el.textContent='';});
-  var arr=document.getElementById('arr'+col);
-  if(arr)arr.textContent=_sortAsc?'↑':'↓';
+  if(_sortKey===key)_sortAsc=!_sortAsc;else{_sortKey=key;_sortAsc=false;}
+  document.querySelectorAll('.arr').forEach(function(el){el.textContent='';});
+  var a=document.getElementById('arr'+col);if(a)a.textContent=_sortAsc?'↑':'↓';
   render();
 }
 
-// ── Render Table ──────────────────────────────────────────────────────────────
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function render(){
   var rows=sorted(filtered());
-  var tb=document.getElementById('tbody');
   var html='';
   rows.forEach(function(d,i){
-    var cls='row'+(d.missing?' is-missing':'')+(d.stale&&!d.missing?' is-stale':'')+(d.conflict?' is-conflict':'');
+    var cls='row'+(d.missing?' is-missing':'')+(d.stale&&!d.missing?' is-stale':'');
     var scoreBar=d.score?'<div class="score-bar-wrap"><div class="score-bar" style="width:'+Math.min(d.score,100)+'%;background:'+esc(d.label_color)+'"></div></div>':'';
     var changeIcon='';
-    if(d.change==='up') changeIcon='<span class="change-icon" title="ارتقاء وضعیت">⬆️</span>';
-    else if(d.change==='down') changeIcon='<span class="change-icon" title="افت وضعیت">⬇️</span>';
-    else if(d.change==='changed') changeIcon='<span class="change-icon" title="تغییر وضعیت">🔄</span>';
+    if(d.change==='up')changeIcon='<span title="ارتقاء وضعیت" style="font-size:12px"> ⬆️</span>';
+    else if(d.change==='down')changeIcon='<span title="افت وضعیت" style="font-size:12px"> ⬇️</span>';
+    else if(d.change==='changed')changeIcon='<span title="تغییر وضعیت" style="font-size:12px"> 🔄</span>';
     var conflictIcon=d.conflict?'<span title="امتیاز بالا — RSI خطرناک" style="color:#ff9100;font-size:11px"> ⚠️</span>':'';
     var staleIcon=d.stale&&!d.missing?'<span title="داده قدیمی" style="color:#78909c;font-size:10px"> 🕐</span>':'';
     var vol=parseFloat(d.vol)||0;
     var volStr=vol>0?vol.toFixed(1)+'x':'—';
-    var spark=d.close_20d?'<canvas class="spark" id="sp'+i+'" data-p="'+esc(d.close_20d)+'" width="80" height="26"></canvas>':'';
+    var volColor=vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c';
+    var spark=d.close_20d?'<canvas class="spark" data-idx="'+i+'" data-p="'+esc(d.close_20d)+'" width="80" height="26"></canvas>':'';
     html+='<tr class="'+cls+'" onclick="openDrawer('+i+')">'
       +'<td><b>'+esc(d.sym)+'</b>'+changeIcon+conflictIcon+staleIcon+'</td>'
       +'<td><span class="badge" style="color:'+esc(d.label_color)+';background:'+esc(d.label_bg)+'">'+esc(d.label_fa)+'</span></td>'
@@ -308,18 +284,17 @@ function render(){
       +'<td style="text-align:center"><span class="rsi-badge" style="color:'+esc(d.rsi_color)+'">'+esc(d.rsi)+'</span></td>'
       +'<td style="text-align:center">'+esc(d.price)+'</td>'
       +'<td style="text-align:center;color:#90caf9;font-size:11px">'+esc(d.sector)+'</td>'
-      +'<td style="text-align:center;color:'+esc(vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c')+'">'+volStr+'</td>'
+      +'<td style="text-align:center;color:'+volColor+'">'+volStr+'</td>'
       +'<td style="text-align:center;font-size:11px">'+esc(d.sm)+'</td>'
       +'<td>'+spark+'</td>'
       +'</tr>';
   });
-  tb.innerHTML=html;
+  document.getElementById('tbody').innerHTML=html;
   document.getElementById('emptyMsg').style.display=rows.length?'none':'block';
   drawSparklines();
   renderTopPicks();
 }
 
-// ── Sparklines ────────────────────────────────────────────────────────────────
 function drawSparklines(){
   document.querySelectorAll('.spark').forEach(function(c){
     var p=c.dataset.p.split(',').map(Number).filter(function(n){return n>0;});
@@ -329,38 +304,29 @@ function drawSparklines(){
     ctx.clearRect(0,0,w,h);
     ctx.strokeStyle=p[n-1]>=p[0]?'#00e676':'#ff5252';
     ctx.lineWidth=1.5;ctx.beginPath();
-    p.forEach(function(v,i){
-      var x=i/(n-1)*w,y=h-(v-mn)/rng*(h-4)-2;
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });
+    p.forEach(function(v,i){var x=i/(n-1)*w,y=h-(v-mn)/rng*(h-4)-2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
     ctx.stroke();
   });
 }
 
-// ── Top Picks ─────────────────────────────────────────────────────────────────
 function renderTopPicks(){
   var picks=DATA.filter(function(d){return d.label==='Entry Candidate'&&d.score>=75&&!d.missing;})
     .sort(function(a,b){return b.score-a.score;}).slice(0,5);
   var bar=document.getElementById('topPicksBar');
   if(!picks.length){bar.style.display='none';return;}
   bar.style.display='block';
-  document.getElementById('topPicksRow').innerHTML=picks.map(function(d,i){
-    return '<div class="pick-card" onclick="openDrawerByIdx(DATA.indexOf(d))">'
+  document.getElementById('topPicksRow').innerHTML=picks.map(function(d){
+    var idx=DATA.indexOf(d);
+    return '<div class="pick-card" onclick="openDrawer('+idx+')">'
       +'<div class="pick-sym">'+esc(d.sym)+'</div>'
       +'<div class="pick-score">امتیاز '+d.score.toFixed(0)+' | رتبه <span style="color:'+esc(d.grade_color)+'">'+esc(d.grade)+'</span></div>'
-      +'<div class="pick-grade" style="color:#8b949e">'+esc(d.rsi_band)+' | '+esc(d.sector)+'</div>'
+      +'<div class="pick-grade">'+esc(d.rsi_band)+' | '+esc(d.sector)+'</div>'
       +'</div>';
   }).join('');
-  // Fix closure issue
-  document.querySelectorAll('.pick-card').forEach(function(card,i){
-    card.onclick=function(){openDrawer(DATA.indexOf(picks[i]));}
-  });
 }
 
-// ── Drawer ────────────────────────────────────────────────────────────────────
 function openDrawer(idx){
-  var d=DATA[idx];
-  if(!d)return;
+  var d=DATA[idx];if(!d)return;
   var conflict=d.conflict?'<div class="warn-box" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ امتیاز بالا اما RSI خطرناک — ورود با احتیاط</div>':'';
   var missing=d.missing?'<div class="warn-box" style="background:#111518;border:1px solid #78909c88;color:#78909c">داده تکنیکال ناقص — سیگنال قابل اعتماد نیست</div>':'';
   var stale=d.stale&&!d.missing?'<div class="warn-box" style="background:#0d1117;border:1px solid #ffd74044;color:#ffd740">🕐 داده قدیمی — ممکن است قیمت به‌روز نباشد</div>':'';
@@ -369,20 +335,20 @@ function openDrawer(idx){
     var arrow=d.change==='up'?'⬆️':d.change==='down'?'⬇️':'🔄';
     change='<div style="color:#8b949e;font-size:11px;margin-top:6px">'+arrow+' از <b>'+esc(d.prev_label_fa)+'</b> به <b style="color:'+esc(d.label_color)+'">'+esc(d.label_fa)+'</b></div>';
   }
-  var spark='';
-  if(d.close_20d)spark='<canvas id="drawerSpark" data-p="'+esc(d.close_20d)+'" width="340" height="70" style="margin-top:10px;display:block"></canvas>';
+  var spark=d.close_20d?'<canvas id="dSpark" data-p="'+esc(d.close_20d)+'" width="340" height="70" style="margin-top:10px;display:block"></canvas>':'';
+  function row(lbl,val){return val?'<dt>'+lbl+'</dt><dd>'+esc(val)+'</dd>':''}
   var vol=parseFloat(d.vol)||0;
-  function row(label,val){return val?'<dt>'+label+'</dt><dd>'+esc(val)+'</dd>':''}
   document.getElementById('drawerContent').innerHTML=
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-top:8px">'
+    '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-top:8px">'
     +'<div style="flex:1"><div style="font-size:18px;font-weight:700;color:#e6edf3">'+esc(d.sym)+'</div>'
-    +'<div style="margin-top:4px"><span class="badge" style="color:'+esc(d.label_color)+';background:'+esc(d.label_bg)+'">'+esc(d.label_fa)+'</span>'
-    +' <span style="color:'+esc(d.grade_color)+';font-weight:700;font-size:15px">'+esc(d.grade)+'</span>'
-    +' <span style="color:#8b949e;font-size:13px">امتیاز '+d.score.toFixed(0)+'</span></div>'
-    +change+'</div></div>'
+    +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+    +'<span class="badge" style="color:'+esc(d.label_color)+';background:'+esc(d.label_bg)+'">'+esc(d.label_fa)+'</span>'
+    +'<span style="color:'+esc(d.grade_color)+';font-weight:700;font-size:15px">'+esc(d.grade)+'</span>'
+    +'<span style="color:#8b949e;font-size:13px">امتیاز '+d.score.toFixed(0)+'</span>'
+    +'</div>'+change+'</div></div>'
     +conflict+missing+stale
-    +'<div class="drawer-section"><h4>دلایل تصمیم</h4><p style="color:#ccc;font-size:12px;line-height:1.7">'+esc(d.reasons)+'</p></div>'
-    +'<div class="drawer-section"><h4>عوامل امتیازدهی</h4><p style="color:#8b949e;font-size:11px;line-height:1.7">'+esc(d.factors)+'</p></div>'
+    +'<div class="drawer-section"><h4>دلایل تصمیم</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+esc(d.reasons)+'</p></div>'
+    +'<div class="drawer-section"><h4>عوامل امتیازدهی</h4><p style="color:#8b949e;font-size:11px;line-height:1.8">'+esc(d.factors)+'</p></div>'
     +'<div class="drawer-section"><h4>مشخصات فنی</h4><dl class="dl">'
     +row('RSI',d.rsi+(d.rsi_band?' ('+d.rsi_band+')':''))
     +row('قیمت',d.price)
@@ -402,24 +368,18 @@ function openDrawer(idx){
     +row('توضیح صف',d.q_fa)
     +'</dl></div>'
     +spark;
-  var ov=document.getElementById('drawerOverlay');
-  ov.classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
   document.body.style.overflow='hidden';
-  // Draw large sparkline
   if(d.close_20d){
     setTimeout(function(){
-      var c=document.getElementById('drawerSpark');
-      if(!c)return;
+      var c=document.getElementById('dSpark');if(!c)return;
       var p=c.dataset.p.split(',').map(Number).filter(function(n){return n>0;});
       if(p.length<2)return;
       var ctx=c.getContext('2d'),w=c.width,h=c.height,n=p.length;
       var mn=Math.min.apply(null,p),mx=Math.max.apply(null,p),rng=mx-mn||1;
       ctx.strokeStyle=p[n-1]>=p[0]?'#00e676':'#ff5252';
       ctx.lineWidth=2;ctx.beginPath();
-      p.forEach(function(v,i){
-        var x=i/(n-1)*w,y=h-(v-mn)/rng*(h-6)-3;
-        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-      });
+      p.forEach(function(v,i){var x=i/(n-1)*w,y=h-(v-mn)/rng*(h-6)-3;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
       ctx.stroke();
     },50);
   }
@@ -430,25 +390,22 @@ function closeDrawer(e){
   document.getElementById('drawerOverlay').classList.remove('open');
   document.body.style.overflow='';
 }
-document.addEventListener('keydown',function(e){
-  if(e.key==='Escape')closeDrawer();
-});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 
-// ── Export ────────────────────────────────────────────────────────────────────
 function exportCSV(){
   var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم×','پول هوشمند','صف','دلایل']];
   filtered().forEach(function(d){
+    var vol=parseFloat(d.vol)||0;
     rows.push([d.sym,d.label_fa,d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
-      parseFloat(d.vol)>0?parseFloat(d.vol).toFixed(2)+'x':'',d.sm,d.q,d.reasons]);
+      vol>0?vol.toFixed(2)+'x':'',d.sm,d.q,d.reasons]);
   });
-  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c||'').replace(/"/g,'""')+'"'}).join(',')}).join('\n');
+  var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c||'').replace(/"/g,'""')+'"'}).join(',')}).join('\n');
   var a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
   a.download='iran_stock_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('arr3').textContent='↓';
 render();
 </script>
