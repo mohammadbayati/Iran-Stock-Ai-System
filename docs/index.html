@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iran Stock AI Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Tahoma, Arial, sans-serif; background: #0f172a; color: #e2e8f0; direction: rtl; }
+  .header { background: #1e293b; padding: 20px; border-bottom: 2px solid #334155; }
+  .header h1 { font-size: 1.4rem; color: #38bdf8; margin-bottom: 8px; }
+  .header .time { font-size: 0.8rem; color: #64748b; }
+  .stats { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .stat { background: #0f172a; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; }
+  .stat span { color: #38bdf8; font-weight: bold; }
+  .market-mood { background: #1e293b; padding: 16px 20px; border-right: 3px solid #38bdf8; margin: 16px; border-radius: 8px; font-size: 0.85rem; line-height: 1.8; }
+  .section-header { font-size: 1rem; font-weight: bold; padding: 12px 20px; margin: 20px 16px 8px; border-right: 4px solid; border-radius: 4px; background: #1e293b; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding: 0 16px 16px; }
+  .card { background: #1e293b; border-radius: 10px; padding: 14px; border: 1px solid #334155; transition: border-color 0.2s; }
+  .card:hover { border-color: #38bdf8; }
+  .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .symbol-name { font-size: 1.1rem; font-weight: bold; color: #f1f5f9; flex: 1; }
+  .grade-badge { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; color: #0f172a; font-weight: bold; }
+  .score-badge { padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; border: 2px solid; font-weight: bold; }
+  .decision-label { font-size: 0.85rem; margin-bottom: 10px; font-weight: bold; }
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+  .data-item { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 3px 6px; background: #0f172a; border-radius: 4px; }
+  .data-item .label { color: #64748b; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: bold; }
+  .badge.green { background: #14532d; color: #86efac; }
+  .badge.red { background: #450a0a; color: #fca5a5; }
+  .badge.yellow { background: #422006; color: #fde68a; }
+  .smart-money { font-size: 0.78rem; color: #94a3b8; margin-bottom: 4px; }
+  .factors { font-size: 0.72rem; color: #475569; margin-bottom: 4px; line-height: 1.5; }
+  .reasons { font-size: 0.75rem; color: #64748b; border-top: 1px solid #334155; padding-top: 6px; margin-top: 4px; }
+  .filter-bar { padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap; background: #1e293b; }
+  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #334155; background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.8rem; }
+  .filter-btn.active, .filter-btn:hover { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📊 Iran Stock AI Dashboard</h1>
+  <div class="time">آخرین بروزرسانی: 2026-06-23 06:26</div>
+  <div class="stats">
+    <div class="stat">کل نمادها: <span>30</span></div>
+    <div class="stat">کاندید ورود: <span>4</span></div>
+    <div class="stat">امتیاز بالا: <span>22</span></div>
+    <div class="stat">فاقد داده: <span>4</span></div>
+  </div>
+</div>
+<div class="market-mood">📊 *گزارش سیستم کمک‌تصمیم بورس تهران*<br>🕐 2026-06-23  09:56<br>─────────────────────<br>🟡 *حالت بازار: بازار خنثی*<br>  سیگنال واضحی وجود ندارد — صبر کنید<br><br>🧠 ترس و طمع: 39/100 😨 ترس<br>  [███░░░░░░░]<br>  ریسک بالا — از ورود جدید خودداری کنید<br><br>💰 جریان پول: +10242 میلیارد<br>📈 مثبت: 262 | 📉 منفی: 367 | 💪 خریدار: 1.01<br><br>🗺 نقشه گردش سکتور امروز:<br>  🟢 پیشرو پتروشیمی | جریان: +3945B | قدرت خریدار: 2.2<br>  🟢 پیشرو سرمایه‌گذاری | جریان: +1905B | قدرت خریدار: 2.3<br>  🟡 خنثی سایر | جریان: +2005B | قدرت خریدار: 1.0<br>  🟡 خنثی بانک | جریان: +1930B | قدرت خریدار: 1.1<br>  🟡 خنثی انرژی | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی برق | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی بیمه | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی دارو | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی ساختمان | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی سیمان | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی شیمیایی | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی غذا | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی مخابرات | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی چاپ و بسته‌بندی | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی خودرو | جریان: -36B | قدرت خریدار: 1.0<br>  🔴 عقب‌مانده ETF | جریان: -51B | قدرت خریدار: -0.1<br>  🔴 عقب‌مانده معدن | جریان: -13B | قدرت خریدار: -1.6<br>  🔴 عقب‌مانده فلزات | جریان: +556B | قدرت خریدار: 0.5<br>─────────────────────<br><br>🔔 تغییر وضعیت نمادها:<br>  ⬆️ *فارس*: واچ تکنیکال → کاندید ورود (امتیاز: 100)<br>  ⬆️ *ورنا*: واچ تکنیکال → کاندید ورود (امتیاز: 100)<br>  ⬇️ شستا: اشباع خرید → کاندید ورود<br>  ⬇️ شسپا: داده ناقص → اشباع خرید<br>  ⬇️ دلقما: داده ناقص → اشباع خرید<br>  ⬇️ وغدیر: کاندید ورود → نیاز به حجم<br>  ⬇️ نارنج اهرم: داده ناقص → اشباع خرید<br>  ⬇️ وبملت: صبر پولبک → نیاز به حجم<br>  ⬇️ فملی: اشباع خرید → صبر پولبک</div>
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterCards('all')">همه</button>
+  <button class="filter-btn" onclick="filterCards('Entry Candidate')">کاندید ورود</button>
+  <button class="filter-btn" onclick="filterCards('Technical Entry Watch')">واچ تکنیکال</button>
+  <button class="filter-btn" onclick="filterCards('Avoid Entry Now - Overbought')">اشباع خرید</button>
+</div>
+<div class="section-header" style="border-color:#22c55e">● کاندید ورود (4 نماد)</div><div class="cards-grid">
+    <div class="card" data-label="Entry Candidate" data-score="100">
+        <div class="card-header">
+            <div class="symbol-name">شستا</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#22c55e">100</div>
+        </div>
+        <div class="decision-label" style="color:#22c55e">● کاندید ورود</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>69.8</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.4x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>8.9%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>1960</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>2175</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.4</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سرمایه‌گذاری</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 58</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: -10 | RSI=70: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 1.4x: +4 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.91): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (58): +2</div>
+    
+        <div class="reasons">💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (58) | score=100, trend=6.0, RSI=69.81, volume_ratio=1.42</div>
+    </div>
+    
+    <div class="card" data-label="Entry Candidate" data-score="100">
+        <div class="card-header">
+            <div class="symbol-name">فارس</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#22c55e">100</div>
+        </div>
+        <div class="decision-label" style="color:#22c55e">● کاندید ورود</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>55.0</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>5.5x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>21.0%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>11885</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>13040</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.7</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>پتروشیمی</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 67</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: -10 | RSI=55: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | سکتور پیشرو: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.80): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (67): +2 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (67) | score=100, trend=6.0, RSI=55.02, volume_ratio=5.53</div>
+    </div>
+    
+    <div class="card" data-label="Entry Candidate" data-score="100">
+        <div class="card-header">
+            <div class="symbol-name">خساپا</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#22c55e">100</div>
+        </div>
+        <div class="decision-label" style="color:#22c55e">● کاندید ورود</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>58.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.6x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>1.6%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>541</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>618</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.6</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>خودرو</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 53</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: -10 | RSI=58: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 1.6x: +7 | ریسک/ریوارد 1.6: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (53): +2</div>
+    
+        <div class="reasons">💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (53) | score=100, trend=6.0, RSI=58.33, volume_ratio=1.61</div>
+    </div>
+    
+    <div class="card" data-label="Entry Candidate" data-score="100">
+        <div class="card-header">
+            <div class="symbol-name">ورنا</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#22c55e">100</div>
+        </div>
+        <div class="decision-label" style="color:#22c55e">● کاندید ورود</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>50.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>4/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.6x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>1.5%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>5198</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>7320</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>6.5</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سایر</span></div>
+        </div>
+        <div class="badges"><span class="badge red">هفتگی↓ 32</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: +6 | RSI=50: +15 (ایده‌آل) | روند 4/6: +12 | حجم نسبی 1.6x: +7 | ریسک/ریوارد 6.5: +10 | قیمت بالای POC: +8 (قدرت) | روند هفتگی نزولی: -4</div>
+    
+        <div class="reasons">score=100, trend=4.0, RSI=50.3, volume_ratio=1.55</div>
+    </div>
+    </div><div class="section-header" style="border-color:#f97316">● صبر برای پولبک (2 نماد)</div><div class="cards-grid">
+    <div class="card" data-label="Wait for Pullback" data-score="97">
+        <div class="card-header">
+            <div class="symbol-name">خبهمن</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#f97316">97</div>
+        </div>
+        <div class="decision-label" style="color:#f97316">● صبر برای پولبک</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>75.1</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>2.4x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>5.3%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>1878</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>2303</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>3.2</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>خودرو</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 48</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: +6 | RSI=75: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.4x: +10 | ریسک/ریوارد 3.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4</div>
+    
+        <div class="reasons">RSI=75.09 در محدوده 70-80 → صبر برای پولبک</div>
+    </div>
+    
+    <div class="card" data-label="Wait for Pullback" data-score="61">
+        <div class="card-header">
+            <div class="symbol-name">فملی</div>
+            <div class="grade-badge" style="background:#eab308">درجه C</div>
+            <div class="score-badge" style="border-color:#f97316">61</div>
+        </div>
+        <div class="decision-label" style="color:#f97316">● صبر برای پولبک</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>78.9</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>0.8x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>3.9%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>21037</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>23640</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.5</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>فلزات</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 77</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: -10 | RSI=79: -10 (اشباع خرید) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.5: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=78.88 در محدوده 70-80 → صبر برای پولبک</div>
+    </div>
+    </div><div class="section-header" style="border-color:#3b82f6">● نیاز به تایید حجم (3 نماد)</div><div class="cards-grid">
+    <div class="card" data-label="Watch - Needs Volume Confirmation" data-score="98">
+        <div class="card-header">
+            <div class="symbol-name">نوری</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#3b82f6">98</div>
+        </div>
+        <div class="decision-label" style="color:#3b82f6">● نیاز به تایید حجم</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>63.2</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>0.7x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>28.6%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>54105</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>66600</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.8</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>پتروشیمی</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 62</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود</div>
+        <div class="factors">پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | RSI=63: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 0.7x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 1.8: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">volume_ratio=0.65 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (62)</div>
+    </div>
+    
+    <div class="card" data-label="Watch - Needs Volume Confirmation" data-score="91">
+        <div class="card-header">
+            <div class="symbol-name">وغدیر</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#3b82f6">91</div>
+        </div>
+        <div class="decision-label" style="color:#3b82f6">● نیاز به تایید حجم</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>50.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>3/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.1x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>-5.7%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>14455</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>16155</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>2.0</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سرمایه‌گذاری</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 61</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: -10 | RSI=50: +15 (ایده‌آل) | روند 3/6: +9 | سکتور پیشرو: +10 | ریسک/ریوارد 2.0: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">trend_score=3.0 < 4 → روند ضعیف | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (61) | حجم نسبی=1.14 → نیاز به تایید حجم</div>
+    </div>
+    
+    <div class="card" data-label="Watch - Needs Volume Confirmation" data-score="78">
+        <div class="card-header">
+            <div class="symbol-name">وبملت</div>
+            <div class="grade-badge" style="background:#84cc16">درجه B</div>
+            <div class="score-badge" style="border-color:#3b82f6">78</div>
+        </div>
+        <div class="decision-label" style="color:#3b82f6">● نیاز به تایید حجم</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>67.0</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.0x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>0.8%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>1260</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>1358</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.5</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>بانک</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 38</span></div>
+        <div class="smart-money">بدون سیگنال واضح</div>
+        <div class="factors">تحلیل صف: -10 | RSI=67: +8 (مناسب) | روند 6/6: +18 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4</div>
+    
+        <div class="reasons">volume_ratio=1.0 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی</div>
+    </div>
+    </div><div class="section-header" style="border-color:#9ca3af">● فقط رصد (2 نماد)</div><div class="cards-grid">
+    <div class="card" data-label="Watch Only" data-score="49">
+        <div class="card-header">
+            <div class="symbol-name">شپدیس</div>
+            <div class="grade-badge" style="background:#f97316">درجه D</div>
+            <div class="score-badge" style="border-color:#9ca3af">49</div>
+        </div>
+        <div class="decision-label" style="color:#9ca3af">● فقط رصد</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>0.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>2/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>0.5x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>-5.1%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>-40587</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>595660</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>10.0</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>پتروشیمی</span></div>
+        </div>
+        <div class="badges"><span class="badge red">هفتگی↓ 32</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">بدون سیگنال واضح</div>
+        <div class="factors">تحلیل صف: -10 | RSI=0: -5 (اشباع فروش) | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 10.0: +10 | قیمت زیر POC: -5 (ضعف) | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=0.34 خارج از محدوده ایده‌آل (45-70)</div>
+    </div>
+    
+    <div class="card" data-label="Watch Only" data-score="39">
+        <div class="card-header">
+            <div class="symbol-name">کچاد</div>
+            <div class="grade-badge" style="background:#f97316">درجه D</div>
+            <div class="score-badge" style="border-color:#9ca3af">39</div>
+        </div>
+        <div class="decision-label" style="color:#9ca3af">● فقط رصد</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>38.4</span></div>
+            <div class="data-item"><span class="label">روند</span><span>2/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>0.5x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>-7.1%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>2284</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>2727</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>2.8</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>فلزات</span></div>
+        </div>
+        <div class="badges"><span class="badge red">هفتگی↓ 34</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: -10 | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 2.8: +7 | قیمت زیر POC: -5 (ضعف) | قیمت نزدیک باند پایین (BB%=0.13): +3 | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=38.4 خارج از محدوده ایده‌آل (45-70)</div>
+    </div>
+    </div><div class="section-header" style="border-color:#ef4444">● اشباع خرید (15 نماد)</div><div class="cards-grid">
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="100">
+        <div class="card-header">
+            <div class="symbol-name">شپنا</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">100</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>94.4</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>6.3x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>15.5%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>8780</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>11440</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>6.0</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>پتروشیمی</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 65</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: +6 | RSI=94: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 6.3x: +10 | سکتور پیشرو: +10 | ریسک/ریوارد 6.0: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=94.39 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="100">
+        <div class="card-header">
+            <div class="symbol-name">فرابورس</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">100</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>91.7</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>3.8x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>12.8%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>5741</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>6080</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.3</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سرمایه‌گذاری</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 58</span><span class="badge yellow">🕯 hammer</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +8 | تحلیل صف: +6 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.8x: +10 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.94): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (58): +2 | کندل چکش: +8</div>
+    
+        <div class="reasons">RSI=91.72 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="93">
+        <div class="card-header">
+            <div class="symbol-name">شسپا</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">93</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>100.0</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>9.6x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>15.7%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>14241</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>18673</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>7.2</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>دارو</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 77</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 9.6x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.94): -4 | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=100.0 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="92">
+        <div class="card-header">
+            <div class="symbol-name">دلقما</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">92</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>100.0</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>10.0x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>15.8%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>3689</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>4529</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>10.0</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>دارو</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 50</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 10.0x: +10 | ریسک/ریوارد 10.0: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.93): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (50): +2 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=100.0 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="86">
+        <div class="card-header">
+            <div class="symbol-name">خاور</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">86</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>78.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>2.1x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>11.2%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>1347</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>1458</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.8</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>خودرو</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 54</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: +6 | RSI=78: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.1x: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.97): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (54): +2</div>
+    
+        <div class="reasons">RSI=78.32 ≥ 70، قیمت نزدیک سقف ۲۰ روزه، بازده ۵ روزه 11.2%</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="86">
+        <div class="card-header">
+            <div class="symbol-name">شبندر</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">86</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>91.8</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>3.9x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>12.0%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>11115</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>11960</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.8</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>پتروشیمی</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 76</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.9x: +10 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4</div>
+    
+        <div class="reasons">RSI=91.8 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="86">
+        <div class="card-header">
+            <div class="symbol-name">وخارزم</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">86</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>85.1</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>3.0x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>9.1%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>4608</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>5088</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.2</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>بانک</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 59</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: +6 | RSI=85: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.85): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (59): +2</div>
+    
+        <div class="reasons">RSI=85.06 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="85">
+        <div class="card-header">
+            <div class="symbol-name">نارنج اهرم</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">85</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>100.0</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>5.5x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>21.7%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>44430</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>61522</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>7.2</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سایر</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 69</span><span class="badge yellow">🕯 doji</span></div>
+        <div class="smart-money">افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: -10 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (69): +2 | کندل دوجی (بلاتکلیفی): +2</div>
+    
+        <div class="reasons">RSI=100.0 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="84">
+        <div class="card-header">
+            <div class="symbol-name">شمواد</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">84</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>95.2</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>4.1x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>10.3%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>6749</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>7330</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.0</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>شیمیایی</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 89</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: +6 | RSI=95: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.1x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.87): -4 | روند هفتگی صعودی: +4 | RSI هفتگی اشباع خرید (89): -3</div>
+    
+        <div class="reasons">RSI=95.15 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="83">
+        <div class="card-header">
+            <div class="symbol-name">سمازن</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">83</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>90.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>4.4x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>8.7%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>60338</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>65210</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.8</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سیمان</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 62</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | RSI=90: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.4x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2</div>
+    
+        <div class="reasons">RSI=90.34 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="80">
+        <div class="card-header">
+            <div class="symbol-name">وخاور</div>
+            <div class="grade-badge" style="background:#22c55e">درجه A</div>
+            <div class="score-badge" style="border-color:#ef4444">80</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>87.1</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.9x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>9.3%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>4386</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>4853</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.2</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>بانک</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 74</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | RSI=87: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.9x: +7 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.85): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (74): +2</div>
+    
+        <div class="reasons">RSI=87.07 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="79">
+        <div class="card-header">
+            <div class="symbol-name">فافق</div>
+            <div class="grade-badge" style="background:#84cc16">درجه B</div>
+            <div class="score-badge" style="border-color:#ef4444">79</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>82.8</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>2.5x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>4.8%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>10411</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>11280</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.7</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>فلزات</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 67</span></div>
+        <div class="smart-money">رشد با حجم بالا</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: +6 | RSI=83: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.5x: +10 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.83): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (67): +2</div>
+    
+        <div class="reasons">RSI=82.83 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="78">
+        <div class="card-header">
+            <div class="symbol-name">وتجارت</div>
+            <div class="grade-badge" style="background:#84cc16">درجه B</div>
+            <div class="score-badge" style="border-color:#ef4444">78</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>91.8</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>3.0x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>11.8%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>615</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>662</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>0.8</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>بانک</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 55</span></div>
+        <div class="smart-money">هم‌راستای صعودی: خریدار و پول هر دو وارد</div>
+        <div class="factors">پول هوشمند: +10 | تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (55): +2</div>
+    
+        <div class="reasons">RSI=91.75 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="70">
+        <div class="card-header">
+            <div class="symbol-name">موج</div>
+            <div class="grade-badge" style="background:#84cc16">درجه B</div>
+            <div class="score-badge" style="border-color:#ef4444">70</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>80.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.8x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>8.2%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>49881</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>57243</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.3</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>سایر</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 61</span></div>
+        <div class="smart-money">افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.8x: +7 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.81): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2</div>
+    
+        <div class="reasons">RSI=80.35 ≥ 80 → اشباع خرید</div>
+    </div>
+    
+    <div class="card" data-label="Avoid Entry Now - Overbought" data-score="60">
+        <div class="card-header">
+            <div class="symbol-name">بیدار</div>
+            <div class="grade-badge" style="background:#eab308">درجه C</div>
+            <div class="score-badge" style="border-color:#ef4444">60</div>
+        </div>
+        <div class="decision-label" style="color:#ef4444">● اشباع خرید</div>
+        
+        <div class="data-grid">
+            <div class="data-item"><span class="label">RSI</span><span>80.3</span></div>
+            <div class="data-item"><span class="label">روند</span><span>6/6</span></div>
+            <div class="data-item"><span class="label">حجم</span><span>1.5x</span></div>
+            <div class="data-item"><span class="label">بازده ۵روزه</span><span>10.1%</span></div>
+            <div class="data-item"><span class="label">حد ضرر</span><span>30823</span></div>
+            <div class="data-item"><span class="label">هدف</span><span>35000</span></div>
+            <div class="data-item"><span class="label">R/R</span><span>1.1</span></div>
+            <div class="data-item"><span class="label">سکتور</span><span>ETF</span></div>
+        </div>
+        <div class="badges"><span class="badge green">هفتگی↑ 65</span></div>
+        <div class="smart-money">افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد</div>
+        <div class="factors">پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.5x: +7 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2</div>
+    
+        <div class="reasons">RSI=80.34 ≥ 80 → اشباع خرید</div>
+    </div>
+    </div><div class="section-header" style="border-color:#4b5563">● داده ناقص (4 نماد)</div><div class="cards-grid">
+    <div class="card" data-label="Missing Technical Data" data-score="0">
+        <div class="card-header">
+            <div class="symbol-name">سينرژي</div>
+            <div class="grade-badge" style="background:#ef4444">درجه F</div>
+            <div class="score-badge" style="border-color:#4b5563">0</div>
+        </div>
+        <div class="decision-label" style="color:#4b5563">● داده ناقص</div>
+        
+        <div class="reasons">داده تاریخچه یا اندیکاتور در دسترس نیست</div>
+    </div>
+    
+    <div class="card" data-label="Missing Technical Data" data-score="0">
+        <div class="card-header">
+            <div class="symbol-name">سپيد</div>
+            <div class="grade-badge" style="background:#ef4444">درجه F</div>
+            <div class="score-badge" style="border-color:#4b5563">0</div>
+        </div>
+        <div class="decision-label" style="color:#4b5563">● داده ناقص</div>
+        
+        <div class="reasons">داده تاریخچه یا اندیکاتور در دسترس نیست</div>
+    </div>
+    
+    <div class="card" data-label="Missing Technical Data" data-score="0">
+        <div class="card-header">
+            <div class="symbol-name">شيراز</div>
+            <div class="grade-badge" style="background:#ef4444">درجه F</div>
+            <div class="score-badge" style="border-color:#4b5563">0</div>
+        </div>
+        <div class="decision-label" style="color:#4b5563">● داده ناقص</div>
+        
+        <div class="reasons">داده تاریخچه یا اندیکاتور در دسترس نیست</div>
+    </div>
+    
+    <div class="card" data-label="Missing Technical Data" data-score="0">
+        <div class="card-header">
+            <div class="symbol-name">زرين</div>
+            <div class="grade-badge" style="background:#ef4444">درجه F</div>
+            <div class="score-badge" style="border-color:#4b5563">0</div>
+        </div>
+        <div class="decision-label" style="color:#4b5563">● داده ناقص</div>
+        
+        <div class="reasons">داده تاریخچه یا اندیکاتور در دسترس نیست</div>
+    </div>
+    </div>
+<script>
+function filterCards(label) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.card').forEach(c => {
+    c.style.display = (label === 'all' || c.dataset.label === label) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
