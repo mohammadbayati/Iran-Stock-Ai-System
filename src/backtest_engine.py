@@ -3,10 +3,13 @@ Backtest Engine — fills outcome prices using actual historical CSVs.
 """
 
 import os
+import sys
 import pandas as pd
 
-SIGNAL_LOG = os.path.join("output", "signal_log.csv")
-HISTORY_DIR = os.path.join("data", "history")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config.settings import DATA_DIR
+SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.csv")
+HISTORY_DIR = os.path.join(DATA_DIR, "history")
 
 
 def _get_price_after(symbol: str, signal_date: str, trading_days: int = 5) -> float | None:
@@ -57,16 +60,16 @@ def generate_report() -> str:
     if not os.path.exists(SIGNAL_LOG):
         return "❌ فایل signal_log.csv یافت نشد."
     df = pd.read_csv(SIGNAL_LOG)
-    required = {"label", "close_price", "close_5d_later"}
+    required = {"label", "close_at_signal", "close_5d_later"}
     if not required.issubset(df.columns):
         return "❌ ستون‌های لازم در لاگ وجود ندارند."
-    df = df.dropna(subset=["close_price", "close_5d_later"]).copy()
+    df = df.dropna(subset=["close_at_signal", "close_5d_later"]).copy()
     if df.empty:
         return "⚠️ هنوز داده‌ای برای بک‌تست وجود ندارد."
-    df["close_price"] = pd.to_numeric(df["close_price"], errors="coerce")
+    df["close_at_signal"] = pd.to_numeric(df["close_at_signal"], errors="coerce")
     df["close_5d_later"] = pd.to_numeric(df["close_5d_later"], errors="coerce")
-    df = df.dropna(subset=["close_price", "close_5d_later"])
-    df["return_5d"] = (df["close_5d_later"] / df["close_price"] - 1) * 100
+    df = df.dropna(subset=["close_at_signal", "close_5d_later"])
+    df["return_5d"] = (df["close_5d_later"] / df["close_at_signal"] - 1) * 100
     lines = ["📊 گزارش دقت سیگنال (بک‌تست ۵ روزه)\n", f"تعداد کل سیگنال با نتیجه: {len(df)}\n"]
     for label, group in df.groupby("label"):
         pos = (group["return_5d"] > 0).sum()
