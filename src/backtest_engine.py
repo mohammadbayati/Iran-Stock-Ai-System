@@ -1,184 +1,100 @@
 """
-Backtest Engine — evaluates historical signal accuracy.
-
-Uses local history CSV files (HISTORY_DIR) to find the actual price
-N trading days after each signal, then computes accuracy per label and grade.
+Backtest Engine — fills outcome prices using actual historical CSVs.
 """
 
 import os
 import pandas as pd
-from datetime import datetime
 
-from config.settings import DATA_DIR, HISTORY_DIR
-
-SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.csv")
-BULLISH_LABELS = {"Entry Candidate", "Technical Entry Watch"}
-BEARISH_LABELS = {"Avoid Entry Now - Overbought"}
+SIGNAL_LOG = os.path.join("output", "signal_log.csv")
+HISTORY_DIR = os.path.join("data", "history")
 
 
-def _load_log() -> pd.DataFrame:
-    if os.path.exists(SIGNAL_LOG):
-        return pd.read_csv(SIGNAL_LOG)
-    return pd.DataFrame()
-
-
-def _save_log(df: pd.DataFrame):
-    df.to_csv(SIGNAL_LOG, index=False, encoding="utf-8-sig")
-
-
-def _get_price_after(symbol: str, signal_date: str, trading_days: int = 5):
-    """
-    Returns the closing price N trading days after signal_date,
-    using the local history CSV for that symbol.
-    """
+def _get_price_after(symbol: str, signal_date: str, trading_days: int = 5) -> float | None:
     path = os.path.join(HISTORY_DIR, f"{symbol}.csv")
     if not os.path.exists(path):
         return None
     try:
         df = pd.read_csv(path)
         df.columns = [c.lower().strip() for c in df.columns]
-        if "close" not in df.columns:
+        if "date" not in df.columns or "close" not in df.columns:
             return None
-
-        # Try to find a date column
-        date_col = None
-        for col in ["date", "jdate", "j_date", "shamsi"]:
-            if col in df.columns:
-                date_col = col
-                break
-        if date_col is None:
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
+        sig_dt = pd.to_datetime(signal_date)
+        future = df[df["date"] > sig_dt].reset_index(drop=True)
+        if len(future) < trading_days:
             return None
-
-        df[date_col] = df[date_col].astype(str).str.strip()
-        df = df.sort_values(date_col).reset_index(drop=True)
-
-        # Find index of signal date (or first date after it)
-        signal_idx = None
-        for i, row in df.iterrows():
-            if str(row[date_col]) >= signal_date:
-                signal_idx = i
-                break
-
-        if signal_idx is None:
-            return None
-
-        target_idx = signal_idx + trading_days
-        if target_idx >= len(df):
-            return None
-
-        return float(df.at[target_idx, "close"])
+        return float(future["close"].iloc[trading_days - 1])
     except Exception:
         return None
 
 
-def fill_outcomes(trading_days: int = 5):
-    """
-    Fills in close_5d_later for signals that are old enough,
-    using actual historical prices instead of current price proxy.
-    """
-    log = _load_log()
-    if log.empty:
-        print("[backtest] No signals in log yet")
-        return
-
-    updated = 0
-    for idx, row in log.iterrows():
-        if pd.notna(row.get("close_5d_later")):
-            continue  # already filled
-
-        signal_date = str(row["date"])
-        symbol = str(row["symbol"])
-        close_at = row.get("close_at_signal")
-        label = str(row.get("decision_label", ""))
-
-        price_after = _get_price_after(symbol, signal_date, trading_days)
-        if price_after is None or not close_at or pd.isna(close_at):
+def fill_outcomes(trading_days: int = 5) -> int:
+    """Read signal_log.csv, fill close_5d_later for rows that don't have it yet."""
+    if not os.path.exists(SIGNAL_LOG):
+        return 0
+    df = pd.read_csv(SIGNAL_LOG)
+    if "close_5d_later" not in df.columns:
+        df["close_5d_later"] = None
+    filled = 0
+    for i, row in df.iterrows():
+        if pd.notna(df.at[i, "close_5d_later"]):
             continue
-
-        try:
-            ret = (float(price_after) / float(close_at) - 1) * 100
-            log.at[idx, "close_5d_later"] = price_after
-            log.at[idx, "return_5d_pct"] = round(ret, 2)
-            if label in BULLISH_LABELS:
-                log.at[idx, "was_correct"] = ret > 0
-            elif label in BEARISH_LABELS:
-                log.at[idx, "was_correct"] = ret < 0
-            updated += 1
-        except Exception:
-            pass
-
-    if updated:
-        _save_log(log)
-        print(f"[backtest] Filled outcomes for {updated} signals")
-    else:
-        print("[backtest] No new outcomes to fill")
+        symbol = str(row.get("symbol", ""))
+        date = str(row.get("date", ""))
+        if not symbol or not date:
+            continue
+        price = _get_price_after(symbol, date, trading_days)
+        if price is not None:
+            df.at[i, "close_5d_later"] = price
+            filled += 1
+    df.to_csv(SIGNAL_LOG, index=False)
+    return filled
 
 
 def generate_report() -> str:
-    """
-    Generates a Persian backtest accuracy report grouped by label and grade.
-    """
-    log = _load_log()
-    if log.empty:
-        return "📊 سیگنالی در لاگ یافت نشد"
-
-    evaluated = log[log["was_correct"].notna()].copy()
-    if evaluated.empty:
-        return "📊 هنوز نتیجه‌ای برای ارزیابی ثبت نشده (سیگنال‌ها کمتر از ۵ روز قدیمی هستند)"
-
-    total = len(evaluated)
-    correct = int(evaluated["was_correct"].sum())
-    accuracy = correct / total * 100
-
-    lines = [
-        f"📊 گزارش بک‌تست سیگنال‌ها",
-        f"─────────────────────",
-        f"کل سیگنال‌های ارزیابی‌شده: {total}",
-        f"دقت کلی: {accuracy:.1f}%  ({correct}/{total})",
-        f"",
-        f"📌 دقت به تفکیک برچسب:",
-    ]
-
-    LABEL_FA = {
-        "Entry Candidate": "کاندید ورود",
-        "Technical Entry Watch": "واچ تکنیکال",
-        "Avoid Entry Now - Overbought": "اشباع خرید (شرت)",
-    }
-
-    by_label = evaluated.groupby("decision_label")["was_correct"].agg(["sum", "count"])
-    for label, row in by_label.iterrows():
-        label_fa = LABEL_FA.get(label, label)
-        acc = row["sum"] / row["count"] * 100
-        lines.append(f"  {label_fa}: {acc:.0f}%  ({int(row['sum'])}/{int(row['count'])})")
-
-    lines += ["", "🏅 دقت به تفکیک درجه:"]
-    by_grade = evaluated.groupby("confidence_grade")["was_correct"].agg(["sum", "count"])
-    for grade, row in by_grade.sort_index().iterrows():
-        acc = row["sum"] / row["count"] * 100
-        lines.append(f"  درجه {grade}: {acc:.0f}%  ({int(row['sum'])}/{int(row['count'])})")
-
-    # Best and worst signals
-    evaluated["return_5d_pct"] = pd.to_numeric(evaluated["return_5d_pct"], errors="coerce")
-    top = evaluated.nlargest(3, "return_5d_pct")[["symbol", "date", "decision_label", "return_5d_pct"]]
-    worst = evaluated.nsmallest(3, "return_5d_pct")[["symbol", "date", "decision_label", "return_5d_pct"]]
-
-    lines += ["", "🏆 بهترین سیگنال‌ها:"]
-    for _, r in top.iterrows():
-        lines.append(f"  {r['symbol']} ({r['date']}): {r['return_5d_pct']:+.1f}%")
-
-    lines += ["", "⚠️ ضعیف‌ترین سیگنال‌ها:"]
-    for _, r in worst.iterrows():
-        lines.append(f"  {r['symbol']} ({r['date']}): {r['return_5d_pct']:+.1f}%")
-
+    """Generate Persian accuracy report grouped by label and grade."""
+    if not os.path.exists(SIGNAL_LOG):
+        return "❌ فایل signal_log.csv یافت نشد."
+    df = pd.read_csv(SIGNAL_LOG)
+    required = {"label", "close_price", "close_5d_later"}
+    if not required.issubset(df.columns):
+        return "❌ ستون‌های لازم در لاگ وجود ندارند."
+    df = df.dropna(subset=["close_price", "close_5d_later"]).copy()
+    if df.empty:
+        return "⚠️ هنوز داده‌ای برای بک‌تست وجود ندارد."
+    df["close_price"] = pd.to_numeric(df["close_price"], errors="coerce")
+    df["close_5d_later"] = pd.to_numeric(df["close_5d_later"], errors="coerce")
+    df = df.dropna(subset=["close_price", "close_5d_later"])
+    df["return_5d"] = (df["close_5d_later"] / df["close_price"] - 1) * 100
+    lines = ["📊 گزارش دقت سیگنال (بک‌تست ۵ روزه)\n", f"تعداد کل سیگنال با نتیجه: {len(df)}\n"]
+    for label, group in df.groupby("label"):
+        pos = (group["return_5d"] > 0).sum()
+        neg = (group["return_5d"] <= 0).sum()
+        total = len(group)
+        avg_ret = group["return_5d"].mean()
+        win_rate = pos / total * 100 if total > 0 else 0
+        lines.append(
+            f"🏷 {label}: {total} سیگنال | "
+            f"✅ {pos} موفق | ❌ {neg} ناموفق | "
+            f"نرخ موفقیت: {win_rate:.0f}% | "
+            f"میانگین بازده: {avg_ret:+.1f}%"
+        )
+    if "grade" in df.columns:
+        lines.append("\nبر اساس درجه:")
+        for grade, group in df.groupby("grade"):
+            total = len(group)
+            avg_ret = group["return_5d"].mean()
+            win_rate = (group["return_5d"] > 0).sum() / total * 100 if total > 0 else 0
+            lines.append(
+                f"  درجه {grade}: {total} سیگنال | "
+                f"نرخ موفقیت: {win_rate:.0f}% | "
+                f"میانگین بازده: {avg_ret:+.1f}%"
+            )
     return "\n".join(lines)
 
 
 def run():
-    print("[backtest] Filling outcomes from history files...")
-    fill_outcomes(trading_days=5)
-    print()
+    filled = fill_outcomes(trading_days=5)
+    print(f"Filled {filled} outcomes.")
     print(generate_report())
-
-
-if __name__ == "__main__":
-    run()
