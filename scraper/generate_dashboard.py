@@ -1,4 +1,4 @@
-"""Generate static HTML dashboard — Phase 2: Charts."""
+"""Generate static HTML dashboard — Phase 3: Performance tab."""
 
 import os
 import sys
@@ -103,6 +103,83 @@ def load_prev_labels():
                     prev[sym] = {"label":lbl,"date":dt}
     return {k:v["label"] for k,v in prev.items()}
 
+def load_perf_data():
+    """Read signal_log.csv and compute performance metrics. Returns None if no data."""
+    if not os.path.exists(SIGNAL_LOG):
+        return None
+    rows = []
+    with open(SIGNAL_LOG, encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    if not rows:
+        return None
+
+    total_logged = len(rows)
+    results = []
+    for r in rows:
+        ep = r.get("close_price","")
+        xp = r.get("close_5d_later","")
+        if not ep or not xp:
+            continue
+        try:
+            entry  = float(ep)
+            exit_  = float(xp)
+            ret    = (exit_ / entry - 1) * 100
+            label  = r.get("decision_label", r.get("label", ""))
+            grade  = r.get("confidence_grade", r.get("grade", ""))
+            label_fa = _fa(label)
+            results.append({
+                "sym":      r.get("symbol", ""),
+                "label":    label,
+                "label_fa": label_fa,
+                "grade":    grade,
+                "date":     r.get("date", ""),
+                "ret":      round(ret, 2),
+                "win":      ret > 0,
+                "entry":    round(entry, 0),
+                "exit":     round(exit_, 0),
+            })
+        except Exception:
+            continue
+
+    completed = len(results)
+    if completed == 0:
+        return {"total_logged": total_logged, "completed": 0,
+                "win_rate": 0, "avg_ret": 0,
+                "by_label": {}, "by_grade": {}, "recent": []}
+
+    wins      = sum(1 for r in results if r["win"])
+    win_rate  = round(wins / completed * 100, 1)
+    avg_ret   = round(sum(r["ret"] for r in results) / completed, 2)
+
+    def _agg(key):
+        groups = {}
+        for r in results:
+            k = r[key] or "?"
+            g = groups.setdefault(k, {"n":0,"wins":0,"ret_sum":0.0})
+            g["n"]       += 1
+            g["wins"]    += 1 if r["win"] else 0
+            g["ret_sum"] += r["ret"]
+        return {
+            k: {
+                "n":        v["n"],
+                "win_rate": round(v["wins"] / v["n"] * 100, 1),
+                "avg_ret":  round(v["ret_sum"] / v["n"], 2),
+            }
+            for k, v in groups.items()
+        }
+
+    recent = sorted(results, key=lambda r: r.get("date",""), reverse=True)[:25]
+
+    return {
+        "total_logged": total_logged,
+        "completed":    completed,
+        "win_rate":     win_rate,
+        "avg_ret":      avg_ret,
+        "by_label":     _agg("label_fa"),
+        "by_grade":     _agg("grade"),
+        "recent":       recent,
+    }
+
 def build_data(rows, prev_labels):
     out = []
     for r in rows:
@@ -169,10 +246,11 @@ def calc_kpi(data):
     return dict(total=total,entry=entry,highc=highc,overbought=over,
                 missing_n=miss,miss_pct=mp,conflict=conf,avg=avg,health=ht,health_c=hc)
 
-def build_html(data, generated_at, kpi):
+def build_html(data, generated_at, kpi, perf):
     sectors     = sorted(set(d["sector"] for d in data if d["sector"]))
     sector_opts = "".join(f'<option value="{_esc(s)}">{_esc(s)}</option>' for s in sectors)
     data_json   = json.dumps(data, ensure_ascii=False)
+    perf_json   = json.dumps(perf or {}, ensure_ascii=False)
     mp          = kpi["miss_pct"]
 
     return f"""<!DOCTYPE html>
@@ -186,18 +264,21 @@ def build_html(data, generated_at, kpi):
 :root{{--bg:#0d1117;--paper:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e}}
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;font-size:13px}}
-/* Header */
 .header{{background:#161b22;border-bottom:1px solid #30363d;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100}}
 .header h1{{color:#58a6ff;font-size:16px;white-space:nowrap}}
 .hm{{color:var(--muted);font-size:11px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}}
 #cd{{background:#0d1b36;padding:2px 10px;border-radius:10px;color:#58a6ff}}
-/* KPI */
+.tab-bar{{display:flex;gap:0;padding:0 16px;background:#161b22;border-bottom:2px solid #21262d}}
+.tab{{padding:9px 18px;font-size:12px;cursor:pointer;color:#8b949e;border-bottom:2px solid transparent;margin-bottom:-2px;user-select:none;transition:color .15s}}
+.tab:hover{{color:#c9d1d9}}
+.tab.active{{color:#58a6ff;border-bottom-color:#58a6ff;font-weight:600}}
+.tab-panel{{display:none}}
+.tab-panel.active{{display:block}}
 .kpi-bar{{display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid #21262d}}
 .kpi{{border-radius:8px;padding:10px 14px;text-align:center;min-width:105px;flex:1;transition:filter .15s}}
 .kpi[onclick]{{cursor:pointer}}.kpi[onclick]:hover{{filter:brightness(1.2)}}
 .kv{{font-size:24px;font-weight:700;line-height:1.1}}
 .kl{{font-size:10px;color:var(--muted);margin-top:3px}}
-/* Charts */
 .charts-section{{padding:12px 16px;border-bottom:1px solid #21262d}}
 .charts-toggle{{display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;user-select:none}}
 .charts-toggle h2{{color:#8b949e;font-size:12px;font-weight:600;letter-spacing:.5px}}
@@ -216,7 +297,6 @@ body{{background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif
 .hm-meta{{font-size:10px;color:#484f58;white-space:nowrap;min-width:60px}}
 @media(max-width:900px){{.charts-grid{{grid-template-columns:1fr 1fr}}}}
 @media(max-width:600px){{.charts-grid{{grid-template-columns:1fr}}}}
-/* Top Picks */
 .top-picks{{padding:10px 16px;border-bottom:1px solid #21262d;display:none}}
 .top-picks h2{{color:#ffd700;font-size:13px;margin-bottom:8px}}
 .picks-row{{display:flex;gap:8px;flex-wrap:wrap}}
@@ -225,7 +305,6 @@ body{{background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif
 .pick-sym{{color:#fff;font-weight:700;font-size:14px}}
 .pick-sc{{color:#00c853;font-size:12px}}
 .pick-gr{{font-size:11px;color:#aaa}}
-/* Controls */
 .controls{{padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #21262d}}
 input,select{{background:#161b22;border:1px solid #30363d;color:var(--text);padding:5px 9px;border-radius:6px;font-size:12px;font-family:Tahoma,Arial,sans-serif}}
 input:focus,select:focus{{outline:1px solid #58a6ff;border-color:#58a6ff}}
@@ -234,7 +313,6 @@ input:focus,select:focus{{outline:1px solid #58a6ff;border-color:#58a6ff}}
 .tbtn{{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;white-space:nowrap;font-family:Tahoma,Arial,sans-serif}}
 .tbtn.on{{background:#1f6feb;border-color:#1f6feb;color:#fff}}
 .tbtn.danger.on{{background:#b91c1c;border-color:#b91c1c}}
-/* Table */
 .tbl-wrap{{overflow-x:auto;padding:0 16px 16px}}
 table{{width:100%;border-collapse:collapse;min-width:700px}}
 th{{background:#161b22;color:#58a6ff;padding:7px 8px;text-align:center;position:sticky;top:52px;z-index:9;cursor:pointer;user-select:none;border-bottom:2px solid #30363d;font-size:12px;white-space:nowrap}}
@@ -250,7 +328,6 @@ tr.row.is-stale td{{opacity:.72}}
 .sb-wrap{{background:#21262d;border-radius:3px;height:4px;margin-top:3px;overflow:hidden}}
 .sb{{height:4px;border-radius:3px}}
 .spark{{display:block}}
-/* Drawer */
 #ov{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500}}
 #ov.open{{display:flex;justify-content:flex-start}}
 #drawer{{background:#161b22;border-left:1px solid #30363d;width:400px;max-width:96vw;height:100%;overflow-y:auto;padding:20px;direction:rtl;position:relative}}
@@ -261,20 +338,35 @@ tr.row.is-stale td{{opacity:.72}}
 .dl{{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:12px}}
 .dl dt{{color:#8b949e}}.dl dd{{color:#e6edf3;font-weight:600}}
 .wbox{{border-radius:6px;padding:8px 12px;font-size:12px;margin-top:8px}}
-/* Disclaimer */
+.perf-section{{padding:16px;border-bottom:1px solid #21262d}}
+.perf-kpi{{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}}
+.perf-card{{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:12px 16px;text-align:center;min-width:120px;flex:1}}
+.perf-card .pv{{font-size:22px;font-weight:700}}
+.perf-card .pl{{font-size:10px;color:#8b949e;margin-top:3px}}
+.perf-grid{{display:grid;grid-template-columns:1fr 1fr;gap:14px}}
+.perf-box{{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:14px}}
+.perf-box h3{{color:#8b949e;font-size:11px;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}}
+.perf-row{{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}}
+.perf-label{{min-width:110px;color:#c9d1d9;text-align:right}}
+.perf-bar-wrap{{flex:1;background:#21262d;border-radius:3px;height:12px;overflow:hidden}}
+.perf-bar{{height:12px;border-radius:3px;min-width:2px}}
+.perf-val{{font-size:11px;white-space:nowrap;min-width:80px;text-align:left}}
+.recent-table{{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}}
+.recent-table th{{background:#0d1117;color:#8b949e;padding:5px 8px;text-align:center;border-bottom:1px solid #21262d}}
+.recent-table td{{padding:5px 8px;border-bottom:1px solid #1c2128;text-align:center}}
+.perf-empty{{color:#484f58;text-align:center;padding:40px;font-size:13px;line-height:2}}
 .disc{{text-align:center;color:#484f58;font-size:10px;padding:14px 16px;border-top:1px solid #21262d;line-height:1.7}}
-/* Scatter tooltip */
 #stt{{position:fixed;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:6px 10px;font-size:11px;color:#e6edf3;pointer-events:none;display:none;z-index:200;direction:rtl;max-width:180px}}
-@media(max-width:600px){{
+@media(max-width:700px){{
   .kpi{{min-width:80px;padding:8px 10px}}.kv{{font-size:18px}}
   #drawer{{width:100vw}}
   th,td{{font-size:11px;padding:4px 5px}}
+  .perf-grid{{grid-template-columns:1fr}}
 }}
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
   <h1>🇮🇷 Iran Stock AI Dashboard</h1>
   <div class="hm">
@@ -285,7 +377,13 @@ tr.row.is-stale td{{opacity:.72}}
   </div>
 </div>
 
-<!-- KPI -->
+<div class="tab-bar">
+  <div class="tab active" id="tab-btn-main" onclick="switchTab('main')">📊 داشبورد امروز</div>
+  <div class="tab" id="tab-btn-perf" onclick="switchTab('perf')">📈 عملکرد سیگنال‌ها</div>
+</div>
+
+<div class="tab-panel active" id="tab-main">
+
 <div class="kpi-bar">
   <div class="kpi" style="background:#0d1b2a;border:1px solid #1f3a5f">
     <div class="kv" style="color:#90caf9">{kpi['total']}</div><div class="kl">📊 کل نمادها</div>
@@ -310,7 +408,6 @@ tr.row.is-stale td{{opacity:.72}}
   </div>
 </div>
 
-<!-- Charts -->
 <div class="charts-section">
   <div class="charts-toggle open" id="chartsToggle" onclick="toggleCharts()">
     <span class="arrow">▶</span>
@@ -319,30 +416,18 @@ tr.row.is-stale td{{opacity:.72}}
   </div>
   <div id="chartsBody" style="display:block">
     <div class="charts-grid">
-      <div class="chart-box">
-        <h3>توزیع وضعیت‌ها</h3>
-        <canvas id="cDist" height="190"></canvas>
-      </div>
-      <div class="chart-box">
-        <h3>Confidence در برابر RSI</h3>
-        <canvas id="cScatter" height="190"></canvas>
-        <div id="stt"></div>
-      </div>
-      <div class="chart-box">
-        <h3>هیتمپ سکتورها</h3>
-        <div class="heatmap-grid" id="cHeat"></div>
-      </div>
+      <div class="chart-box"><h3>توزیع وضعیت‌ها</h3><canvas id="cDist" height="190"></canvas></div>
+      <div class="chart-box"><h3>Confidence در برابر RSI</h3><canvas id="cScatter" height="190"></canvas></div>
+      <div class="chart-box"><h3>هیتمپ سکتورها</h3><div class="heatmap-grid" id="cHeat"></div></div>
     </div>
   </div>
 </div>
 
-<!-- Top Picks -->
 <div class="top-picks" id="tpBar">
   <h2>🏆 بهترین فرصت‌های امروز</h2>
   <div class="picks-row" id="tpRow"></div>
 </div>
 
-<!-- Controls -->
 <div class="controls">
   <input type="text" id="q" placeholder="🔍 نماد..." oninput="render()" style="width:100px">
   <select id="fL" onchange="render()">
@@ -377,7 +462,6 @@ tr.row.is-stale td{{opacity:.72}}
   <button class="btn" onclick="doExport()">📥 Excel</button>
 </div>
 
-<!-- Table -->
 <div class="tbl-wrap">
 <table>
 <thead><tr>
@@ -397,7 +481,12 @@ tr.row.is-stale td{{opacity:.72}}
 <div id="emp" style="display:none;text-align:center;padding:40px;color:#484f58">نتیجه‌ای یافت نشد</div>
 </div>
 
-<!-- Drawer -->
+</div>
+
+<div class="tab-panel" id="tab-perf">
+  <div id="perfContent"></div>
+</div>
+
 <div id="ov" onclick="closeDr(event)">
   <div id="drawer">
     <button class="dcls" onclick="closeDr()">✕</button>
@@ -406,7 +495,6 @@ tr.row.is-stale td{{opacity:.72}}
 </div>
 <div id="stt"></div>
 
-<!-- Disclaimer -->
 <div class="disc">
   ⚠️ این داشبورد صرفاً ابزار تحلیل تکنیکال است و <b>توصیه خرید یا فروش</b> محسوب نمی‌شود.<br>
   تصمیم‌گیری مالی کاملاً مسئولیت کاربر است. Iran Stock AI © {generated_at[:4]}
@@ -414,8 +502,16 @@ tr.row.is-stale td{{opacity:.72}}
 
 <script>
 const DATA = {data_json};
+const PERF = {perf_json};
 
-// ── Countdown ────────────────────────────────────────────────────────────────
+function switchTab(t){{
+  ['main','perf'].forEach(function(n){{
+    document.getElementById('tab-'+n).classList.toggle('active',n===t);
+    document.getElementById('tab-btn-'+n).classList.toggle('active',n===t);
+  }});
+  if(t==='perf')renderPerf();
+}}
+
 var _s=900;
 (function t(){{
   var m=Math.floor(_s/60),s=_s%60;
@@ -423,9 +519,7 @@ var _s=900;
   if(_s>0)_s--;setTimeout(t,1000);
 }})();
 
-// ── State ────────────────────────────────────────────────────────────────────
-var _tags={{}}, _sk='score', _sa=false, _kf=null;
-var _chartsOpen=true;
+var _tags={{}}, _sk='score', _sa=false, _kf=null, _chartsOpen=true;
 
 function toggleCharts(){{
   _chartsOpen=!_chartsOpen;
@@ -441,8 +535,7 @@ function toggleTag(t){{
 
 function kpiF(type){{
   _kf=_kf===type?null:type;
-  document.getElementById('fL').value='';
-  document.getElementById('fG').value='';
+  document.getElementById('fL').value='';document.getElementById('fG').value='';
   Object.keys(_tags).forEach(function(t){{
     _tags[t]=false;
     var el=document.getElementById('btn'+t.charAt(0).toUpperCase()+t.slice(1));
@@ -451,13 +544,10 @@ function kpiF(type){{
   render();
 }}
 
-// ── Filter ───────────────────────────────────────────────────────────────────
 function filtered(){{
   var q=(document.getElementById('q').value||'').toLowerCase();
-  var fL=document.getElementById('fL').value;
-  var fG=document.getElementById('fG').value;
-  var fS=document.getElementById('fS').value;
-  var fR=document.getElementById('fR').value;
+  var fL=document.getElementById('fL').value,fG=document.getElementById('fG').value;
+  var fS=document.getElementById('fS').value,fR=document.getElementById('fR').value;
   return DATA.filter(function(d){{
     if(q&&!d.sym.toLowerCase().includes(q)&&!d.sector.toLowerCase().includes(q))return false;
     if(fL&&d.label_fa!==fL)return false;
@@ -492,20 +582,17 @@ function srt(k,c){{
   render();
 }}
 
-// ── Escape ───────────────────────────────────────────────────────────────────
 function e(s){{return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}}
 
-// ── Render Table ─────────────────────────────────────────────────────────────
 function render(){{
-  var rows=sorted(filtered()), html='';
-  rows.forEach(function(d,i){{
+  var rows=sorted(filtered()),html='';
+  rows.forEach(function(d){{
     var cls='row'+(d.missing?' is-missing':'')+(d.stale&&!d.missing?' is-stale':'');
     var sb=d.score?'<div class="sb-wrap"><div class="sb" style="width:'+Math.min(d.score,100)+'%;background:'+e(d.label_color)+'"></div></div>':'';
     var ci=d.change==='up'?'<span title="ارتقاء"> ⬆️</span>':d.change==='down'?'<span title="افت"> ⬇️</span>':d.change==='changed'?'<span title="تغییر"> 🔄</span>':'';
     var wi=d.conflict?'<span title="⚠️ Risk Conflict" style="color:#ff9100;font-size:11px"> ⚠️</span>':'';
     var si=d.stale&&!d.missing?'<span title="داده قدیمی" style="color:#78909c;font-size:10px"> 🕐</span>':'';
-    var vol=parseFloat(d.vol)||0;
-    var vc=vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c';
+    var vol=parseFloat(d.vol)||0,vc=vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c';
     var sp=d.close_20d?'<canvas class="spark" data-p="'+e(d.close_20d)+'" width="80" height="26"></canvas>':'';
     html+='<tr class="'+cls+'" onclick="openDr('+DATA.indexOf(d)+')">'
       +'<td><b>'+e(d.sym)+'</b>'+ci+wi+si+'</td>'
@@ -517,19 +604,13 @@ function render(){{
       +'<td style="text-align:center;color:#90caf9;font-size:11px">'+e(d.sector)+'</td>'
       +'<td style="text-align:center;color:'+vc+'">'+(vol>0?vol.toFixed(1)+'x':'—')+'</td>'
       +'<td style="font-size:11px">'+e(d.sm)+'</td>'
-      +'<td>'+sp+'</td>'
-      +'</tr>';
+      +'<td>'+sp+'</td></tr>';
   }});
   document.getElementById('tb').innerHTML=html;
   document.getElementById('emp').style.display=rows.length?'none':'block';
-  drawSparks();
-  drawTopPicks();
-  drawDist();
-  drawScatter();
-  drawHeat();
+  drawSparks();drawTopPicks();drawDist();drawScatter();drawHeat();
 }}
 
-// ── Sparklines ───────────────────────────────────────────────────────────────
 function drawSparks(){{
   document.querySelectorAll('.spark').forEach(function(c){{
     var p=c.dataset.p.split(',').map(Number).filter(function(n){{return n>0;}});
@@ -544,7 +625,6 @@ function drawSparks(){{
   }});
 }}
 
-// ── Top Picks ─────────────────────────────────────────────────────────────────
 function drawTopPicks(){{
   var picks=DATA.filter(function(d){{return d.label==='Entry Candidate'&&d.score>=75&&!d.missing;}})
     .sort(function(a,b){{return b.score-a.score;}}).slice(0,5);
@@ -552,203 +632,121 @@ function drawTopPicks(){{
   if(!picks.length){{bar.style.display='none';return;}}
   bar.style.display='block';
   document.getElementById('tpRow').innerHTML=picks.map(function(d){{
-    var idx=DATA.indexOf(d);
-    return '<div class="pick" onclick="openDr('+idx+')">'
+    return '<div class="pick" onclick="openDr('+DATA.indexOf(d)+')">'
       +'<div class="pick-sym">'+e(d.sym)+'</div>'
       +'<div class="pick-sc">امتیاز '+d.score.toFixed(0)+' | <span style="color:'+e(d.grade_color)+'">'+e(d.grade)+'</span></div>'
       +'<div class="pick-gr">'+e(d.rsi_band)+' | '+e(d.sector)+'</div></div>';
   }}).join('');
 }}
 
-// ── Chart 1: Distribution ─────────────────────────────────────────────────────
 function drawDist(){{
-  var c=document.getElementById('cDist');
-  if(!c)return;
-  var W=c.offsetWidth||300; c.width=W; c.height=190;
-  var ctx=c.getContext('2d');
-  ctx.clearRect(0,0,W,190);
+  var c=document.getElementById('cDist');if(!c)return;
+  var W=c.offsetWidth||300;c.width=W;c.height=190;
+  var ctx=c.getContext('2d');ctx.clearRect(0,0,W,190);
   var labels=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع','داده ناقص'];
   var colors=['#00c853','#69f0ae','#ffd740','#ffab40','#40c4ff','#ff5252','#78909c'];
   var counts=labels.map(function(l){{return DATA.filter(function(d){{return d.label_fa===l;}}).length;}});
   var mx=Math.max.apply(null,counts)||1;
-  var rowH=24, pad=4, labelW=110, barX=labelW+8, barMaxW=W-labelW-50;
-  ctx.font='11px Tahoma,Arial,sans-serif';
-  ctx.textAlign='right';
-  ctx.textBaseline='middle';
+  var rowH=24,pad=4,labelW=110,barX=labelW+8,barMaxW=W-labelW-50;
+  ctx.font='11px Tahoma,Arial,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
   labels.forEach(function(l,i){{
-    var y=pad+i*rowH+rowH/2;
-    var bw=Math.max((counts[i]/mx)*barMaxW,1);
-    // bar background
-    ctx.fillStyle='#21262d';
-    ctx.beginPath();ctx.roundRect(barX,y-8,barMaxW,16,3);ctx.fill();
-    // bar fill
-    ctx.fillStyle=colors[i];
-    ctx.beginPath();ctx.roundRect(barX,y-8,bw,16,3);ctx.fill();
-    // label
-    ctx.fillStyle='#c9d1d9';
-    ctx.fillText(l,labelW,y);
-    // count
-    ctx.fillStyle=colors[i];
-    ctx.textAlign='left';
-    ctx.fillText(counts[i],barX+bw+4,y);
-    ctx.textAlign='right';
+    var y=pad+i*rowH+rowH/2,bw=Math.max((counts[i]/mx)*barMaxW,1);
+    ctx.fillStyle='#21262d';ctx.beginPath();ctx.roundRect(barX,y-8,barMaxW,16,3);ctx.fill();
+    ctx.fillStyle=colors[i];ctx.beginPath();ctx.roundRect(barX,y-8,bw,16,3);ctx.fill();
+    ctx.fillStyle='#c9d1d9';ctx.fillText(l,labelW,y);
+    ctx.fillStyle=colors[i];ctx.textAlign='left';ctx.fillText(counts[i],barX+bw+4,y);ctx.textAlign='right';
   }});
-  // click handler
   c.onclick=function(ev){{
-    var rect=c.getBoundingClientRect();
-    var y=ev.clientY-rect.top;
-    var i=Math.floor((y-pad)/rowH);
-    if(i>=0&&i<labels.length&&counts[i]>0){{
-      document.getElementById('fL').value=labels[i];
-      render();
-    }}
+    var rect=c.getBoundingClientRect(),y=ev.clientY-rect.top,i=Math.floor((y-pad)/rowH);
+    if(i>=0&&i<labels.length&&counts[i]>0){{document.getElementById('fL').value=labels[i];render();}}
   }};
   c.style.cursor='pointer';
-  c.title='کلیک برای فیلتر';
 }}
 
-// ── Chart 2: Scatter ──────────────────────────────────────────────────────────
 function drawScatter(){{
-  var c=document.getElementById('cScatter');
-  if(!c)return;
-  var W=c.offsetWidth||300; c.width=W; c.height=190;
-  var ctx=c.getContext('2d');
-  ctx.clearRect(0,0,W,190);
-  var PAD={{t:10,r:10,b:30,l:30}};
-  var pw=W-PAD.l-PAD.r, ph=190-PAD.t-PAD.b;
-
-  // danger zone RSI > 80
+  var c=document.getElementById('cScatter');if(!c)return;
+  var W=c.offsetWidth||300;c.width=W;c.height=190;
+  var ctx=c.getContext('2d');ctx.clearRect(0,0,W,190);
+  var PAD={{t:10,r:10,b:30,l:30}},pw=W-PAD.l-PAD.r,ph=190-PAD.t-PAD.b;
   var dz=PAD.l+pw*0.8;
-  ctx.fillStyle='rgba(255,82,82,.07)';
-  ctx.fillRect(dz,PAD.t,pw*0.2,ph);
-  ctx.strokeStyle='#ff525255';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(dz,PAD.t);ctx.lineTo(dz,PAD.t+ph);ctx.stroke();
-
-  // axes
-  ctx.strokeStyle='#30363d';ctx.lineWidth=1;
-  ctx.beginPath();
+  ctx.fillStyle='rgba(255,82,82,.07)';ctx.fillRect(dz,PAD.t,pw*0.2,ph);
+  ctx.strokeStyle='#ff525255';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(dz,PAD.t);ctx.lineTo(dz,PAD.t+ph);ctx.stroke();
+  ctx.strokeStyle='#30363d';ctx.beginPath();
   ctx.moveTo(PAD.l,PAD.t);ctx.lineTo(PAD.l,PAD.t+ph);
-  ctx.moveTo(PAD.l,PAD.t+ph);ctx.lineTo(PAD.l+pw,PAD.t+ph);
-  ctx.stroke();
-
-  // axis labels
+  ctx.moveTo(PAD.l,PAD.t+ph);ctx.lineTo(PAD.l+pw,PAD.t+ph);ctx.stroke();
   ctx.fillStyle='#484f58';ctx.font='9px Tahoma';ctx.textAlign='center';
-  [0,25,50,75,100].forEach(function(v){{
-    var x=PAD.l+pw*(v/100);
-    ctx.fillText(v,x,PAD.t+ph+14);
-  }});
+  [0,25,50,75,100].forEach(function(v){{ctx.fillText(v,PAD.l+pw*(v/100),PAD.t+ph+14);}});
   ctx.textAlign='right';
-  [0,25,50,75,100].forEach(function(v){{
-    var y=PAD.t+ph-ph*(v/100);
-    ctx.fillText(v,PAD.l-4,y+3);
-  }});
-
-  // axis titles
-  ctx.fillStyle='#8b949e';ctx.font='10px Tahoma';
-  ctx.textAlign='center';
+  [0,25,50,75,100].forEach(function(v){{ctx.fillText(v,PAD.l-4,PAD.t+ph-ph*(v/100)+3);}});
+  ctx.fillStyle='#8b949e';ctx.font='10px Tahoma';ctx.textAlign='center';
   ctx.fillText('RSI',PAD.l+pw/2,PAD.t+ph+26);
-
-  // dots
   var visible=filtered();
   DATA.forEach(function(d){{
-    var rsi=parseFloat(d.rsi)||0;
-    var sc=d.score||0;
-    if(!rsi||!sc)return;
-    var x=PAD.l+pw*(rsi/100);
-    var y=PAD.t+ph-ph*(sc/100);
-    var vol=parseFloat(d.vol)||1;
-    var r=Math.min(Math.max(vol*2.5,3),10);
+    var rsi=parseFloat(d.rsi)||0,sc=d.score||0;if(!rsi||!sc)return;
+    var x=PAD.l+pw*(rsi/100),y=PAD.t+ph-ph*(sc/100);
+    var vol=parseFloat(d.vol)||1,r=Math.min(Math.max(vol*2.5,3),10);
     var inFilter=visible.indexOf(d)>=0;
-    ctx.beginPath();
-    ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle=inFilter?d.label_color+'cc':'#30363d';
-    ctx.fill();
-    if(inFilter&&d.conflict){{
-      ctx.strokeStyle='#ff9100';ctx.lineWidth=2;
-      ctx.stroke();
-    }}
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=inFilter?d.label_color+'cc':'#30363d';ctx.fill();
+    if(inFilter&&d.conflict){{ctx.strokeStyle='#ff9100';ctx.lineWidth=2;ctx.stroke();}}
   }});
-
-  // hover tooltip
   var tt=document.getElementById('stt');
   c.onmousemove=function(ev){{
-    var rect=c.getBoundingClientRect();
-    var mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
-    var found=null, minD=999;
+    var rect=c.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top,found=null,minD=999;
     DATA.forEach(function(d){{
-      var rsi=parseFloat(d.rsi)||0, sc=d.score||0;
-      if(!rsi||!sc)return;
-      var x=PAD.l+pw*(rsi/100), y2=PAD.t+ph-ph*(sc/100);
-      var dist=Math.sqrt((mx-x)**2+(my-y2)**2);
+      var rsi=parseFloat(d.rsi)||0,sc=d.score||0;if(!rsi||!sc)return;
+      var x=PAD.l+pw*(rsi/100),y2=PAD.t+ph-ph*(sc/100),dist=Math.sqrt((mx-x)**2+(my-y2)**2);
       if(dist<14&&dist<minD){{minD=dist;found=d;}}
     }});
     if(found){{
-      tt.style.display='block';
-      tt.style.left=(ev.clientX+12)+'px';
-      tt.style.top=(ev.clientY-10)+'px';
+      tt.style.display='block';tt.style.left=(ev.clientX+12)+'px';tt.style.top=(ev.clientY-10)+'px';
       tt.innerHTML='<b>'+e(found.sym)+'</b><br>Score: '+found.score.toFixed(0)+'<br>RSI: '+e(found.rsi)+'<br>'+e(found.label_fa);
       c.style.cursor='pointer';
-    }} else {{
-      tt.style.display='none';
-      c.style.cursor='crosshair';
-    }}
+    }}else{{tt.style.display='none';c.style.cursor='crosshair';}}
   }};
   c.onmouseleave=function(){{tt.style.display='none';}};
   c.onclick=function(ev){{
-    var rect=c.getBoundingClientRect();
-    var mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
-    var found=null, minD=999;
+    var rect=c.getBoundingClientRect(),mx=ev.clientX-rect.left,my=ev.clientY-rect.top,found=null,minD=999;
     DATA.forEach(function(d){{
-      var rsi=parseFloat(d.rsi)||0, sc=d.score||0;
-      if(!rsi||!sc)return;
-      var x=PAD.l+pw*(rsi/100), y2=PAD.t+ph-ph*(sc/100);
-      var dist=Math.sqrt((mx-x)**2+(my-y2)**2);
+      var rsi=parseFloat(d.rsi)||0,sc=d.score||0;if(!rsi||!sc)return;
+      var x=PAD.l+pw*(rsi/100),y2=PAD.t+ph-ph*(sc/100),dist=Math.sqrt((mx-x)**2+(my-y2)**2);
       if(dist<14&&dist<minD){{minD=dist;found=d;}}
     }});
     if(found)openDr(DATA.indexOf(found));
   }};
 }}
 
-// ── Chart 3: Sector Heatmap ───────────────────────────────────────────────────
 function drawHeat(){{
-  var el=document.getElementById('cHeat');
-  if(!el)return;
+  var el=document.getElementById('cHeat');if(!el)return;
   var sectors={{}};
   DATA.forEach(function(d){{
     if(!d.sector)return;
     if(!sectors[d.sector])sectors[d.sector]={{n:0,sc:0,entry:0,over:0,miss:0}};
-    var s=sectors[d.sector];
-    s.n++;s.sc+=d.score;
+    var s=sectors[d.sector];s.n++;s.sc+=d.score;
     if(d.label==='Entry Candidate')s.entry++;
     if(d.label==='Avoid Entry Now - Overbought')s.over++;
     if(d.missing)s.miss++;
   }});
   var arr=Object.keys(sectors).map(function(k){{
-    var s=sectors[k];
-    return{{name:k,n:s.n,avg:s.n?Math.round(s.sc/s.n):0,entry:s.entry,over:s.over,miss:s.miss}};
+    var s=sectors[k];return{{name:k,avg:s.n?Math.round(s.sc/s.n):0,entry:s.entry,over:s.over,miss:s.miss}};
   }}).sort(function(a,b){{return b.avg-a.avg;}});
   var maxAvg=arr.length?arr[0].avg:100;
   el.innerHTML=arr.map(function(s){{
     var pct=maxAvg?s.avg/maxAvg*100:0;
     var bc=s.avg>=80?'#00c853':s.avg>=65?'#ffd740':s.avg>=50?'#ff9100':'#ff5252';
-    var meta=s.entry?'🟢'+s.entry+' ':'';
-    meta+=s.over?'🔴'+s.over+' ':'';
-    meta+=s.miss?'⬜'+s.miss:'';
-    return '<div class="hm-row" onclick="filterBySector(\''+s.name+'\')" title="کلیک برای فیلتر">'
+    var meta=(s.entry?'🟢'+s.entry+' ':'')+(s.over?'🔴'+s.over+' ':'')+(s.miss?'⬜'+s.miss:'');
+    return '<div class="hm-row" onclick="filterBySector(\''+s.name+'\')">'
       +'<div class="hm-name">'+e(s.name)+'</div>'
       +'<div class="hm-bar-wrap"><div class="hm-bar" style="width:'+pct+'%;background:'+bc+'">'+s.avg+'</div></div>'
-      +'<div class="hm-meta">'+meta+'</div>'
-      +'</div>';
+      +'<div class="hm-meta">'+meta+'</div></div>';
   }}).join('');
 }}
 
 function filterBySector(sec){{
-  document.getElementById('fS').value=sec;
-  render();
+  document.getElementById('fS').value=sec;render();
   document.getElementById('tb').scrollIntoView({{behavior:'smooth',block:'start'}});
 }}
 
-// ── Drawer ────────────────────────────────────────────────────────────────────
 function openDr(idx){{
   var d=DATA[idx];if(!d)return;
   var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ امتیاز بالا اما RSI خطرناک — ورود با احتیاط</div>':'';
@@ -799,7 +797,6 @@ function openDr(idx){{
     }},50);
   }}
 }}
-
 function closeDr(ev){{
   if(ev&&ev.target!==document.getElementById('ov'))return;
   document.getElementById('ov').classList.remove('open');
@@ -807,7 +804,6 @@ function closeDr(ev){{
 }}
 document.addEventListener('keydown',function(ev){{if(ev.key==='Escape')closeDr();}});
 
-// ── Export ────────────────────────────────────────────────────────────────────
 function doExport(){{
   var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم×','پول هوشمند','صف','دلایل']];
   filtered().forEach(function(d){{
@@ -815,14 +811,78 @@ function doExport(){{
     rows.push([d.sym,d.label_fa,d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
       vol>0?vol.toFixed(2)+'x':'',d.sm,d.q,d.reasons]);
   }});
-  var csv=rows.map(function(r){{return r.map(function(c){{return'"'+String(c||'').replace(/"/g,'""')+'"'}}).join(',')}}).join('\\n');
+  var csv=rows.map(function(r){{return r.map(function(c){{return'"'+String(c||'').replace(/"/g,'""')+'"'}}).join(',')}}).join('\n');
   var a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\\uFEFF'+encodeURIComponent(csv);
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
   a.download='iran_stock_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }}
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+function renderPerf(){{
+  var el=document.getElementById('perfContent');
+  if(!PERF||!PERF.completed){{
+    el.innerHTML='<div class="perf-empty">'
+      +'<div style="font-size:2rem;margin-bottom:12px">📭</div>'
+      +'<div>هنوز داده‌ای برای بک‌تست ثبت نشده است.</div>'
+      +'<div style="font-size:11px;margin-top:8px;color:#484f58">'
+      +'پس از ۵ روز معاملاتی از اولین سیگنال، نتایج اینجا نمایش داده می‌شوند.<br>'
+      +'تعداد سیگنال ثبت‌شده: '+(PERF.total_logged||0)+'</div></div>';
+    return;
+  }}
+  var wr=PERF.win_rate,ar=PERF.avg_ret;
+  var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
+  var arColor=ar>0?'#00c853':ar<0?'#ff5252':'#ffd740';
+  var cards='<div class="perf-kpi">'
+    +'<div class="perf-card" style="border-color:#1f3a5f"><div class="pv" style="color:#90caf9">'+PERF.total_logged+'</div><div class="pl">کل سیگنال ثبت‌شده</div></div>'
+    +'<div class="perf-card" style="border-color:#21262d"><div class="pv" style="color:#c9d1d9">'+PERF.completed+'</div><div class="pl">دارای نتیجه (۵ روزه)</div></div>'
+    +'<div class="perf-card" style="border-color:'+wrColor+'44"><div class="pv" style="color:'+wrColor+'">'+wr+'%</div><div class="pl">نرخ موفقیت کلی</div></div>'
+    +'<div class="perf-card" style="border-color:'+arColor+'44"><div class="pv" style="color:'+arColor+'">'+(ar>0?'+':'')+ar+'%</div><div class="pl">میانگین بازده ۵ روزه</div></div>'
+    +'</div>';
+  var byLabel=PERF.by_label||{{}};
+  var labelOrder=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع'];
+  var lc={{'ورود قوی':'#00c853','ورود':'#69f0ae','تماشا — پولبک':'#ffd740','تماشا — حجم':'#ffab40','نگهداری':'#40c4ff','خروج / اشباع':'#ff5252'}};
+  var labelRows='';
+  labelOrder.forEach(function(l){{
+    var v=byLabel[l];if(!v||!v.n)return;
+    var wc=v.win_rate>=60?'#00c853':v.win_rate>=45?'#ffd740':'#ff5252';
+    var ac=v.avg_ret>0?'#00c853':v.avg_ret<0?'#ff5252':'#aaa';
+    labelRows+='<div class="perf-row">'
+      +'<div class="perf-label" style="color:'+(lc[l]||'#8b949e')+'">'+e(l)+'</div>'
+      +'<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+v.win_rate+'%;background:'+wc+'"></div></div>'
+      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'% موفق</div>'
+      +'<div style="font-size:11px;color:'+ac+';min-width:70px;text-align:left">'+(v.avg_ret>0?'+':'')+v.avg_ret+'%</div>'
+      +'<div style="font-size:10px;color:#484f58;min-width:40px">n='+v.n+'</div></div>';
+  }});
+  var byGrade=PERF.by_grade||{{}};
+  var gc={{'A+':'#00e676','A':'#69f0ae','B':'#ffd740','C':'#ff9100','D':'#ff5252'}};
+  var gradeRows='';
+  ['A+','A','B','C','D'].forEach(function(g){{
+    var v=byGrade[g];if(!v||!v.n)return;
+    var wc=v.win_rate>=60?'#00c853':v.win_rate>=45?'#ffd740':'#ff5252';
+    var ac=v.avg_ret>0?'#00c853':v.avg_ret<0?'#ff5252':'#aaa';
+    gradeRows+='<div class="perf-row">'
+      +'<div class="perf-label" style="color:'+(gc[g]||'#78909c')+';font-weight:700;font-size:15px">'+e(g)+'</div>'
+      +'<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+v.win_rate+'%;background:'+wc+'"></div></div>'
+      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'% موفق</div>'
+      +'<div style="font-size:11px;color:'+ac+';min-width:70px;text-align:left">'+(v.avg_ret>0?'+':'')+v.avg_ret+'%</div>'
+      +'<div style="font-size:10px;color:#484f58;min-width:40px">n='+v.n+'</div></div>';
+  }});
+  var recentRows=(PERF.recent||[]).map(function(r){{
+    var rc=r.ret>0?'#00c853':r.ret<0?'#ff5252':'#aaa';
+    return '<tr><td>'+e(r.sym)+'</td><td style="color:'+(lc[r.label_fa]||'#aaa')+'">'+e(r.label_fa)+'</td>'
+      +'<td>'+e(r.grade)+'</td><td>'+e(r.date.slice(0,10))+'</td>'
+      +'<td>'+e(r.entry)+'</td><td>'+e(r.exit)+'</td>'
+      +'<td style="color:'+rc+';font-weight:600">'+(r.ret>0?'+':'')+r.ret+'%</td></tr>';
+  }}).join('');
+  el.innerHTML='<div class="perf-section">'+cards
+    +'<div class="perf-grid">'
+    +'<div class="perf-box"><h3>📊 عملکرد به تفکیک وضعیت</h3>'+(labelRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
+    +'<div class="perf-box"><h3>🏅 عملکرد به تفکیک رتبه</h3>'+(gradeRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
+    +'</div><div style="margin-top:14px"><div class="perf-box"><h3>🕐 آخرین معاملات بک‌تست‌شده</h3>'
+    +'<table class="recent-table"><thead><tr><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>تاریخ</th><th>ورود</th><th>خروج</th><th>بازده</th></tr></thead>'
+    +'<tbody>'+recentRows+'</tbody></table></div></div></div>';
+}}
+
 document.getElementById('a3').textContent='↓';
 window.addEventListener('resize',function(){{drawDist();drawScatter();drawHeat();}});
 render();
@@ -843,12 +903,13 @@ def run():
     prev  = load_prev_labels()
     data  = build_data(rows, prev)
     kpi   = calc_kpi(data)
+    perf  = load_perf_data()
     gen   = datetime.now().strftime("%Y-%m-%d %H:%M")
-    page  = build_html(data, gen, kpi)
+    page  = build_html(data, gen, kpi, perf)
     os.makedirs("docs", exist_ok=True)
     with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(page)
-    print(f"[dashboard] Phase-2 → {DASHBOARD_PATH} | {len(rows)} symbols")
+    print(f"[dashboard] Phase-3 → {DASHBOARD_PATH} | {len(rows)} symbols | perf: {perf['completed'] if perf else 0} completed")
 
 
 if __name__ == "__main__":
