@@ -3,811 +3,672 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iran Stock AI Dashboard</title>
+<meta http-equiv="refresh" content="900">
+<title>داشبورد بازار ایران</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Tahoma,Arial,sans-serif;background:#0a0f1e;color:#e2e8f0;direction:rtl;font-size:13px}
-.topbar{background:linear-gradient(135deg,#0f172a,#1e293b);padding:14px 24px;border-bottom:1px solid #1e3a5f;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.topbar h1{font-size:1.1rem;color:#38bdf8;font-weight:bold}
-.time{color:#64748b;font-size:0.78rem}
-.pulse{display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-left:6px;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.stats{display:flex;gap:10px;padding:14px 24px;flex-wrap:wrap}
-.stat-card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 18px;min-width:110px;text-align:center}
-.stat-card .val{font-size:1.5rem;font-weight:bold;line-height:1}
-.stat-card .lbl{font-size:0.7rem;color:#64748b;margin-top:3px}
-.widgets{display:flex;gap:14px;padding:0 24px 14px;flex-wrap:wrap;align-items:flex-start}
-.widget-box{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px}
-.widget-title{font-size:0.78rem;color:#94a3b8;margin-bottom:10px}
-.sector-wrap{padding:0 24px 14px}
-.sector-title{font-size:0.78rem;color:#94a3b8;margin-bottom:8px}
-.sector-chips{display:flex;gap:8px;flex-wrap:wrap}
-.sector-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.75rem}
-.sector-score{font-weight:bold;color:#38bdf8}
-.mood-box{background:#0f172a;border:1px solid #1e3a5f;border-radius:8px;padding:12px 16px;font-size:0.75rem;line-height:2;color:#94a3b8;margin:0 24px 14px;max-height:160px;overflow-y:auto}
-.filter-bar{padding:8px 24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#0f172a;border-top:1px solid #1e293b;border-bottom:1px solid #1e293b}
-.filter-bar input{background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:6px 12px;border-radius:6px;font-size:0.78rem;width:150px}
-.filter-bar input::placeholder{color:#475569}
-.filter-bar select{background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:0.78rem}
-.filter-btn{padding:5px 14px;border-radius:16px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:0.75rem;font-family:Tahoma}
-.filter-btn:hover{background:#38bdf8;color:#0a0f1e;border-color:#38bdf8}
-.export-btn{padding:5px 14px;border-radius:16px;border:1px solid #22c55e;background:transparent;color:#22c55e;cursor:pointer;font-size:0.75rem;font-family:Tahoma;margin-right:auto}
-.export-btn:hover{background:#22c55e;color:#0a0f1e}
-.table-wrap{padding:0 24px 32px;overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:0.78rem}
-thead th{background:#0f172a;color:#64748b;padding:9px 8px;text-align:right;border-bottom:2px solid #1e293b;cursor:pointer;white-space:nowrap;user-select:none}
-thead th:hover{color:#38bdf8}
-thead th.sort-asc::after{content:" ↑"}
-thead th.sort-desc::after{content:" ↓"}
-tbody tr{border-bottom:1px solid #111827;transition:filter 0.15s}
-tbody tr:hover{filter:brightness(1.3)}
-tbody td{padding:8px 8px;vertical-align:middle;white-space:nowrap}
-.sym{color:#f1f5f9;font-size:0.88rem}
-.grade-tag{padding:1px 7px;border-radius:10px;font-size:0.7rem;color:#0a0f1e;font-weight:bold}
-.badge{padding:1px 5px;border-radius:8px;font-size:0.65rem;font-weight:bold;margin-left:2px}
-.badge.g{background:#14532d;color:#86efac}
-.badge.r{background:#450a0a;color:#fca5a5}
-.badge.y{background:#422006;color:#fde68a}
-
-/* Popup */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center}
-.overlay.open{display:flex}
-.popup{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:24px;width:90%;max-width:520px;max-height:85vh;overflow-y:auto;position:relative;direction:rtl}
-.popup-close{position:absolute;top:14px;left:14px;background:transparent;border:none;color:#64748b;font-size:1.2rem;cursor:pointer}
-.popup-close:hover{color:#ef4444}
-.popup-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #334155}
-.popup-sym{font-size:1.5rem;font-weight:bold;color:#f1f5f9}
-.popup-label{font-size:0.82rem;font-weight:bold}
-.popup-grade{padding:3px 10px;border-radius:10px;font-size:0.78rem;color:#0a0f1e;font-weight:bold}
-.popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.popup-item{background:#0f172a;border-radius:6px;padding:8px 12px}
-.popup-item .pi-label{font-size:0.68rem;color:#64748b;margin-bottom:2px}
-.popup-item .pi-val{font-size:0.88rem;color:#e2e8f0;font-weight:bold}
-.popup-section{margin-bottom:10px}
-.popup-section-title{font-size:0.72rem;color:#64748b;margin-bottom:4px;text-transform:uppercase}
-.popup-text{font-size:0.78rem;color:#94a3b8;line-height:1.7;background:#0f172a;border-radius:6px;padding:8px 12px}
-
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:#0a0f1e}
-::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Tahoma, Arial, sans-serif; background: #0f172a; color: #e2e8f0; direction: rtl; }
+  header { background: linear-gradient(135deg, #1e3a5f, #0f2940); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 1.4rem; color: #60a5fa; }
+  header small { color: #94a3b8; font-size: 0.8rem; }
+  .top-bar { display: flex; gap: 12px; padding: 12px 24px; flex-wrap: wrap; align-items: center; }
+  input#search { flex: 1; min-width: 180px; padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 0.9rem; }
+  select { padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 0.9rem; cursor: pointer; }
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; cursor: pointer; font-size: 0.9rem; font-family: Tahoma; }
+  .btn:hover { background: #1d4ed8; }
+  .stats { display: flex; gap: 10px; padding: 0 24px 12px; flex-wrap: wrap; }
+  .stat-card { background: #1e293b; border-radius: 10px; padding: 10px 16px; text-align: center; min-width: 80px; border: 1px solid #334155; }
+  .stat-card .num { font-size: 1.5rem; font-weight: bold; }
+  .stat-card .lbl { font-size: 0.7rem; color: #94a3b8; }
+  .chips { padding: 0 24px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 4px 10px; font-size: 0.75rem; color: #94a3b8; }
+  .table-wrap { overflow-x: auto; padding: 0 24px 80px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th { background: #1e293b; color: #94a3b8; padding: 10px 8px; text-align: right; cursor: pointer; user-select: none; position: sticky; top: 0; border-bottom: 2px solid #334155; white-space: nowrap; }
+  thead th:hover { color: #60a5fa; }
+  tbody tr { border-bottom: 1px solid #1e293b; cursor: pointer; transition: filter 0.15s; }
+  tbody tr:hover { filter: brightness(1.2); }
+  td { padding: 8px 8px; white-space: nowrap; }
+  .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+  .popup-overlay.active { display: flex; }
+  .popup { background: #1e293b; border-radius: 14px; padding: 24px; max-width: 480px; width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid #334155; position: relative; }
+  .popup h2 { font-size: 1.3rem; margin-bottom: 14px; color: #60a5fa; }
+  .popup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .popup-item { background: #0f172a; border-radius: 8px; padding: 8px 10px; }
+  .popup-item .k { font-size: 0.7rem; color: #94a3b8; }
+  .popup-item .v { font-size: 0.95rem; font-weight: 600; margin-top: 2px; }
+  .close-btn { position: absolute; top: 12px; left: 16px; background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }
+  .close-btn:hover { color: #e2e8f0; }
+  footer { position: fixed; bottom: 0; left: 0; right: 0; background: #0f172a; border-top: 1px solid #1e293b; padding: 8px 24px; font-size: 0.75rem; color: #475569; display: flex; justify-content: space-between; }
+  .refresh-badge { color: #22c55e; }
+  canvas.sparkline { display: block; }
 </style>
 </head>
 <body>
+<header>
+  <h1>📈 داشبورد بازار سهام ایران</h1>
+  <small>آخرین به‌روزرسانی: 2026-06-23 07:34 | <span class="refresh-badge">🔄 هر ۱۵ دقیقه</span></small>
+</header>
 
-<div class="topbar">
-  <div style="display:flex;align-items:center;gap:8px">
-    <span class="pulse"></span>
-    <span class="topbar h1">📊 Iran Stock AI Dashboard</span>
-  </div>
-  <div class="time">آخرین آپدیت: 2026-06-23 07:00</div>
+<div class="top-bar">
+  <input type="text" id="search" placeholder="🔍 جستجوی نماد...">
+  <select id="filter-label">
+    <option value="">همه تصمیم‌ها</option>
+    <option value="ورود قوی">ورود قوی</option>
+    <option value="ورود">ورود</option>
+    <option value="تماشا">تماشا</option>
+    <option value="نگهداری">نگهداری</option>
+    <option value="خروج">خروج</option>
+  </select>
+  <select id="filter-grade">
+    <option value="">همه درجات</option>
+    <option value="A">A</option>
+    <option value="B">B</option>
+    <option value="C">C</option>
+    <option value="D">D</option>
+  </select>
+  <select id="filter-sector"><option value="">همه سکتورها</option><option value="سایر">سایر (7)</option><option value="پتروشیمی">پتروشیمی (5)</option><option value="بانک">بانک (4)</option><option value="سرمایه‌گذاری">سرمایه‌گذاری (3)</option><option value="خودرو">خودرو (3)</option><option value="فلزات">فلزات (3)</option><option value="دارو">دارو (2)</option><option value="ETF">ETF (1)</option><option value="سیمان">سیمان (1)</option><option value="شیمیایی">شیمیایی (1)</option></select>
+  <button class="btn" onclick="exportCSV()">⬇️ خروجی Excel</button>
 </div>
 
 <div class="stats">
-  <div class="stat-card"><div class="val" style="color:#e2e8f0">30</div><div class="lbl">کل نمادها</div></div>
-  <div class="stat-card"><div class="val" style="color:#22c55e">4</div><div class="lbl">کاندید ورود</div></div>
-  <div class="stat-card"><div class="val" style="color:#eab308">0</div><div class="lbl">واچ تکنیکال</div></div>
-  <div class="stat-card"><div class="val" style="color:#ef4444">15</div><div class="lbl">اشباع خرید</div></div>
-  <div class="stat-card"><div class="val" style="color:#38bdf8">21</div><div class="lbl">امتیاز ۷۰+</div></div>
-  <div class="stat-card"><div class="val" style="color:#6b7280">4</div><div class="lbl">فاقد داده</div></div>
+  <div class="stat-card"><div class="num" style="color:#16a34a">0</div><div class="lbl">ورود قوی</div></div>
+  <div class="stat-card"><div class="num" style="color:#22c55e">0</div><div class="lbl">ورود</div></div>
+  <div class="stat-card"><div class="num" style="color:#ca8a04">0</div><div class="lbl">تماشا</div></div>
+  <div class="stat-card"><div class="num" style="color:#2563eb">0</div><div class="lbl">نگهداری</div></div>
+  <div class="stat-card"><div class="num" style="color:#dc2626">0</div><div class="lbl">خروج</div></div>
+  <div class="stat-card"><div class="num" style="color:#94a3b8">30</div><div class="lbl">کل</div></div>
 </div>
 
-<div class="widgets">
-  <div class="widget-box">
-    <div class="widget-title">توزیع سیگنال‌ها</div>
-    <canvas id="donut" width="170" height="170"></canvas>
-    <div id="donut-legend" style="margin-top:8px;font-size:0.7rem"></div>
-  </div>
-  <div class="widget-box" style="text-align:center">
-    <div class="widget-title">میانگین امتیاز بازار</div>
-    <canvas id="gauge" width="170" height="105"></canvas>
-    <div id="gauge-val" style="font-size:1.6rem;font-weight:bold;color:#38bdf8;margin-top:2px"></div>
-    <div style="font-size:0.68rem;color:#64748b">از ۱۰۰</div>
-  </div>
-  <div class="widget-box" style="flex:1;min-width:240px">
-    <div class="widget-title">وضعیت بازار</div>
-    <div style="font-size:0.72rem;line-height:2;color:#94a3b8;max-height:180px;overflow-y:auto">📊 *گزارش سیستم کمک‌تصمیم بورس تهران*<br>🕐 2026-06-23  10:30<br>─────────────────────<br>🟡 *حالت بازار: بازار خنثی*<br>  سیگنال واضحی وجود ندارد — صبر کنید<br><br>🧠 ترس و طمع: 39/100 😨 ترس<br>  [███░░░░░░░]<br>  ریسک بالا — از ورود جدید خودداری کنید<br><br>💰 جریان پول: +12422 میلیارد<br>📈 مثبت: 262 | 📉 منفی: 367 | 💪 خریدار: 1.0<br><br>🗺 نقشه گردش سکتور امروز:<br>  🟢 پیشرو پتروشیمی | جریان: +4804B | قدرت خریدار: 2.1<br>  🟢 پیشرو سرمایه‌گذاری | جریان: +2063B | قدرت خریدار: 1.8<br>  🟡 خنثی سایر | جریان: +2568B | قدرت خریدار: 1.0<br>  🟡 خنثی خودرو | جریان: +54B | قدرت خریدار: 0.8<br>  🟡 خنثی انرژی | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی برق | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی بیمه | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی دارو | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی ساختمان | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی سیمان | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی شیمیایی | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی غذا | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی مخابرات | جریان: +0B | قدرت خریدار: 1.0<br>  🟡 خنثی چاپ و بسته‌بندی | جریان: +0B | قدرت خریدار: 1.0<br>  🔴 عقب‌مانده معدن | جریان: -42B | قدرت خریدار: -1.6<br>  🔴 عقب‌مانده ETF | جریان: +70B | قدرت خریدار: -0.1<br>  🔴 عقب‌مانده فلزات | جریان: +646B | قدرت خریدار: 0.4<br>  🔴 عقب‌مانده بانک | جریان: +2259B | قدرت خریدار: 0.4<br>─────────────────────<br><br>🔔 تغییر وضعیت نمادها:<br>  ⬆️ *فارس*: واچ تکنیکال → کاندید ورود (امتیاز: 100)<br>  ⬆️ *ورنا*: واچ تکنیکال → کاندید ورود (امتیاز: 100)<br>  ⬇️ شستا: اشباع خرید → کاندید ورود<br>  ⬇️ شسپا: داده ناقص → اشباع خرید<br>  ⬇️ دلقما: داده ناقص → اشباع خرید<br>  ⬇️ وغدیر: کاندید ورود → نیاز به حجم<br>  ⬇️ نارنج اهرم: داده ناقص → اشباع خرید<br>  ⬇️ وبملت: صبر پولبک → نیاز به حجم<br>  ⬇️ فملی: اشباع خرید → صبر پولبک</div>
-  </div>
-</div>
-
-<div class="sector-wrap">
-  <div class="sector-title">🗺 هیتمپ سکتورها</div>
-  <div class="sector-chips"><div class="sector-chip" style="background:#450a0a;border:1px solid #ef4444">🔴 ETF <span class="sector-score">60</span></div><div class="sector-chip" style="background:#450a0a;border:1px solid #ef4444">🔴 بانک <span class="sector-score">70</span></div><div class="sector-chip" style="background:#1e293b;border:1px solid #475569">🟡 خودرو <span class="sector-score">94</span></div><div class="sector-chip" style="background:#1e293b;border:1px solid #475569">🟡 دارو <span class="sector-score">92</span></div><div class="sector-chip" style="background:#1e293b;border:1px solid #475569">🟡 سایر <span class="sector-score">36</span></div><div class="sector-chip" style="background:#14532d;border:1px solid #22c55e">🟢 سرمایه‌گذاری <span class="sector-score">97</span></div><div class="sector-chip" style="background:#1e293b;border:1px solid #475569">🟡 سیمان <span class="sector-score">83</span></div><div class="sector-chip" style="background:#1e293b;border:1px solid #475569">🟡 شیمیایی <span class="sector-score">84</span></div><div class="sector-chip" style="background:#450a0a;border:1px solid #ef4444">🔴 فلزات <span class="sector-score">65</span></div><div class="sector-chip" style="background:#14532d;border:1px solid #22c55e">🟢 پتروشیمی <span class="sector-score">87</span></div></div>
-</div>
-
-<div class="filter-bar">
-  <input type="text" id="search" placeholder="🔍 جستجوی نماد..." oninput="applyFilters()">
-  <select id="f-label" onchange="applyFilters()">
-    <option value="">همه سیگنال‌ها</option>
-    <option value="Entry Candidate">کاندید ورود</option>
-    <option value="Technical Entry Watch">واچ تکنیکال</option>
-    <option value="Wait for Pullback">صبر پولبک</option>
-    <option value="Avoid Entry Now - Overbought">اشباع خرید</option>
-    <option value="Watch - Needs Volume Confirmation">نیاز به حجم</option>
-    <option value="Watch Only">فقط رصد</option>
-    <option value="Missing Technical Data">داده ناقص</option>
-  </select>
-  <select id="f-grade" onchange="applyFilters()">
-    <option value="">همه درجه‌ها</option>
-    <option value="A">درجه A</option>
-    <option value="B">درجه B</option>
-    <option value="C">درجه C</option>
-    <option value="D">درجه D</option>
-    <option value="F">درجه F</option>
-  </select>
-  <select id="f-sector" onchange="applyFilters()">
-    <option value="">همه سکتورها</option>
-  </select>
-  <button class="filter-btn" onclick="resetFilters()">ریست</button>
-  <button class="export-btn" onclick="exportExcel()">⬇ Excel</button>
-  <span id="count-label" style="color:#64748b;font-size:0.75rem"></span>
-</div>
+<div class="chips"><span class="chip">سایر <b>7</b></span><span class="chip">پتروشیمی <b>5</b></span><span class="chip">بانک <b>4</b></span><span class="chip">سرمایه‌گذاری <b>3</b></span><span class="chip">خودرو <b>3</b></span><span class="chip">فلزات <b>3</b></span><span class="chip">دارو <b>2</b></span><span class="chip">ETF <b>1</b></span><span class="chip">سیمان <b>1</b></span><span class="chip">شیمیایی <b>1</b></span></div>
 
 <div class="table-wrap">
 <table id="main-table">
-<thead>
-  <tr>
-    <th onclick="sortTable(0)">نماد</th>
-    <th onclick="sortTable(1)">سیگنال</th>
-    <th onclick="sortTable(2)">امتیاز</th>
-    <th onclick="sortTable(3)">RSI</th>
-    <th onclick="sortTable(4)">روند</th>
-    <th onclick="sortTable(5)">حجم</th>
-    <th onclick="sortTable(6)">بازده۵ر</th>
-    <th onclick="sortTable(7)">حد ضرر</th>
-    <th onclick="sortTable(8)">هدف</th>
-    <th onclick="sortTable(9)">R/R</th>
-    <th onclick="sortTable(10)">سکتور</th>
-    <th>نشانه‌ها</th>
-  </tr>
-</thead>
-<tbody id="table-body">
-
-        <tr data-label="Entry Candidate" data-sector="سرمایه‌گذاری" data-grade="A" data-score="100"
-            style="background:rgba(34,197,94,0.07);cursor:pointer" onclick="showPopup('row_1')">
-            <td><strong class="sym">شستا</strong></td>
-            <td><span style="color:#22c55e">●</span> کاندید ورود</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 100</td>
-            <td>69.8</td>
-            <td>6/6</td>
-            <td>1.4x</td>
-            <td>8.9%</td>
-            <td>1960</td>
-            <td>2175</td>
-            <td>1.4</td>
-            <td>سرمایه‌گذاری</td>
-            <td><span class="badge g">W↑58</span></td>
-        </tr>
-        <tr data-label="Entry Candidate" data-sector="پتروشیمی" data-grade="A" data-score="100"
-            style="background:rgba(34,197,94,0.07);cursor:pointer" onclick="showPopup('row_2')">
-            <td><strong class="sym">فارس</strong></td>
-            <td><span style="color:#22c55e">●</span> کاندید ورود</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 100</td>
-            <td>55.0</td>
-            <td>6/6</td>
-            <td>5.5x</td>
-            <td>21.0%</td>
-            <td>11885</td>
-            <td>13040</td>
-            <td>0.7</td>
-            <td>پتروشیمی</td>
-            <td><span class="badge g">W↑67</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="پتروشیمی" data-grade="A" data-score="100"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_3')">
-            <td><strong class="sym">شپنا</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 100</td>
-            <td>94.4</td>
-            <td>6/6</td>
-            <td>6.3x</td>
-            <td>15.5%</td>
-            <td>8780</td>
-            <td>11440</td>
-            <td>6.0</td>
-            <td>پتروشیمی</td>
-            <td><span class="badge g">W↑65</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="سرمایه‌گذاری" data-grade="A" data-score="100"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_29')">
-            <td><strong class="sym">فرابورس</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 100</td>
-            <td>91.7</td>
-            <td>6/6</td>
-            <td>3.8x</td>
-            <td>12.8%</td>
-            <td>5741</td>
-            <td>6080</td>
-            <td>0.3</td>
-            <td>سرمایه‌گذاری</td>
-            <td><span class="badge g">W↑58</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Entry Candidate" data-sector="سایر" data-grade="A" data-score="100"
-            style="background:rgba(34,197,94,0.07);cursor:pointer" onclick="showPopup('row_23')">
-            <td><strong class="sym">ورنا</strong></td>
-            <td><span style="color:#22c55e">●</span> کاندید ورود</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 100</td>
-            <td>50.3</td>
-            <td>4/6</td>
-            <td>1.6x</td>
-            <td>1.5%</td>
-            <td>5198</td>
-            <td>7320</td>
-            <td>6.5</td>
-            <td>سایر</td>
-            <td><span class="badge r">W↓32</span></td>
-        </tr>
-        <tr data-label="Entry Candidate" data-sector="خودرو" data-grade="A" data-score="98"
-            style="background:rgba(34,197,94,0.07);cursor:pointer" onclick="showPopup('row_6')">
-            <td><strong class="sym">خساپا</strong></td>
-            <td><span style="color:#22c55e">●</span> کاندید ورود</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 98</td>
-            <td>58.3</td>
-            <td>6/6</td>
-            <td>1.6x</td>
-            <td>1.6%</td>
-            <td>541</td>
-            <td>618</td>
-            <td>1.6</td>
-            <td>خودرو</td>
-            <td><span class="badge g">W↑53</span></td>
-        </tr>
-        <tr data-label="Watch - Needs Volume Confirmation" data-sector="پتروشیمی" data-grade="A" data-score="98"
-            style="background:rgba(59,130,246,0.05);cursor:pointer" onclick="showPopup('row_14')">
-            <td><strong class="sym">نوری</strong></td>
-            <td><span style="color:#3b82f6">●</span> نیاز به تایید حجم</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 98</td>
-            <td>63.2</td>
-            <td>6/6</td>
-            <td>0.7x</td>
-            <td>28.6%</td>
-            <td>54105</td>
-            <td>66600</td>
-            <td>1.8</td>
-            <td>پتروشیمی</td>
-            <td><span class="badge g">W↑62</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Wait for Pullback" data-sector="خودرو" data-grade="A" data-score="97"
-            style="background:rgba(249,115,22,0.05);cursor:pointer" onclick="showPopup('row_22')">
-            <td><strong class="sym">خبهمن</strong></td>
-            <td><span style="color:#f97316">●</span> صبر برای پولبک</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 97</td>
-            <td>75.1</td>
-            <td>6/6</td>
-            <td>2.4x</td>
-            <td>5.3%</td>
-            <td>1878</td>
-            <td>2303</td>
-            <td>3.2</td>
-            <td>خودرو</td>
-            <td><span class="badge g">W↑48</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="دارو" data-grade="A" data-score="93"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_25')">
-            <td><strong class="sym">شسپا</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 93</td>
-            <td>100.0</td>
-            <td>6/6</td>
-            <td>9.6x</td>
-            <td>15.7%</td>
-            <td>14241</td>
-            <td>18673</td>
-            <td>7.2</td>
-            <td>دارو</td>
-            <td><span class="badge g">W↑77</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="دارو" data-grade="A" data-score="92"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_20')">
-            <td><strong class="sym">دلقما</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 92</td>
-            <td>100.0</td>
-            <td>6/6</td>
-            <td>10.0x</td>
-            <td>15.8%</td>
-            <td>3689</td>
-            <td>4529</td>
-            <td>10.0</td>
-            <td>دارو</td>
-            <td><span class="badge g">W↑50</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Watch - Needs Volume Confirmation" data-sector="سرمایه‌گذاری" data-grade="A" data-score="91"
-            style="background:rgba(59,130,246,0.05);cursor:pointer" onclick="showPopup('row_4')">
-            <td><strong class="sym">وغدیر</strong></td>
-            <td><span style="color:#3b82f6">●</span> نیاز به تایید حجم</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 91</td>
-            <td>50.3</td>
-            <td>3/6</td>
-            <td>1.1x</td>
-            <td>-5.7%</td>
-            <td>14455</td>
-            <td>16155</td>
-            <td>2.0</td>
-            <td>سرمایه‌گذاری</td>
-            <td><span class="badge g">W↑61</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="خودرو" data-grade="A" data-score="86"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_21')">
-            <td><strong class="sym">خاور</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 86</td>
-            <td>78.3</td>
-            <td>6/6</td>
-            <td>2.1x</td>
-            <td>11.2%</td>
-            <td>1347</td>
-            <td>1458</td>
-            <td>0.8</td>
-            <td>خودرو</td>
-            <td><span class="badge g">W↑54</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="پتروشیمی" data-grade="A" data-score="86"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_0')">
-            <td><strong class="sym">شبندر</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 86</td>
-            <td>91.8</td>
-            <td>6/6</td>
-            <td>3.9x</td>
-            <td>12.0%</td>
-            <td>11115</td>
-            <td>11960</td>
-            <td>0.8</td>
-            <td>پتروشیمی</td>
-            <td><span class="badge g">W↑76</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="سایر" data-grade="A" data-score="85"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_12')">
-            <td><strong class="sym">نارنج اهرم</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 85</td>
-            <td>100.0</td>
-            <td>6/6</td>
-            <td>5.5x</td>
-            <td>21.7%</td>
-            <td>44430</td>
-            <td>61522</td>
-            <td>7.2</td>
-            <td>سایر</td>
-            <td><span class="badge g">W↑69</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="شیمیایی" data-grade="A" data-score="84"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_19')">
-            <td><strong class="sym">شمواد</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 84</td>
-            <td>95.2</td>
-            <td>6/6</td>
-            <td>4.1x</td>
-            <td>10.3%</td>
-            <td>6749</td>
-            <td>7330</td>
-            <td>1.0</td>
-            <td>شیمیایی</td>
-            <td><span class="badge g">W↑89</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="سیمان" data-grade="A" data-score="83"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_18')">
-            <td><strong class="sym">سمازن</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#22c55e">A</span> 83</td>
-            <td>90.3</td>
-            <td>6/6</td>
-            <td>4.4x</td>
-            <td>8.7%</td>
-            <td>60338</td>
-            <td>65210</td>
-            <td>0.8</td>
-            <td>سیمان</td>
-            <td><span class="badge g">W↑62</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="فلزات" data-grade="B" data-score="79"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_26')">
-            <td><strong class="sym">فافق</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#84cc16">B</span> 79</td>
-            <td>82.8</td>
-            <td>6/6</td>
-            <td>2.5x</td>
-            <td>4.8%</td>
-            <td>10411</td>
-            <td>11280</td>
-            <td>0.7</td>
-            <td>فلزات</td>
-            <td><span class="badge g">W↑67</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="بانک" data-grade="B" data-score="76"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_17')">
-            <td><strong class="sym">وخارزم</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#84cc16">B</span> 76</td>
-            <td>85.1</td>
-            <td>6/6</td>
-            <td>3.0x</td>
-            <td>9.1%</td>
-            <td>4608</td>
-            <td>5088</td>
-            <td>1.2</td>
-            <td>بانک</td>
-            <td><span class="badge g">W↑59</span></td>
-        </tr>
-        <tr data-label="Watch - Needs Volume Confirmation" data-sector="بانک" data-grade="B" data-score="73"
-            style="background:rgba(59,130,246,0.05);cursor:pointer" onclick="showPopup('row_9')">
-            <td><strong class="sym">وبملت</strong></td>
-            <td><span style="color:#3b82f6">●</span> نیاز به تایید حجم</td>
-            <td><span class="grade-tag" style="background:#84cc16">B</span> 73</td>
-            <td>67.0</td>
-            <td>6/6</td>
-            <td>1.0x</td>
-            <td>0.8%</td>
-            <td>1260</td>
-            <td>1358</td>
-            <td>0.5</td>
-            <td>بانک</td>
-            <td><span class="badge g">W↑38</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="سایر" data-grade="B" data-score="70"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_11')">
-            <td><strong class="sym">موج</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#84cc16">B</span> 70</td>
-            <td>80.3</td>
-            <td>6/6</td>
-            <td>1.8x</td>
-            <td>8.2%</td>
-            <td>49881</td>
-            <td>57243</td>
-            <td>1.3</td>
-            <td>سایر</td>
-            <td><span class="badge g">W↑61</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="بانک" data-grade="B" data-score="70"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_28')">
-            <td><strong class="sym">وخاور</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#84cc16">B</span> 70</td>
-            <td>87.1</td>
-            <td>6/6</td>
-            <td>1.9x</td>
-            <td>9.3%</td>
-            <td>4386</td>
-            <td>4853</td>
-            <td>1.2</td>
-            <td>بانک</td>
-            <td><span class="badge g">W↑74</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="بانک" data-grade="C" data-score="63"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_10')">
-            <td><strong class="sym">وتجارت</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#eab308">C</span> 63</td>
-            <td>91.8</td>
-            <td>6/6</td>
-            <td>3.0x</td>
-            <td>11.8%</td>
-            <td>615</td>
-            <td>662</td>
-            <td>0.8</td>
-            <td>بانک</td>
-            <td><span class="badge g">W↑55</span></td>
-        </tr>
-        <tr data-label="Wait for Pullback" data-sector="فلزات" data-grade="C" data-score="61"
-            style="background:rgba(249,115,22,0.05);cursor:pointer" onclick="showPopup('row_8')">
-            <td><strong class="sym">فملی</strong></td>
-            <td><span style="color:#f97316">●</span> صبر برای پولبک</td>
-            <td><span class="grade-tag" style="background:#eab308">C</span> 61</td>
-            <td>78.9</td>
-            <td>6/6</td>
-            <td>0.8x</td>
-            <td>3.9%</td>
-            <td>21037</td>
-            <td>23640</td>
-            <td>1.5</td>
-            <td>فلزات</td>
-            <td><span class="badge g">W↑77</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Avoid Entry Now - Overbought" data-sector="ETF" data-grade="C" data-score="60"
-            style="background:rgba(239,68,68,0.07);cursor:pointer" onclick="showPopup('row_7')">
-            <td><strong class="sym">بیدار</strong></td>
-            <td><span style="color:#ef4444">●</span> اشباع خرید</td>
-            <td><span class="grade-tag" style="background:#eab308">C</span> 60</td>
-            <td>80.3</td>
-            <td>6/6</td>
-            <td>1.5x</td>
-            <td>10.1%</td>
-            <td>30823</td>
-            <td>35000</td>
-            <td>1.1</td>
-            <td>ETF</td>
-            <td><span class="badge g">W↑65</span></td>
-        </tr>
-        <tr data-label="Watch Only" data-sector="فلزات" data-grade="C" data-score="54"
-            style="background:transparent;cursor:pointer" onclick="showPopup('row_13')">
-            <td><strong class="sym">کچاد</strong></td>
-            <td><span style="color:#6b7280">●</span> فقط رصد</td>
-            <td><span class="grade-tag" style="background:#eab308">C</span> 54</td>
-            <td>38.4</td>
-            <td>2/6</td>
-            <td>0.5x</td>
-            <td>-7.1%</td>
-            <td>2284</td>
-            <td>2727</td>
-            <td>2.8</td>
-            <td>فلزات</td>
-            <td><span class="badge r">W↓34</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Watch Only" data-sector="پتروشیمی" data-grade="D" data-score="49"
-            style="background:transparent;cursor:pointer" onclick="showPopup('row_5')">
-            <td><strong class="sym">شپدیس</strong></td>
-            <td><span style="color:#6b7280">●</span> فقط رصد</td>
-            <td><span class="grade-tag" style="background:#f97316">D</span> 49</td>
-            <td>0.3</td>
-            <td>2/6</td>
-            <td>0.5x</td>
-            <td>-5.1%</td>
-            <td>-40587</td>
-            <td>595660</td>
-            <td>10.0</td>
-            <td>پتروشیمی</td>
-            <td><span class="badge r">W↓32</span><span class="badge y">🕯</span></td>
-        </tr>
-        <tr data-label="Missing Technical Data" data-sector="سایر" data-grade="F" data-score="0"
-            style="background:transparent;cursor:pointer" onclick="showPopup('row_15')">
-            <td><strong class="sym">سينرژي</strong></td>
-            <td><span style="color:#374151">●</span> داده ناقص</td>
-            <td><span class="grade-tag" style="background:#ef4444">F</span> 0</td>
-            <td>—</td>
-            <td>—/6</td>
-            <td>—x</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>سایر</td>
-            <td></td>
-        </tr>
-        <tr data-label="Missing Technical Data" data-sector="سایر" data-grade="F" data-score="0"
-            style="background:transparent;cursor:pointer" onclick="showPopup('row_16')">
-            <td><strong class="sym">سپيد</strong></td>
-            <td><span style="color:#374151">●</span> داده ناقص</td>
-            <td><span class="grade-tag" style="background:#ef4444">F</span> 0</td>
-            <td>—</td>
-            <td>—/6</td>
-            <td>—x</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>سایر</td>
-            <td></td>
-        </tr>
-        <tr data-label="Missing Technical Data" data-sector="سایر" data-grade="F" data-score="0"
-            style="background:transparent;cursor:pointer" onclick="showPopup('row_24')">
-            <td><strong class="sym">شيراز</strong></td>
-            <td><span style="color:#374151">●</span> داده ناقص</td>
-            <td><span class="grade-tag" style="background:#ef4444">F</span> 0</td>
-            <td>—</td>
-            <td>—/6</td>
-            <td>—x</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>سایر</td>
-            <td></td>
-        </tr>
-        <tr data-label="Missing Technical Data" data-sector="سایر" data-grade="F" data-score="0"
-            style="background:transparent;cursor:pointer" onclick="showPopup('row_27')">
-            <td><strong class="sym">زرين</strong></td>
-            <td><span style="color:#374151">●</span> داده ناقص</td>
-            <td><span class="grade-tag" style="background:#ef4444">F</span> 0</td>
-            <td>—</td>
-            <td>—/6</td>
-            <td>—x</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>سایر</td>
-            <td></td>
-        </tr>
-</tbody>
+  <thead>
+    <tr>
+      <th onclick="sortTable(0)">نماد ↕</th>
+      <th onclick="sortTable(1)">تصمیم ↕</th>
+      <th onclick="sortTable(2)">درجه ↕</th>
+      <th onclick="sortTable(3)">سکتور ↕</th>
+      <th onclick="sortTable(4)">اطمینان ↕</th>
+      <th onclick="sortTable(5)">RSI ↕</th>
+      <th onclick="sortTable(6)">قیمت ↕</th>
+      <th onclick="sortTable(7)">جریان پول ↕</th>
+      <th onclick="sortTable(8)">قدرت خریدار ↕</th>
+      <th>تغییر وضعیت</th>
+      <th>نمودار ۲۰ روز</th>
+    </tr>
+  </thead>
+  <tbody id="table-body">
+    
+<tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;86&quot;, &quot;rsi&quot;: &quot;91.8&quot;, &quot;close&quot;: &quot;11590.0&quot;, &quot;support&quot;: &quot;7590.0&quot;, &quot;resistance&quot;: &quot;11960.0&quot;, &quot;stop_loss&quot;: &quot;11115.35&quot;, &quot;target_1&quot;: &quot;11960.0&quot;, &quot;rr&quot;: &quot;0.78&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>پتروشیمی</td>
+  <td>86</td>
+  <td>91.8</td>
+  <td>11590.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="7300,7510,7730,7960,8190,8430,8680,8940,9200,9470,9190,9480,9760,10050,10350,10660,10970,11290,11620,11590"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سرمایه‌گذاری"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سرمایه‌گذاری&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;69.81&quot;, &quot;close&quot;: &quot;2049.0&quot;, &quot;support&quot;: &quot;1693.0&quot;, &quot;resistance&quot;: &quot;2175.0&quot;, &quot;stop_loss&quot;: &quot;1959.75&quot;, &quot;target_1&quot;: &quot;2175.0&quot;, &quot;rr&quot;: &quot;1.41&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سرمایه‌گذاری</td>
+  <td>100</td>
+  <td>69.81</td>
+  <td>2049.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="1641,1689,1740,1771,1824,1801,1789,1745,1728,1760,1708,1759,1811,1828,1882,1938,1996,2053,2113,2049"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;55.02&quot;, &quot;close&quot;: &quot;12560.0&quot;, &quot;support&quot;: &quot;11580.0&quot;, &quot;resistance&quot;: &quot;13040.0&quot;, &quot;stop_loss&quot;: &quot;11885.0&quot;, &quot;target_1&quot;: &quot;13040.0&quot;, &quot;rr&quot;: &quot;0.71&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>پتروشیمی</td>
+  <td>100</td>
+  <td>55.02</td>
+  <td>12560.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="12290,12360,12730,12400,12350,12140,11760,11550,11250,11150,10800,10530,10350,10470,10380,10500,11620,11890,12200,12560"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;94.39&quot;, &quot;close&quot;: &quot;9160.0&quot;, &quot;support&quot;: &quot;6480.0&quot;, &quot;resistance&quot;: &quot;9160.0&quot;, &quot;stop_loss&quot;: &quot;8779.65&quot;, &quot;target_1&quot;: &quot;11440.42&quot;, &quot;rr&quot;: &quot;6.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>پتروشیمی</td>
+  <td>100</td>
+  <td>94.39</td>
+  <td>9160.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="5470,5630,5790,5960,6130,6310,6490,6680,6880,7080,6900,7270,7480,7700,7930,8160,8400,8650,8900,9160"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سرمایه‌گذاری"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سرمایه‌گذاری&quot;, &quot;confidence&quot;: &quot;91&quot;, &quot;rsi&quot;: &quot;50.33&quot;, &quot;close&quot;: &quot;15030.0&quot;, &quot;support&quot;: &quot;14220.0&quot;, &quot;resistance&quot;: &quot;14950.0&quot;, &quot;stop_loss&quot;: &quot;14455.0&quot;, &quot;target_1&quot;: &quot;16154.76&quot;, &quot;rr&quot;: &quot;1.96&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;3.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سرمایه‌گذاری</td>
+  <td>91</td>
+  <td>50.33</td>
+  <td>15030.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="15320,14710,14580,14840,15000,15000,14640,14690,14710,14800,15080,15500,15000,15470,15930,16400,15930,15880,15450,15030"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;49&quot;, &quot;rsi&quot;: &quot;0.34&quot;, &quot;close&quot;: &quot;12920.0&quot;, &quot;support&quot;: &quot;12840.0&quot;, &quot;resistance&quot;: &quot;595660.0&quot;, &quot;stop_loss&quot;: &quot;-40587.15&quot;, &quot;target_1&quot;: &quot;595660.0&quot;, &quot;rr&quot;: &quot;10.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;2.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>پتروشیمی</td>
+  <td>49</td>
+  <td>0.34</td>
+  <td>12920.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="525730,513370,499800,512960,498400,507320,13250,13210,13120,13310,12920,13200,12870,13260,13610,14040,13640,13680,13270,12920"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="خودرو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;خودرو&quot;, &quot;confidence&quot;: &quot;98&quot;, &quot;rsi&quot;: &quot;58.33&quot;, &quot;close&quot;: &quot;570.0&quot;, &quot;support&quot;: &quot;523.0&quot;, &quot;resistance&quot;: &quot;568.0&quot;, &quot;stop_loss&quot;: &quot;540.64&quot;, &quot;target_1&quot;: &quot;617.59&quot;, &quot;rr&quot;: &quot;1.62&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>خودرو</td>
+  <td>98</td>
+  <td>58.33</td>
+  <td>570.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="508,514,535,540,556,540,532,522,512,528,513,528,543,545,561,577,560,574,585,570"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="ETF"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;ETF&quot;, &quot;confidence&quot;: &quot;60&quot;, &quot;rsi&quot;: &quot;80.34&quot;, &quot;close&quot;: &quot;32819.0&quot;, &quot;support&quot;: &quot;20110.0&quot;, &quot;resistance&quot;: &quot;35000.0&quot;, &quot;stop_loss&quot;: &quot;30822.71&quot;, &quot;target_1&quot;: &quot;35000.0&quot;, &quot;rr&quot;: &quot;1.09&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>ETF</td>
+  <td>60</td>
+  <td>80.34</td>
+  <td>32819.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="19493,20272,21082,21779,22650,23556,24488,24686,25824,26414,25358,26498,27557,28659,29805,30997,32236,33525,34763,32819"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;61&quot;, &quot;rsi&quot;: &quot;78.88&quot;, &quot;close&quot;: &quot;22070.0&quot;, &quot;support&quot;: &quot;13680.0&quot;, &quot;resistance&quot;: &quot;23640.0&quot;, &quot;stop_loss&quot;: &quot;21037.15&quot;, &quot;target_1&quot;: &quot;23640.0&quot;, &quot;rr&quot;: &quot;1.52&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>فلزات</td>
+  <td>61</td>
+  <td>78.88</td>
+  <td>22070.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="15080,15530,15990,16460,16950,17450,17970,18500,19040,19410,18830,19450,20030,20630,21240,21870,22520,23180,22380,22070"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;73&quot;, &quot;rsi&quot;: &quot;66.98&quot;, &quot;close&quot;: &quot;1326.0&quot;, &quot;support&quot;: &quot;1218.0&quot;, &quot;resistance&quot;: &quot;1358.0&quot;, &quot;stop_loss&quot;: &quot;1259.57&quot;, &quot;target_1&quot;: &quot;1358.0&quot;, &quot;rr&quot;: &quot;0.48&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>بانک</td>
+  <td>73</td>
+  <td>66.98</td>
+  <td>1326.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="991,1020,1050,1081,1113,1146,1178,1147,1189,1207,1171,1206,1242,1278,1316,1355,1387,1434,1364,1326"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;63&quot;, &quot;rsi&quot;: &quot;91.75&quot;, &quot;close&quot;: &quot;642.0&quot;, &quot;support&quot;: &quot;447.0&quot;, &quot;resistance&quot;: &quot;662.0&quot;, &quot;stop_loss&quot;: &quot;615.21&quot;, &quot;target_1&quot;: &quot;662.0&quot;, &quot;rr&quot;: &quot;0.75&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>بانک</td>
+  <td>63</td>
+  <td>91.75</td>
+  <td>642.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="409,421,433,444,457,470,484,497,510,525,510,527,542,558,574,591,608,626,644,642"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;70&quot;, &quot;rsi&quot;: &quot;80.35&quot;, &quot;close&quot;: &quot;53027.0&quot;, &quot;support&quot;: &quot;34926.0&quot;, &quot;resistance&quot;: &quot;57243.0&quot;, &quot;stop_loss&quot;: &quot;49880.64&quot;, &quot;target_1&quot;: &quot;57243.0&quot;, &quot;rr&quot;: &quot;1.34&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>70</td>
+  <td>80.35</td>
+  <td>53027.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="31661,32927,34244,35580,37003,38483,40021,41230,42678,43486,41747,43586,45329,47142,49027,50988,53027,55142,55996,53027"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;46516.0&quot;, &quot;support&quot;: &quot;23300.0&quot;, &quot;resistance&quot;: &quot;46516.0&quot;, &quot;stop_loss&quot;: &quot;44430.14&quot;, &quot;target_1&quot;: &quot;61521.66&quot;, &quot;rr&quot;: &quot;7.19&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>100</td>
+  <td>100.0</td>
+  <td>46516.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="22235,23124,24048,25009,26009,27049,28130,29255,30425,31642,32907,34222,35350,36764,38234,39763,41353,43007,44727,46516"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;54&quot;, &quot;rsi&quot;: &quot;38.4&quot;, &quot;close&quot;: &quot;2400.0&quot;, &quot;support&quot;: &quot;2371.0&quot;, &quot;resistance&quot;: &quot;2727.0&quot;, &quot;stop_loss&quot;: &quot;2283.96&quot;, &quot;target_1&quot;: &quot;2727.0&quot;, &quot;rr&quot;: &quot;2.82&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;2.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>فلزات</td>
+  <td>54</td>
+  <td>38.4</td>
+  <td>2400.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="2411,2485,2513,2648,2704,2623,2587,2510,2442,2516,2436,2503,2433,2509,2584,2661,2582,2548,2472,2400"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="پتروشیمی"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;پتروشیمی&quot;, &quot;confidence&quot;: &quot;98&quot;, &quot;rsi&quot;: &quot;63.2&quot;, &quot;close&quot;: &quot;58650.0&quot;, &quot;support&quot;: &quot;48430.0&quot;, &quot;resistance&quot;: &quot;66600.0&quot;, &quot;stop_loss&quot;: &quot;54105.0&quot;, &quot;target_1&quot;: &quot;66600.0&quot;, &quot;rr&quot;: &quot;1.75&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>پتروشیمی</td>
+  <td>98</td>
+  <td>63.2</td>
+  <td>58650.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="51420,53140,52330,52400,51000,49470,48350,47190,48280,46140,45450,44430,45260,44840,45600,64890,62180,62000,59990,58650"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>0</td>
+  <td></td>
+  <td></td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>0</td>
+  <td></td>
+  <td></td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;76&quot;, &quot;rsi&quot;: &quot;85.06&quot;, &quot;close&quot;: &quot;4828.0&quot;, &quot;support&quot;: &quot;2803.0&quot;, &quot;resistance&quot;: &quot;5088.0&quot;, &quot;stop_loss&quot;: &quot;4608.25&quot;, &quot;target_1&quot;: &quot;5088.0&quot;, &quot;rr&quot;: &quot;1.18&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>بانک</td>
+  <td>76</td>
+  <td>85.06</td>
+  <td>4828.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="3070,3162,3256,3353,3453,3556,3662,3771,3884,4000,3880,4052,4173,4298,4426,4558,4694,4834,4979,4828"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سیمان"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سیمان&quot;, &quot;confidence&quot;: &quot;83&quot;, &quot;rsi&quot;: &quot;90.34&quot;, &quot;close&quot;: &quot;62990.0&quot;, &quot;support&quot;: &quot;41720.0&quot;, &quot;resistance&quot;: &quot;65210.0&quot;, &quot;stop_loss&quot;: &quot;60338.21&quot;, &quot;target_1&quot;: &quot;65210.0&quot;, &quot;rr&quot;: &quot;0.84&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سیمان</td>
+  <td>83</td>
+  <td>90.34</td>
+  <td>62990.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="38370,39520,40700,41920,43170,44460,45790,47160,48570,50020,51520,53060,54650,56280,57960,59690,61480,63320,65210,62990"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="شیمیایی"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;شیمیایی&quot;, &quot;confidence&quot;: &quot;84&quot;, &quot;rsi&quot;: &quot;95.15&quot;, &quot;close&quot;: &quot;7040.0&quot;, &quot;support&quot;: &quot;3112.0&quot;, &quot;resistance&quot;: &quot;7330.0&quot;, &quot;stop_loss&quot;: &quot;6748.56&quot;, &quot;target_1&quot;: &quot;7330.0&quot;, &quot;rr&quot;: &quot;1.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>شیمیایی</td>
+  <td>84</td>
+  <td>95.15</td>
+  <td>7040.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="4305,4434,4567,4704,4845,4990,5139,5293,5450,5610,5770,5850,6020,6200,6380,6570,6760,6960,7150,7040"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="دارو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;دارو&quot;, &quot;confidence&quot;: &quot;92&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;3700.0&quot;, &quot;support&quot;: &quot;3554.0&quot;, &quot;resistance&quot;: &quot;4529.0&quot;, &quot;stop_loss&quot;: &quot;3689.3&quot;, &quot;target_1&quot;: &quot;4529.0&quot;, &quot;rr&quot;: &quot;10.0&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>دارو</td>
+  <td>92</td>
+  <td>100.0</td>
+  <td>3700.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="3219,2180,2245,2312,2381,2452,2525,2600,2678,2758,2840,2925,3012,3102,3195,3290,3388,3489,3593,3700"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="خودرو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;خودرو&quot;, &quot;confidence&quot;: &quot;86&quot;, &quot;rsi&quot;: &quot;78.32&quot;, &quot;close&quot;: &quot;1410.0&quot;, &quot;support&quot;: &quot;1176.0&quot;, &quot;resistance&quot;: &quot;1458.0&quot;, &quot;stop_loss&quot;: &quot;1347.11&quot;, &quot;target_1&quot;: &quot;1458.0&quot;, &quot;rr&quot;: &quot;0.76&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>خودرو</td>
+  <td>86</td>
+  <td>78.32</td>
+  <td>1410.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="1078,1106,1142,1157,1191,1188,1170,1148,1152,1169,1134,1168,1203,1232,1268,1306,1345,1381,1420,1410"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="خودرو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;خودرو&quot;, &quot;confidence&quot;: &quot;97&quot;, &quot;rsi&quot;: &quot;75.09&quot;, &quot;close&quot;: &quot;1978.0&quot;, &quot;support&quot;: &quot;1779.0&quot;, &quot;resistance&quot;: &quot;1975.0&quot;, &quot;stop_loss&quot;: &quot;1878.04&quot;, &quot;target_1&quot;: &quot;2303.07&quot;, &quot;rr&quot;: &quot;3.25&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>خودرو</td>
+  <td>97</td>
+  <td>75.09</td>
+  <td>1978.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="1495,1523,1584,1619,1667,1708,1718,1703,1740,1763,1711,1762,1814,1824,1878,1934,1910,2021,2015,1978"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;50.3&quot;, &quot;close&quot;: &quot;5480.0&quot;, &quot;support&quot;: &quot;4980.0&quot;, &quot;resistance&quot;: &quot;7320.0&quot;, &quot;stop_loss&quot;: &quot;5198.21&quot;, &quot;target_1&quot;: &quot;7320.0&quot;, &quot;rr&quot;: &quot;6.53&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;4.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>100</td>
+  <td>50.3</td>
+  <td>5480.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="5597,5430,5375,5470,5620,5470,5360,5200,5050,5130,5030,5080,5280,5270,5400,5570,5410,5530,5610,5480"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>0</td>
+  <td></td>
+  <td></td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="دارو"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;دارو&quot;, &quot;confidence&quot;: &quot;93&quot;, &quot;rsi&quot;: &quot;100.0&quot;, &quot;close&quot;: &quot;14780.0&quot;, &quot;support&quot;: &quot;8850.0&quot;, &quot;resistance&quot;: &quot;14780.0&quot;, &quot;stop_loss&quot;: &quot;14241.07&quot;, &quot;target_1&quot;: &quot;18673.4&quot;, &quot;rr&quot;: &quot;7.22&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;doji&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>دارو</td>
+  <td>93</td>
+  <td>100.0</td>
+  <td>14780.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="8480,8730,8990,9250,9520,9800,10090,10390,10700,11020,11350,11690,12040,12400,12770,13150,13540,13940,14350,14780"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="فلزات"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;فلزات&quot;, &quot;confidence&quot;: &quot;79&quot;, &quot;rsi&quot;: &quot;82.83&quot;, &quot;close&quot;: &quot;10930.0&quot;, &quot;support&quot;: &quot;7780.0&quot;, &quot;resistance&quot;: &quot;11280.0&quot;, &quot;stop_loss&quot;: &quot;10411.43&quot;, &quot;target_1&quot;: &quot;11280.0&quot;, &quot;rr&quot;: &quot;0.67&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>فلزات</td>
+  <td>79</td>
+  <td>82.83</td>
+  <td>10930.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="7480,7690,7810,8040,8280,8520,8770,9030,9300,9570,9290,9560,9840,10130,10430,10740,10450,10990,10960,10930"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سایر"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سایر&quot;, &quot;confidence&quot;: &quot;0&quot;, &quot;rsi&quot;: &quot;&quot;, &quot;close&quot;: &quot;&quot;, &quot;support&quot;: &quot;&quot;, &quot;resistance&quot;: &quot;&quot;, &quot;stop_loss&quot;: &quot;&quot;, &quot;target_1&quot;: &quot;&quot;, &quot;rr&quot;: &quot;&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سایر</td>
+  <td>0</td>
+  <td></td>
+  <td></td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" ></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="بانک"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;بانک&quot;, &quot;confidence&quot;: &quot;70&quot;, &quot;rsi&quot;: &quot;87.07&quot;, &quot;close&quot;: &quot;4595.0&quot;, &quot;support&quot;: &quot;2902.0&quot;, &quot;resistance&quot;: &quot;4853.0&quot;, &quot;stop_loss&quot;: &quot;4386.19&quot;, &quot;target_1&quot;: &quot;4853.0&quot;, &quot;rr&quot;: &quot;1.24&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;none&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>بانک</td>
+  <td>70</td>
+  <td>87.07</td>
+  <td>4595.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="2907,2994,3083,3175,3270,3368,3469,3572,3679,3784,3700,3850,3965,4083,4205,4331,4460,4593,4725,4595"></canvas></td>
+</tr>
+<tr style="background:transparent" data-label="" data-grade="" data-sector="سرمایه‌گذاری"
+    onclick="showPopup('', '{&quot;symbol&quot;: &quot;&quot;, &quot;label&quot;: &quot;&quot;, &quot;grade&quot;: &quot;&quot;, &quot;sector&quot;: &quot;سرمایه‌گذاری&quot;, &quot;confidence&quot;: &quot;100&quot;, &quot;rsi&quot;: &quot;91.72&quot;, &quot;close&quot;: &quot;6000.0&quot;, &quot;support&quot;: &quot;4422.0&quot;, &quot;resistance&quot;: &quot;6080.0&quot;, &quot;stop_loss&quot;: &quot;5741.35&quot;, &quot;target_1&quot;: &quot;6080.0&quot;, &quot;rr&quot;: &quot;0.31&quot;, &quot;bp&quot;: &quot;&quot;, &quot;flow&quot;: &quot;—&quot;, &quot;macd_x&quot;: &quot;none&quot;, &quot;candle&quot;: &quot;hammer&quot;, &quot;bb_sq&quot;: &quot;False&quot;, &quot;trend&quot;: &quot;6.0&quot;}')">
+  <td><b style="color:#6b7280"></b></td>
+  <td><span style="color:#6b7280;font-weight:600"></span></td>
+  <td></td>
+  <td>سرمایه‌گذاری</td>
+  <td>100</td>
+  <td>91.72</td>
+  <td>6000.0</td>
+  <td>—</td>
+  <td></td>
+  <td><span style="color:#9ca3af">—</span></td>
+  <td><canvas class="sparkline" width="80" height="30" data-spark="3908,4025,4145,4261,4388,4519,4652,4764,4802,4881,4734,4876,5022,5170,5320,5470,5630,5770,5920,6000"></canvas></td>
+</tr>
+  </tbody>
 </table>
 </div>
 
-<!-- Popup overlay -->
-<div class="overlay" id="overlay" onclick="closePopup(event)">
-  <div class="popup" id="popup">
-    <button class="popup-close" onclick="closePopupBtn()">✕</button>
-    <div id="popup-content"></div>
+<div class="popup-overlay" id="popup-overlay" onclick="closePopup(event)">
+  <div class="popup" id="popup-box">
+    <button class="close-btn" onclick="closePopupDirect()">✕</button>
+    <h2 id="popup-title"></h2>
+    <div class="popup-grid" id="popup-content"></div>
   </div>
 </div>
 
+<footer>
+  <span>Iran Stock AI Dashboard</span>
+  <span id="countdown"></span>
+</footer>
+
 <script>
-const DATA = {"row_1": {"symbol": "شستا", "label_fa": "کاندید ورود", "color": "#22c55e", "grade": "A", "grade_color": "#22c55e", "score": 100, "rsi": "69.8", "rsi_status": "بالاتر از میانه", "trend": "6", "vol": "1.4", "ret5": "8.9%", "sl": "1960", "tgt": "2175", "rr": "1.4", "atr": "60", "sector": "سرمایه‌گذاری", "sm": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "58", "poc": "above", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=70: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 1.4x: +4 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.91): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (58): +2", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (58) | score=100, trend=6.0, RSI=69.81, volume_ratio=1.42", "missing": false},
-"row_2": {"symbol": "فارس", "label_fa": "کاندید ورود", "color": "#22c55e", "grade": "A", "grade_color": "#22c55e", "score": 100, "rsi": "55.0", "rsi_status": "میانه", "trend": "6", "vol": "5.5", "ret5": "21.0%", "sl": "11885", "tgt": "13040", "rr": "0.7", "atr": "450", "sector": "پتروشیمی", "sm": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "67", "poc": "at", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=55: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | سکتور پیشرو: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.80): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (67): +2 | کندل دوجی (بلاتکلیفی): +2", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (67) | score=100, trend=6.0, RSI=55.02, volume_ratio=5.53", "missing": false},
-"row_3": {"symbol": "شپنا", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 100, "rsi": "94.4", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "6.3", "ret5": "15.5%", "sl": "8780", "tgt": "11440", "rr": "6.0", "atr": "254", "sector": "پتروشیمی", "sm": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "queue": "فشار خرید تخمینی (تغییر قیمت: 3.0%)", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "65", "poc": "above", "factors": "پول هوشمند: +10 | تحلیل صف: +6 | RSI=94: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 6.3x: +10 | سکتور پیشرو: +10 | ریسک/ریوارد 6.0: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=94.39 ≥ 80 → اشباع خرید", "missing": false},
-"row_29": {"symbol": "فرابورس", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 100, "rsi": "91.7", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "3.8", "ret5": "12.8%", "sl": "5741", "tgt": "6080", "rr": "0.3", "atr": "172", "sector": "سرمایه‌گذاری", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 4.1%)", "candle": "🔨 چکش", "macd": "", "w_trend": "up", "w_rsi": "58", "poc": "above", "factors": "پول هوشمند: +8 | تحلیل صف: +6 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.8x: +10 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.94): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (58): +2 | کندل چکش: +8", "reasons": "RSI=91.72 ≥ 80 → اشباع خرید", "missing": false},
-"row_23": {"symbol": "ورنا", "label_fa": "کاندید ورود", "color": "#22c55e", "grade": "A", "grade_color": "#22c55e", "score": 100, "rsi": "50.3", "rsi_status": "میانه", "trend": "4", "vol": "1.6", "ret5": "1.5%", "sl": "5198", "tgt": "7320", "rr": "6.5", "atr": "188", "sector": "سایر", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.6%)", "candle": "", "macd": "", "w_trend": "down", "w_rsi": "32", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=50: +15 (ایده‌آل) | روند 4/6: +12 | حجم نسبی 1.6x: +7 | ریسک/ریوارد 6.5: +10 | قیمت بالای POC: +8 (قدرت) | روند هفتگی نزولی: -4", "reasons": "score=100, trend=4.0, RSI=50.3, volume_ratio=1.55", "missing": false},
-"row_6": {"symbol": "خساپا", "label_fa": "کاندید ورود", "color": "#22c55e", "grade": "A", "grade_color": "#22c55e", "score": 98, "rsi": "58.3", "rsi_status": "میانه", "trend": "6", "vol": "1.6", "ret5": "1.6%", "sl": "541", "tgt": "618", "rr": "1.6", "atr": "20", "sector": "خودرو", "sm": "بدون سیگنال واضح", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "53", "poc": "above", "factors": "تحلیل صف: -10 | RSI=58: +15 (ایده‌آل) | روند 6/6: +18 | حجم نسبی 1.6x: +7 | ریسک/ریوارد 1.6: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (53): +2", "reasons": "💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (53) | score=98, trend=6.0, RSI=58.33, volume_ratio=1.61", "missing": false},
-"row_14": {"symbol": "نوری", "label_fa": "نیاز به تایید حجم", "color": "#3b82f6", "grade": "A", "grade_color": "#22c55e", "score": 98, "rsi": "63.2", "rsi_status": "بالاتر از میانه", "trend": "6", "vol": "0.7", "ret5": "28.6%", "sl": "54105", "tgt": "66600", "rr": "1.8", "atr": "3030", "sector": "پتروشیمی", "sm": "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "62", "poc": "below", "factors": "پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | RSI=63: +8 (مناسب) | روند 6/6: +18 | حجم نسبی 0.7x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 1.8: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2 | کندل دوجی (بلاتکلیفی): +2", "reasons": "volume_ratio=0.65 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (62)", "missing": false},
-"row_22": {"symbol": "خبهمن", "label_fa": "صبر برای پولبک", "color": "#f97316", "grade": "A", "grade_color": "#22c55e", "score": 97, "rsi": "75.1", "rsi_status": "اشباع خرید", "trend": "6", "vol": "2.4", "ret5": "5.3%", "sl": "1878", "tgt": "2303", "rr": "3.2", "atr": "67", "sector": "خودرو", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.5%)", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "48", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=75: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.4x: +10 | ریسک/ریوارد 3.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4", "reasons": "RSI=75.09 در محدوده 70-80 → صبر برای پولبک", "missing": false},
-"row_25": {"symbol": "شسپا", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 93, "rsi": "100.0", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "9.6", "ret5": "15.7%", "sl": "14241", "tgt": "18673", "rr": "7.2", "atr": "359", "sector": "دارو", "sm": "رشد با حجم بالا", "queue": "داده صف موجود نیست", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "77", "poc": "above", "factors": "پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 9.6x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.94): -4 | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "missing": false},
-"row_20": {"symbol": "دلقما", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 92, "rsi": "100.0", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "10.0", "ret5": "15.8%", "sl": "3689", "tgt": "4529", "rr": "10.0", "atr": "93", "sector": "دارو", "sm": "رشد با حجم بالا", "queue": "داده صف موجود نیست", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "50", "poc": "at", "factors": "پول هوشمند: +5 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 10.0x: +10 | ریسک/ریوارد 10.0: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.93): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (50): +2 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "missing": false},
-"row_4": {"symbol": "وغدیر", "label_fa": "نیاز به تایید حجم", "color": "#3b82f6", "grade": "A", "grade_color": "#22c55e", "score": 91, "rsi": "50.3", "rsi_status": "میانه", "trend": "3", "vol": "1.1", "ret5": "-5.7%", "sl": "14455", "tgt": "16155", "rr": "2.0", "atr": "550", "sector": "سرمایه‌گذاری", "sm": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "61", "poc": "below", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=50: +15 (ایده‌آل) | روند 3/6: +9 | سکتور پیشرو: +10 | ریسک/ریوارد 2.0: +4 | قیمت زیر POC: -5 (ضعف) | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2 | کندل دوجی (بلاتکلیفی): +2", "reasons": "trend_score=3.0 < 4 → روند ضعیف | 💡 روند هفتگی صعودی | RSI هفتگی در محدوده ایده‌آل (61) | حجم نسبی=1.14 → نیاز به تایید حجم", "missing": false},
-"row_21": {"symbol": "خاور", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 86, "rsi": "78.3", "rsi_status": "اشباع خرید", "trend": "6", "vol": "2.1", "ret5": "11.2%", "sl": "1347", "tgt": "1458", "rr": "0.8", "atr": "42", "sector": "خودرو", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.4%)", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "54", "poc": "at", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=78: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.1x: +10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.97): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (54): +2", "reasons": "RSI=78.32 ≥ 70، قیمت نزدیک سقف ۲۰ روزه، بازده ۵ روزه 11.2%", "missing": false},
-"row_0": {"symbol": "شبندر", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 86, "rsi": "91.8", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "3.9", "ret5": "12.0%", "sl": "11115", "tgt": "11960", "rr": "0.8", "atr": "316", "sector": "پتروشیمی", "sm": "هم‌راستای صعودی: خریدار و پول هر دو وارد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "76", "poc": "above", "factors": "پول هوشمند: +10 | تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.9x: +10 | سکتور پیشرو: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4", "reasons": "RSI=91.8 ≥ 80 → اشباع خرید", "missing": false},
-"row_12": {"symbol": "نارنج اهرم", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 85, "rsi": "100.0", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "5.5", "ret5": "21.7%", "sl": "44430", "tgt": "61522", "rr": "7.2", "atr": "1391", "sector": "سایر", "sm": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "69", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=100: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 5.5x: +10 | ریسک/ریوارد 7.2: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.95): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (69): +2 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=100.0 ≥ 80 → اشباع خرید", "missing": false},
-"row_19": {"symbol": "شمواد", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 84, "rsi": "95.2", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "4.1", "ret5": "10.3%", "sl": "6749", "tgt": "7330", "rr": "1.0", "atr": "194", "sector": "شیمیایی", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.9%)", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "89", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=95: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.1x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.87): -4 | روند هفتگی صعودی: +4 | RSI هفتگی اشباع خرید (89): -3", "reasons": "RSI=95.15 ≥ 80 → اشباع خرید", "missing": false},
-"row_18": {"symbol": "سمازن", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "A", "grade_color": "#22c55e", "score": 83, "rsi": "90.3", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "4.4", "ret5": "8.7%", "sl": "60338", "tgt": "65210", "rr": "0.8", "atr": "1768", "sector": "سیمان", "sm": "رشد با حجم بالا", "queue": "داده صف موجود نیست", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "62", "poc": "above", "factors": "پول هوشمند: +5 | RSI=90: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 4.4x: +10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (62): +2", "reasons": "RSI=90.34 ≥ 80 → اشباع خرید", "missing": false},
-"row_26": {"symbol": "فافق", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "B", "grade_color": "#84cc16", "score": 79, "rsi": "82.8", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "2.5", "ret5": "4.8%", "sl": "10411", "tgt": "11280", "rr": "0.7", "atr": "346", "sector": "فلزات", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.5%)", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "67", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=83: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 2.5x: +10 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.83): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (67): +2", "reasons": "RSI=82.83 ≥ 80 → اشباع خرید", "missing": false},
-"row_17": {"symbol": "وخارزم", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "B", "grade_color": "#84cc16", "score": 76, "rsi": "85.1", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "3.0", "ret5": "9.1%", "sl": "4608", "tgt": "5088", "rr": "1.2", "atr": "146", "sector": "بانک", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.1%)", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "59", "poc": "at", "factors": "پول هوشمند: +5 | تحلیل صف: +6 | RSI=85: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | سکتور عقب‌مانده: -10 | قیمت روی POC: +5 (ناحیه ارزش) | قیمت نزدیک باند بالا (BB%=0.85): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (59): +2", "reasons": "RSI=85.06 ≥ 80 → اشباع خرید", "missing": false},
-"row_9": {"symbol": "وبملت", "label_fa": "نیاز به تایید حجم", "color": "#3b82f6", "grade": "B", "grade_color": "#84cc16", "score": 73, "rsi": "67.0", "rsi_status": "بالاتر از میانه", "trend": "6", "vol": "1.0", "ret5": "0.8%", "sl": "1260", "tgt": "1358", "rr": "0.5", "atr": "44", "sector": "بانک", "sm": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "38", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=67: +8 (مناسب) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4", "reasons": "volume_ratio=1.0 < 1.2 → نیاز به تایید حجم | 💡 روند هفتگی صعودی", "missing": false},
-"row_11": {"symbol": "موج", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "B", "grade_color": "#84cc16", "score": 70, "rsi": "80.3", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "1.8", "ret5": "8.2%", "sl": "49881", "tgt": "57243", "rr": "1.3", "atr": "2098", "sector": "سایر", "sm": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "61", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.8x: +7 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.81): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (61): +2", "reasons": "RSI=80.35 ≥ 80 → اشباع خرید", "missing": false},
-"row_28": {"symbol": "وخاور", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "B", "grade_color": "#84cc16", "score": 70, "rsi": "87.1", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "1.9", "ret5": "9.3%", "sl": "4386", "tgt": "4853", "rr": "1.2", "atr": "139", "sector": "بانک", "sm": "رشد با حجم بالا", "queue": "داده صف موجود نیست", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "74", "poc": "above", "factors": "پول هوشمند: +5 | RSI=87: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.9x: +7 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.85): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (74): +2", "reasons": "RSI=87.07 ≥ 80 → اشباع خرید", "missing": false},
-"row_10": {"symbol": "وتجارت", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "C", "grade_color": "#eab308", "score": 63, "rsi": "91.8", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "3.0", "ret5": "11.8%", "sl": "615", "tgt": "662", "rr": "0.8", "atr": "18", "sector": "بانک", "sm": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "55", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=92: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 3.0x: +10 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.90): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (55): +2", "reasons": "RSI=91.75 ≥ 80 → اشباع خرید", "missing": false},
-"row_8": {"symbol": "فملی", "label_fa": "صبر برای پولبک", "color": "#f97316", "grade": "C", "grade_color": "#eab308", "score": 61, "rsi": "78.9", "rsi_status": "اشباع خرید", "trend": "6", "vol": "0.8", "ret5": "3.9%", "sl": "21037", "tgt": "23640", "rr": "1.5", "atr": "689", "sector": "فلزات", "sm": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "up", "w_rsi": "77", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=79: -10 (اشباع خرید) | روند 6/6: +18 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 1.5: +4 | قیمت بالای POC: +8 (قدرت) | روند هفتگی صعودی: +4 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=78.88 در محدوده 70-80 → صبر برای پولبک", "missing": false},
-"row_7": {"symbol": "بیدار", "label_fa": "اشباع خرید", "color": "#ef4444", "grade": "C", "grade_color": "#eab308", "score": 60, "rsi": "80.3", "rsi_status": "اشباع خرید شدید", "trend": "6", "vol": "1.5", "ret5": "10.1%", "sl": "30823", "tgt": "35000", "rr": "1.1", "atr": "1331", "sector": "ETF", "sm": "افت حقیقی‌محور: ممکن است اغراق‌آمیز باشد", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "", "macd": "", "w_trend": "up", "w_rsi": "65", "poc": "above", "factors": "پول هوشمند: +5 | تحلیل صف: -10 | RSI=80: -10 (اشباع خرید) | روند 6/6: +18 | حجم نسبی 1.5x: +7 | سکتور عقب‌مانده: -10 | قیمت بالای POC: +8 (قدرت) | قیمت نزدیک باند بالا (BB%=0.84): -4 | روند هفتگی صعودی: +4 | RSI هفتگی ایده‌آل (65): +2", "reasons": "RSI=80.34 ≥ 80 → اشباع خرید", "missing": false},
-"row_13": {"symbol": "کچاد", "label_fa": "فقط رصد", "color": "#6b7280", "grade": "C", "grade_color": "#eab308", "score": 54, "rsi": "38.4", "rsi_status": "ضعیف", "trend": "2", "vol": "0.5", "ret5": "-7.1%", "sl": "2284", "tgt": "2727", "rr": "2.8", "atr": "77", "sector": "فلزات", "sm": "تجمیع هوشمند: حقیقی می‌فروشد، پول هوشمند وارد می‌شود", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "down", "w_rsi": "34", "poc": "below", "factors": "پول هوشمند: +20 (تجمیع پنهان) | تحلیل صف: -10 | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور عقب‌مانده: -10 | ریسک/ریوارد 2.8: +7 | قیمت زیر POC: -5 (ضعف) | قیمت نزدیک باند پایین (BB%=0.13): +3 | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=38.4 خارج از محدوده ایده‌آل (45-70)", "missing": false},
-"row_5": {"symbol": "شپدیس", "label_fa": "فقط رصد", "color": "#6b7280", "grade": "D", "grade_color": "#f97316", "score": 49, "rsi": "0.3", "rsi_status": "اشباع فروش", "trend": "2", "vol": "0.5", "ret5": "-5.1%", "sl": "-40587", "tgt": "595660", "rr": "10.0", "atr": "35671", "sector": "پتروشیمی", "sm": "بدون سیگنال واضح", "queue": "عرضه غالب — صف فروش قوی‌تر از تقاضا", "candle": "〰️ دوجی", "macd": "", "w_trend": "down", "w_rsi": "32", "poc": "below", "factors": "تحلیل صف: -10 | RSI=0: -5 (اشباع فروش) | روند 2/6: +6 | حجم نسبی 0.5x: -5 | سکتور پیشرو: +10 | ریسک/ریوارد 10.0: +10 | قیمت زیر POC: -5 (ضعف) | روند هفتگی نزولی: -4 | کندل دوجی (بلاتکلیفی): +2", "reasons": "RSI=0.34 خارج از محدوده ایده‌آل (45-70)", "missing": false},
-"row_15": {"symbol": "سينرژي", "label_fa": "داده ناقص", "color": "#374151", "grade": "F", "grade_color": "#ef4444", "score": 0, "rsi": "—", "rsi_status": "اشباع فروش", "trend": "—", "vol": "—", "ret5": "—", "sl": "—", "tgt": "—", "rr": "—", "atr": "—", "sector": "سایر", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 3.1%)", "candle": "", "macd": "", "w_trend": "", "w_rsi": "—", "poc": "unknown", "factors": "داده تکنیکال موجود نیست", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "missing": true},
-"row_16": {"symbol": "سپيد", "label_fa": "داده ناقص", "color": "#374151", "grade": "F", "grade_color": "#ef4444", "score": 0, "rsi": "—", "rsi_status": "اشباع فروش", "trend": "—", "vol": "—", "ret5": "—", "sl": "—", "tgt": "—", "rr": "—", "atr": "—", "sector": "سایر", "sm": "رشد با حجم بالا", "queue": "فشار خرید تخمینی (تغییر قیمت: 2.1%)", "candle": "", "macd": "", "w_trend": "", "w_rsi": "—", "poc": "unknown", "factors": "داده تکنیکال موجود نیست", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "missing": true},
-"row_24": {"symbol": "شيراز", "label_fa": "داده ناقص", "color": "#374151", "grade": "F", "grade_color": "#ef4444", "score": 0, "rsi": "—", "rsi_status": "اشباع فروش", "trend": "—", "vol": "—", "ret5": "—", "sl": "—", "tgt": "—", "rr": "—", "atr": "—", "sector": "سایر", "sm": "رشد با حجم بالا", "queue": "داده صف موجود نیست", "candle": "", "macd": "", "w_trend": "", "w_rsi": "—", "poc": "unknown", "factors": "داده تکنیکال موجود نیست", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "missing": true},
-"row_27": {"symbol": "زرين", "label_fa": "داده ناقص", "color": "#374151", "grade": "F", "grade_color": "#ef4444", "score": 0, "rsi": "—", "rsi_status": "اشباع فروش", "trend": "—", "vol": "—", "ret5": "—", "sl": "—", "tgt": "—", "rr": "—", "atr": "—", "sector": "سایر", "sm": "رشد با حجم بالا", "queue": "داده صف موجود نیست", "candle": "", "macd": "", "w_trend": "", "w_rsi": "—", "poc": "unknown", "factors": "داده تکنیکال موجود نیست", "reasons": "داده تاریخچه یا اندیکاتور در دسترس نیست", "missing": true}};
-const donutData = [{"label": "کاندید ورود", "count": 4, "color": "#22c55e"}, {"label": "صبر برای پولبک", "count": 2, "color": "#f97316"}, {"label": "اشباع خرید", "count": 15, "color": "#ef4444"}, {"label": "نیاز به تایید حجم", "count": 3, "color": "#3b82f6"}, {"label": "فقط رصد", "count": 2, "color": "#6b7280"}, {"label": "داده ناقص", "count": 4, "color": "#374151"}];
-
-// --- Donut ---
-(function(){
-  const c=document.getElementById('donut'),ctx=c.getContext('2d');
-  const total=donutData.reduce((s,d)=>s+d.count,0);
-  let angle=-Math.PI/2;
-  const cx=85,cy=85,r=65,ir=42;
-  donutData.forEach(d=>{
-    const sl=(d.count/total)*Math.PI*2;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+sl);
-    ctx.closePath();ctx.fillStyle=d.color;ctx.fill();angle+=sl;
-  });
-  ctx.beginPath();ctx.arc(cx,cy,ir,0,Math.PI*2);ctx.fillStyle='#1e293b';ctx.fill();
-  ctx.fillStyle='#e2e8f0';ctx.font='bold 13px Tahoma';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(total,cx,cy);
-  const leg=document.getElementById('donut-legend');
-  donutData.forEach(d=>{
-    leg.innerHTML+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-      <span style="width:8px;height:8px;background:${d.color};border-radius:2px;flex-shrink:0;display:inline-block"></span>
-      <span style="color:#94a3b8">${d.label}: ${d.count}</span></div>`;
-  });
-})();
-
-// --- Gauge ---
-(function(){
-  const c=document.getElementById('gauge'),ctx=c.getContext('2d');
-  const rows=[...document.querySelectorAll('#table-body tr')];
-  const scores=rows.map(r=>parseFloat(r.dataset.score)||0);
-  const avg=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:0;
-  document.getElementById('gauge-val').textContent=avg.toFixed(0);
-  const cx=85,cy=95,r=70;
-  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,2*Math.PI);ctx.strokeStyle='#1e3a5f';ctx.lineWidth=12;ctx.stroke();
-  const color=avg>=70?'#22c55e':avg>=50?'#eab308':'#ef4444';
-  const pct=Math.min(avg/100,1);
-  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,Math.PI+pct*Math.PI);
-  ctx.strokeStyle=color;ctx.lineWidth=12;ctx.lineCap='round';ctx.stroke();
-})();
-
-// --- Sector select ---
-(function(){
-  const sel=document.getElementById('f-sector');
-  const secs=[...new Set([...document.querySelectorAll('#table-body tr')].map(r=>r.dataset.sector))].filter(Boolean).sort();
-  secs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
-})();
-
-// --- Filters ---
-function applyFilters(){
-  const s=document.getElementById('search').value.trim().toLowerCase();
-  const l=document.getElementById('f-label').value;
-  const g=document.getElementById('f-grade').value;
-  const sec=document.getElementById('f-sector').value;
-  let v=0;
-  document.querySelectorAll('#table-body tr').forEach(r=>{
-    const sym=r.querySelector('.sym')?.textContent.toLowerCase()||'';
-    const show=(!s||sym.includes(s))&&(!l||r.dataset.label===l)&&(!g||r.dataset.grade===g)&&(!sec||r.dataset.sector===sec);
-    r.style.display=show?'':'none';
-    if(show)v++;
-  });
-  document.getElementById('count-label').textContent=v+' نماد';
+function drawSparkline(canvas, dataStr) {
+  if (!dataStr) return;
+  const prices = dataStr.split(',').map(Number).filter(n => !isNaN(n));
+  if (prices.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const min = Math.min(...prices), max = Math.max(...prices);
+  const range = max - min || 1;
+  const pts = prices.map((p, i) => [
+    (i / (prices.length - 1)) * w,
+    h - ((p - min) / range) * (h - 4) - 2
+  ]);
+  ctx.clearRect(0, 0, w, h);
+  const last = prices[prices.length - 1];
+  const first = prices[0];
+  const lineColor = last >= first ? '#22c55e' : '#ef4444';
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, last >= first ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], h);
+  pts.forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.lineTo(pts[pts.length-1][0], h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  const [lx, ly] = pts[pts.length - 1];
+  ctx.beginPath();
+  ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = lineColor;
+  ctx.fill();
 }
 
-function resetFilters(){
-  ['search','f-label','f-grade','f-sector'].forEach(id=>{const el=document.getElementById(id);if(el.tagName==='INPUT')el.value='';else el.selectedIndex=0;});
-  applyFilters();
+document.querySelectorAll('canvas.sparkline').forEach(c => {
+  drawSparkline(c, c.dataset.spark);
+});
+
+function showPopup(sym, dataStr) {
+  const d = JSON.parse(dataStr);
+  document.getElementById('popup-title').textContent = '📌 ' + sym;
+  const fields = [
+    ['تصمیم', d.label], ['درجه', d.grade], ['سکتور', d.sector],
+    ['اطمینان', d.confidence], ['RSI', d.rsi], ['قیمت', d.close],
+    ['حمایت', d.support], ['مقاومت', d.resistance],
+    ['حد ضرر', d.stop_loss], ['هدف', d.target_1],
+    ['R/R', d.rr], ['قدرت خریدار', d.bp],
+    ['جریان پول', d.flow], ['MACD', d.macd_x],
+    ['کندل', d.candle], ['BB Squeeze', d.bb_sq],
+    ['ترند', d.trend],
+  ];
+  document.getElementById('popup-content').innerHTML = fields.map(([k,v]) =>
+    `<div class="popup-item"><div class="k">${k}</div><div class="v">${v || '—'}</div></div>`
+  ).join('');
+  document.getElementById('popup-overlay').classList.add('active');
+}
+function closePopup(e) {
+  if (e.target === document.getElementById('popup-overlay')) closePopupDirect();
+}
+function closePopupDirect() {
+  document.getElementById('popup-overlay').classList.remove('active');
 }
 
-// --- Sort ---
-let sc=-1,sd=1;
-function sortTable(col){
-  const tbody=document.getElementById('table-body');
-  const rows=[...tbody.querySelectorAll('tr')];
-  if(sc===col)sd*=-1;else{sc=col;sd=1;};
-  document.querySelectorAll('thead th').forEach((th,i)=>{th.classList.remove('sort-asc','sort-desc');if(i===col)th.classList.add(sd===1?'sort-asc':'sort-desc');});
-  rows.sort((a,b)=>{
-    const av=a.cells[col]?.textContent.trim()||'',bv=b.cells[col]?.textContent.trim()||'';
-    const an=parseFloat(av),bn=parseFloat(bv);
-    return(!isNaN(an)&&!isNaN(bn))?(an-bn)*sd:av.localeCompare(bv,'fa')*sd;
+function applyFilters() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const label = document.getElementById('filter-label').value;
+  const grade = document.getElementById('filter-grade').value;
+  const sector = document.getElementById('filter-sector').value;
+  document.querySelectorAll('#table-body tr').forEach(tr => {
+    const sym = tr.cells[0]?.textContent.toLowerCase() || '';
+    const lbl = tr.dataset.label || '';
+    const grd = tr.dataset.grade || '';
+    const sec = tr.dataset.sector || '';
+    const ok = (!search || sym.includes(search))
+      && (!label || lbl.includes(label))
+      && (!grade || grd === grade)
+      && (!sector || sec === sector);
+    tr.style.display = ok ? '' : 'none';
   });
-  rows.forEach(r=>tbody.appendChild(r));
 }
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('filter-label').addEventListener('change', applyFilters);
+document.getElementById('filter-grade').addEventListener('change', applyFilters);
+document.getElementById('filter-sector').addEventListener('change', applyFilters);
 
-// --- Popup ---
-function showPopup(id){
-  const d=DATA[id];if(!d)return;
-  const c=document.getElementById('popup-content');
-  const macdBadge=d.macd==='bullish'?'<span class="badge g">MACD↑</span>':d.macd==='bearish'?'<span class="badge r">MACD↓</span>':'';
-  const wBadge=d.w_trend==='up'?`<span class="badge g">هفتگی↑ ${d.w_rsi}</span>`:d.w_trend==='down'?`<span class="badge r">هفتگی↓ ${d.w_rsi}</span>`:'';
-  const candleBadge=d.candle?`<span class="badge y">🕯 ${d.candle}</span>`:'';
-  const pocBadge=d.poc?`<span class="badge g" style="background:#1e3a5f;color:#38bdf8">POC: ${d.poc}</span>`:'';
-
-  c.innerHTML=`
-    <div class="popup-header">
-      <div>
-        <div class="popup-sym">${d.symbol}</div>
-        <div class="popup-label" style="color:${d.color}">${d.label_fa}</div>
-      </div>
-      <div style="margin-right:auto">
-        <span class="popup-grade" style="background:${d.grade_color}">درجه ${d.grade}</span>
-        <div style="font-size:1.4rem;font-weight:bold;color:${d.color};text-align:center;margin-top:4px">${d.score}</div>
-      </div>
-    </div>
-
-    ${d.missing?'<div style="color:#64748b;text-align:center;padding:20px">داده تکنیکال موجود نیست</div>':`
-    <div class="popup-grid">
-      <div class="popup-item"><div class="pi-label">RSI</div><div class="pi-val">${d.rsi} <small style="color:#64748b;font-size:0.7rem">${d.rsi_status}</small></div></div>
-      <div class="popup-item"><div class="pi-label">روند</div><div class="pi-val">${d.trend}/6</div></div>
-      <div class="popup-item"><div class="pi-label">حجم نسبی</div><div class="pi-val">${d.vol}x</div></div>
-      <div class="popup-item"><div class="pi-label">بازده ۵ روزه</div><div class="pi-val">${d.ret5}</div></div>
-      <div class="popup-item"><div class="pi-label">🛑 حد ضرر</div><div class="pi-val" style="color:#ef4444">${d.sl}</div></div>
-      <div class="popup-item"><div class="pi-label">🎯 هدف</div><div class="pi-val" style="color:#22c55e">${d.tgt}</div></div>
-      <div class="popup-item"><div class="pi-label">R/R</div><div class="pi-val">${d.rr}</div></div>
-      <div class="popup-item"><div class="pi-label">ATR</div><div class="pi-val">${d.atr}</div></div>
-    </div>
-
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-      ${macdBadge}${wBadge}${candleBadge}${pocBadge}
-    </div>
-
-    ${d.sm?`<div class="popup-section"><div class="popup-section-title">🧠 پول هوشمند</div><div class="popup-text">${d.sm}</div></div>`:''}
-    ${d.queue?`<div class="popup-section"><div class="popup-section-title">📋 تحلیل صف</div><div class="popup-text">${d.queue}</div></div>`:''}
-    ${d.factors?`<div class="popup-section"><div class="popup-section-title">💡 عوامل امتیاز</div><div class="popup-text">${d.factors}</div></div>`:''}
-    ${d.reasons?`<div class="popup-section"><div class="popup-section-title">💬 دلایل تصمیم</div><div class="popup-text">${d.reasons}</div></div>`:''}
-    <div class="popup-section"><div class="popup-section-title">🏭 سکتور</div><div class="popup-text">${d.sector}</div></div>
-    `}
-  `;
-  document.getElementById('overlay').classList.add('open');
-}
-
-function closePopup(e){if(e.target===document.getElementById('overlay'))closePopupBtn();}
-function closePopupBtn(){document.getElementById('overlay').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopupBtn();});
-
-// --- Export Excel ---
-function exportExcel(){
-  const rows=[...document.querySelectorAll('#table-body tr')].filter(r=>r.style.display!=='none');
-  const headers=['نماد','سیگنال','امتیاز','RSI','روند','حجم','بازده۵روز','حد ضرر','هدف','R/R','سکتور'];
-  let csv='﻿'+headers.join(',')+'
-';
-  rows.forEach(r=>{
-    const cells=[...r.cells].slice(0,11).map(c=>'"'+(c.textContent.trim().replace(/"/g,'""'))+'"');
-    csv+=cells.join(',')+'
-';
+let sortDir = {};
+function sortTable(col) {
+  const tb = document.getElementById('table-body');
+  const rows = Array.from(tb.querySelectorAll('tr'));
+  sortDir[col] = !sortDir[col];
+  rows.sort((a, b) => {
+    const av = a.cells[col]?.textContent.trim() || '';
+    const bv = b.cells[col]?.textContent.trim() || '';
+    const an = parseFloat(av), bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return sortDir[col] ? an - bn : bn - an;
+    return sortDir[col] ? av.localeCompare(bv, 'fa') : bv.localeCompare(av, 'fa');
   });
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='iran_stock_signals.csv';
+  rows.forEach(r => tb.appendChild(r));
+}
+
+function exportCSV() {
+  const rows = Array.from(document.querySelectorAll('#main-table tr'));
+  const csv = rows.filter(r => r.style.display !== 'none').map(r =>
+    Array.from(r.cells).slice(0, 9).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')
+  ).join('
+');
+  const blob = new Blob(['﻿' + csv], {type: 'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'iran-stock-signals.csv';
   a.click();
 }
 
-// Init
-applyFilters();
+(function() {
+  const start = Date.now();
+  const interval = 900;
+  function tick() {
+    const elapsed = Math.floor((Date.now() - start) / 1000);
+    const left = interval - (elapsed % interval);
+    const m = Math.floor(left / 60), s = left % 60;
+    document.getElementById('countdown').textContent =
+      'به‌روزرسانی بعدی: ' + m + ':' + String(s).padStart(2,'0');
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
 </script>
 </body>
 </html>
