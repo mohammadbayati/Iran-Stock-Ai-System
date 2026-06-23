@@ -3,7 +3,6 @@
 import os
 import sys
 import csv
-import json
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,20 +26,20 @@ def label_fa(label: str) -> str:
 
 def label_color(label: str) -> str:
     fa = label_fa(label)
-    if fa in ("ورود قوی",): return "#00c853"
-    if fa in ("ورود",): return "#69f0ae"
-    if fa in ("تماشا",): return "#ffd740"
-    if fa in ("نگهداری",): return "#40c4ff"
-    if fa in ("خروج",): return "#ff5252"
+    if fa == "ورود قوی": return "#00c853"
+    if fa == "ورود": return "#69f0ae"
+    if fa == "تماشا": return "#ffd740"
+    if fa == "نگهداری": return "#40c4ff"
+    if fa == "خروج": return "#ff5252"
     return "#9e9e9e"
 
 def label_bg(label: str) -> str:
     fa = label_fa(label)
-    if fa in ("ورود قوی",): return "#003300"
-    if fa in ("ورود",): return "#003322"
-    if fa in ("تماشا",): return "#333300"
-    if fa in ("نگهداری",): return "#003344"
-    if fa in ("خروج",): return "#330000"
+    if fa == "ورود قوی": return "#003300"
+    if fa == "ورود": return "#003322"
+    if fa == "تماشا": return "#333300"
+    if fa == "نگهداری": return "#003344"
+    if fa == "خروج": return "#330000"
     return "#222"
 
 def grade_color(grade: str) -> str:
@@ -52,7 +51,6 @@ def grade_color(grade: str) -> str:
     return "#9e9e9e"
 
 def load_prev_labels() -> dict:
-    """Load previous decision_label per symbol from signal_log."""
     prev = {}
     if not os.path.exists(SIGNAL_LOG):
         return prev
@@ -90,8 +88,10 @@ def build_html(rows: list, generated_at: str) -> str:
         if prev and prev != label:
             prev_fa = label_fa(prev)
             cur_fa = label_fa(label)
-            change_icon = "⬆️" if label in ("Entry Candidate", "Technical Entry Watch") and prev not in ("Entry Candidate", "Technical Entry Watch") else "⬇️" if prev in ("Entry Candidate", "Technical Entry Watch") and label not in ("Entry Candidate", "Technical Entry Watch") else "🔄"
-            change_cell = f'<span title="از {prev_fa} به {cur_fa}">{change_icon}</span>'
+            is_upgrade = label in ("Entry Candidate", "Technical Entry Watch") and prev not in ("Entry Candidate", "Technical Entry Watch")
+            is_downgrade = prev in ("Entry Candidate", "Technical Entry Watch") and label not in ("Entry Candidate", "Technical Entry Watch")
+            icon = "⬆️" if is_upgrade else "⬇️" if is_downgrade else "🔄"
+            change_cell = f'<span title="از {prev_fa} به {cur_fa}">{icon}</span>'
         else:
             change_cell = ""
 
@@ -101,8 +101,10 @@ def build_html(rows: list, generated_at: str) -> str:
 
         try:
             score_val = float(score)
+            score_display = f"{score_val:.0f}"
             score_bar = f'<div style="background:#333;border-radius:4px;height:6px;margin-top:3px"><div style="background:{color};width:{min(score_val,100):.0f}%;height:6px;border-radius:4px"></div></div>'
-        except Exception:
+        except (ValueError, TypeError):
+            score_display = ""
             score_bar = ""
 
         sparkline = ""
@@ -110,35 +112,35 @@ def build_html(rows: list, generated_at: str) -> str:
             sparkline = f'<canvas class="spark" data-prices="{close_20d}" width="80" height="30"></canvas>'
 
         label_display = label_fa(label)
-
         popup_id = f"pop_{sym}"
-        row_html = f"""<tr onclick="showPopup('{popup_id}')" style="cursor:pointer">
-  <td><b>{sym}</b> {change_cell}</td>
-  <td style="color:{color};background:{bg};text-align:center;border-radius:4px;padding:2px 6px">{label_display}</td>
-  <td style="color:{gc};text-align:center">{grade}</td>
-  <td style="text-align:center">{score_val:.0f if score else score}<br>{score_bar}</td>
-  <td style="text-align:center">{rsi}</td>
-  <td style="text-align:center">{price}</td>
-  <td style="text-align:center;font-size:11px">{sector}</td>
-  <td style="text-align:center">{sm}</td>
-  <td style="text-align:center">{q}</td>
-  <td>{sparkline}</td>
-</tr>"""
 
-        popup_html = f"""<div id="{popup_id}" class="popup" style="display:none">
-  <div class="popup-box">
-    <button onclick="closePopup('{popup_id}')" style="float:left;background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>
-    <h3 style="color:{color}">{sym} — {label_display}</h3>
-    <p><b>امتیاز:</b> {score} | <b>رتبه:</b> <span style="color:{gc}">{grade}</span></p>
-    <p><b>سکتور:</b> {sector}</p>
-    <p><b>RSI:</b> {rsi} | <b>قیمت:</b> {price}</p>
-    <p><b>پول هوشمند:</b> {sm} — {r.get('smart_money_fa','')}</p>
-    <p><b>صف:</b> {q} — {r.get('queue_fa','')}</p>
-    <p><b>دلایل:</b> {reasons}</p>
-    <p style="font-size:11px;color:#aaa"><b>عوامل:</b> {factors}</p>
-    <div style="margin-top:10px">{sparkline.replace('width="80" height="30"','width="280" height="80"') if close_20d else ''}</div>
-  </div>
-</div>"""
+        row_html = f'<tr class="data-row" onclick="showPopup(\'{popup_id}\')" style="cursor:pointer">\n'
+        row_html += f'  <td><b>{sym}</b> {change_cell}</td>\n'
+        row_html += f'  <td style="color:{color};background:{bg};text-align:center;border-radius:4px;padding:2px 6px">{label_display}</td>\n'
+        row_html += f'  <td style="color:{gc};text-align:center">{grade}</td>\n'
+        row_html += f'  <td style="text-align:center">{score_display}<br>{score_bar}</td>\n'
+        row_html += f'  <td style="text-align:center">{rsi}</td>\n'
+        row_html += f'  <td style="text-align:center">{price}</td>\n'
+        row_html += f'  <td style="text-align:center;font-size:11px">{sector}</td>\n'
+        row_html += f'  <td style="text-align:center">{sm}</td>\n'
+        row_html += f'  <td style="text-align:center">{q}</td>\n'
+        row_html += f'  <td>{sparkline}</td>\n'
+        row_html += '</tr>\n'
+
+        spark_large = close_20d and f'<canvas class="spark" data-prices="{close_20d}" width="280" height="80"></canvas>' or ""
+        popup_html = f'<tr id="{popup_id}" class="popup" style="display:none"><td colspan="10">\n'
+        popup_html += f'<div class="popup-box">\n'
+        popup_html += f'<button onclick="closePopup(\'{popup_id}\')" style="float:left;background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>\n'
+        popup_html += f'<h3 style="color:{color}">{sym} — {label_display}</h3>\n'
+        popup_html += f'<p><b>امتیاز:</b> {score_display} | <b>رتبه:</b> <span style="color:{gc}">{grade}</span></p>\n'
+        popup_html += f'<p><b>سکتور:</b> {sector}</p>\n'
+        popup_html += f'<p><b>RSI:</b> {rsi} | <b>قیمت:</b> {price}</p>\n'
+        popup_html += f'<p><b>پول هوشمند:</b> {sm} — {r.get("smart_money_fa","")}</p>\n'
+        popup_html += f'<p><b>صف:</b> {q} — {r.get("queue_fa","")}</p>\n'
+        popup_html += f'<p><b>دلایل:</b> {reasons}</p>\n'
+        popup_html += f'<p style="font-size:11px;color:#aaa"><b>عوامل:</b> {factors}</p>\n'
+        popup_html += f'<div style="margin-top:10px">{spark_large}</div>\n'
+        popup_html += '</div></td></tr>\n'
 
         table_rows += row_html + popup_html
 
@@ -161,9 +163,9 @@ def build_html(rows: list, generated_at: str) -> str:
   th{{background:#1e1e1e;color:#90caf9;padding:6px 8px;text-align:center;position:sticky;top:0;cursor:pointer;user-select:none}}
   th:hover{{background:#263238}}
   td{{padding:5px 8px;border-bottom:1px solid #222;vertical-align:middle}}
-  tr:hover{{background:#1a1a2e}}
-  .popup{{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center}}
-  .popup-box{{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:20px;max-width:400px;width:90%;direction:rtl}}
+  tr.data-row:hover{{background:#1a1a2e}}
+  .popup{{background:rgba(0,0,0,.85)}}
+  .popup-box{{background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px;max-width:420px;margin:auto;direction:rtl}}
   #countdown{{display:inline-block;background:#1a237e;padding:2px 10px;border-radius:10px;font-size:11px;color:#90caf9}}
   .spark{{display:block}}
 </style>
@@ -219,7 +221,6 @@ def build_html(rows: list, generated_at: str) -> str:
 </table>
 
 <script>
-// Countdown timer
 var refreshSecs = 900;
 function updateCountdown() {{
   var m = Math.floor(refreshSecs/60), s = refreshSecs%60;
@@ -229,14 +230,13 @@ function updateCountdown() {{
 }}
 updateCountdown();
 
-// Sparklines
 window.addEventListener('load', function() {{
   document.querySelectorAll('.spark').forEach(function(c) {{
-    var prices = c.dataset.prices.split(',').map(Number).filter(n=>!isNaN(n));
+    var prices = c.dataset.prices.split(',').map(Number).filter(function(n){{return !isNaN(n);}});
     if(!prices.length) return;
     var ctx = c.getContext('2d');
     var w=c.width, h=c.height, n=prices.length;
-    var mn=Math.min(...prices), mx=Math.max(...prices), rng=mx-mn||1;
+    var mn=Math.min.apply(null,prices), mx=Math.max.apply(null,prices), rng=mx-mn||1;
     ctx.strokeStyle = prices[n-1]>=prices[0]?'#00e676':'#ff5252';
     ctx.lineWidth=1.5;
     ctx.beginPath();
@@ -248,7 +248,6 @@ window.addEventListener('load', function() {{
   }});
 }});
 
-// Filter
 function filterTable() {{
   var q=document.getElementById('searchBox').value.toLowerCase();
   var lf=document.getElementById('labelFilter').value;
@@ -256,13 +255,12 @@ function filterTable() {{
   document.querySelectorAll('#tableBody tr.data-row').forEach(function(tr) {{
     var sym=tr.cells[0].textContent.toLowerCase();
     var lbl=tr.cells[1].textContent;
-    var grd=tr.cells[2].textContent;
+    var grd=tr.cells[2].textContent.trim();
     var show=sym.includes(q)&&(lf===''||lbl.includes(lf))&&(gf===''||grd===gf);
     tr.style.display=show?'':'none';
   }});
 }}
 
-// Sort
 var sortDir={{}};
 function sortTable(col) {{
   var tb=document.getElementById('tableBody');
@@ -274,22 +272,25 @@ function sortTable(col) {{
     if(!isNaN(an)&&!isNaN(bn)) return asc?an-bn:bn-an;
     return asc?av.localeCompare(bv,'fa'):bv.localeCompare(av,'fa');
   }});
-  rows.forEach(r=>tb.appendChild(r));
+  rows.forEach(function(r){{tb.appendChild(r);}});
 }}
 
-// Popup
-function showPopup(id) {{ document.getElementById(id).style.display='flex'; }}
+function showPopup(id) {{
+  document.querySelectorAll('tr.popup').forEach(function(p){{p.style.display='none';}});
+  document.getElementById(id).style.display='table-row';
+}}
 function closePopup(id) {{ document.getElementById(id).style.display='none'; }}
-document.addEventListener('keydown',function(e){{if(e.key==='Escape')document.querySelectorAll('.popup').forEach(p=>p.style.display='none');}});
+document.addEventListener('keydown',function(e){{
+  if(e.key==='Escape') document.querySelectorAll('tr.popup').forEach(function(p){{p.style.display='none';}});
+}});
 
-// CSV Export
 function exportCSV() {{
   var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','قیمت','سکتور','پول هوشمند','صف']];
   document.querySelectorAll('#tableBody tr.data-row').forEach(function(tr) {{
     if(tr.style.display==='none') return;
-    rows.push(Array.from(tr.cells).slice(0,9).map(td=>td.textContent.trim()));
+    rows.push(Array.from(tr.cells).slice(0,9).map(function(td){{return td.textContent.trim();}}));
   }});
-  var csv=rows.map(r=>r.join(',')).join('\\n');
+  var csv=rows.map(function(r){{return r.join(',');}}).join('\\n');
   var a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\\uFEFF'+encodeURIComponent(csv);
   a.download='stock_dashboard.csv';a.click();
