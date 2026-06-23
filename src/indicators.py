@@ -13,7 +13,7 @@ from datetime import datetime
 
 from config.settings import HISTORY_DIR, STALE_HISTORY_DAYS
 
-MINIMUM_BARS = 15
+MINIMUM_BARS = 15  # minimum bars needed for calculations
 
 
 def load_history(symbol: str) -> pd.DataFrame | None:
@@ -52,6 +52,7 @@ def _rsi(series: pd.Series, period: int = 14) -> float | None:
 
 
 def _rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
+    """Returns the full RSI series (for divergence detection)."""
     delta = series.diff()
     gain = delta.clip(lower=0)
     loss = (-delta).clip(lower=0)
@@ -62,6 +63,7 @@ def _rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
 
 
 def _atr(df: pd.DataFrame, period: int = 14) -> float | None:
+    """Average True Range — requires high/low/close columns."""
     if "high" not in df.columns or "low" not in df.columns:
         return None
     if len(df) < period + 1:
@@ -82,20 +84,22 @@ def _atr(df: pd.DataFrame, period: int = 14) -> float | None:
 def _rsi_divergence(close: pd.Series, rsi_s: pd.Series, lookback: int = 10) -> str:
     if len(close) < lookback or len(rsi_s.dropna()) < lookback:
         return "none"
-
     price_recent = close.iloc[-lookback:]
     rsi_recent = rsi_s.iloc[-lookback:]
-
     price_first_half = price_recent.iloc[:lookback // 2]
     price_second_half = price_recent.iloc[lookback // 2:]
     rsi_first_half = rsi_recent.iloc[:lookback // 2]
     rsi_second_half = rsi_recent.iloc[lookback // 2:]
-
-    bullish = (price_second_half.min() < price_first_half.min() * 0.995) and \
-              (rsi_second_half.min() > rsi_first_half.min() + 2)
-    bearish = (price_second_half.max() > price_first_half.max() * 1.005) and \
-              (rsi_second_half.max() < rsi_first_half.max() - 2)
-
+    price_low1 = price_first_half.min()
+    price_low2 = price_second_half.min()
+    rsi_low1 = rsi_first_half.min()
+    rsi_low2 = rsi_second_half.min()
+    price_high1 = price_first_half.max()
+    price_high2 = price_second_half.max()
+    rsi_high1 = rsi_first_half.max()
+    rsi_high2 = rsi_second_half.max()
+    bullish = (price_low2 < price_low1 * 0.995) and (rsi_low2 > rsi_low1 + 2)
+    bearish = (price_high2 > price_high1 * 1.005) and (rsi_high2 < rsi_high1 - 2)
     if bullish:
         return "bullish"
     if bearish:
@@ -107,25 +111,20 @@ def _trend_score(df: pd.DataFrame) -> int:
     close = df["close"]
     n = min(20, len(close))
     score = 0
-
     ma20 = close.rolling(n).mean().iloc[-1]
     latest = close.iloc[-1]
-
     if latest > ma20:
         score += 1
-
     if len(close) >= 50:
         ma50 = close.rolling(50).mean().iloc[-1]
         if latest > ma50:
             score += 1
-
     ma20_series = close.rolling(n).mean()
     lookback = min(5, len(ma20_series.dropna()))
     if lookback >= 2:
         slope = ma20_series.iloc[-1] - ma20_series.iloc[-lookback]
         if slope > 0:
             score += 1
-
     if len(close) >= 10:
         recent = close.iloc[-5:]
         prior = close.iloc[-10:-5]
@@ -133,13 +132,11 @@ def _trend_score(df: pd.DataFrame) -> int:
             score += 1
         if recent.min() > prior.min():
             score += 1
-
     high_n = close.iloc[-n:].max()
     low_n = close.iloc[-n:].min()
     mid = (high_n + low_n) / 2
     if latest > mid:
         score += 1
-
     return score
 
 
@@ -147,35 +144,27 @@ def _volume_profile(df: pd.DataFrame, bins: int = 10) -> dict:
     df_vp = df.tail(60) if len(df) > 60 else df
     if "volume" not in df_vp.columns or df_vp["volume"].isna().all():
         return {"poc": None, "vah": None, "val": None, "poc_position": "unknown"}
-
     close = df_vp["close"].dropna()
     volume = df_vp["volume"].dropna()
     if len(close) < 5 or len(volume) < 5:
         return {"poc": None, "vah": None, "val": None, "poc_position": "unknown"}
-
     price_min = close.min()
     price_max = close.max()
     if price_max <= price_min:
         return {"poc": None, "vah": None, "val": None, "poc_position": "unknown"}
-
     bin_edges = np.linspace(price_min, price_max, bins + 1)
     bin_vols = np.zeros(bins)
     bin_midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
-
     for price, vol in zip(close, volume):
         idx = min(int((price - price_min) / (price_max - price_min) * bins), bins - 1)
         bin_vols[idx] += vol
-
     poc_idx = int(np.argmax(bin_vols))
     poc = round(float(bin_midpoints[poc_idx]), 2)
-
     total_vol = bin_vols.sum()
     target_vol = total_vol * 0.70
-
     val_idx = poc_idx
     vah_idx = poc_idx
     captured = bin_vols[poc_idx]
-
     while captured < target_vol:
         can_go_low = val_idx > 0
         can_go_high = vah_idx < bins - 1
@@ -191,10 +180,8 @@ def _volume_profile(df: pd.DataFrame, bins: int = 10) -> dict:
             captured += bin_vols[vah_idx]
         else:
             break
-
     val = round(float(bin_midpoints[val_idx]), 2)
     vah = round(float(bin_midpoints[vah_idx]), 2)
-
     latest_close = float(close.iloc[-1])
     if latest_close > poc * 1.01:
         poc_position = "above"
@@ -202,42 +189,37 @@ def _volume_profile(df: pd.DataFrame, bins: int = 10) -> dict:
         poc_position = "below"
     else:
         poc_position = "at"
-
     return {"poc": poc, "vah": vah, "val": val, "poc_position": poc_position}
 
 
 def _swing_points(df: pd.DataFrame, window: int = 5, lookback: int = 60) -> dict:
     df_s = df.tail(lookback).reset_index(drop=True) if len(df) > lookback else df.reset_index(drop=True)
     has_hl = "high" in df_s.columns and "low" in df_s.columns
-
-    highs = df_s["high"] if has_hl else df_s["close"]
-    lows = df_s["low"] if has_hl else df_s["close"]
-
+    if has_hl:
+        highs = df_s["high"]
+        lows = df_s["low"]
+    else:
+        highs = df_s["close"]
+        lows = df_s["close"]
     swing_highs = []
     swing_lows = []
     n = len(df_s)
-
     for i in range(window, n - window):
         left_h = highs.iloc[i - window:i]
         right_h = highs.iloc[i + 1:i + window + 1]
         if highs.iloc[i] >= left_h.max() and highs.iloc[i] >= right_h.max():
             swing_highs.append(float(highs.iloc[i]))
-
         left_l = lows.iloc[i - window:i]
         right_l = lows.iloc[i + 1:i + window + 1]
         if lows.iloc[i] <= left_l.min() and lows.iloc[i] <= right_l.min():
             swing_lows.append(float(lows.iloc[i]))
-
     latest_close = float(df_s["close"].iloc[-1])
     fallback_high = float(highs.max())
     fallback_low = float(lows.min())
-
     resistance_candidates = [p for p in swing_highs if p >= latest_close * 0.99]
     resistance = round(min(resistance_candidates), 2) if resistance_candidates else round(fallback_high, 2)
-
     support_candidates = [p for p in swing_lows if p <= latest_close * 1.01]
     support = round(max(support_candidates), 2) if support_candidates else round(fallback_low, 2)
-
     return {"support": support, "resistance": resistance}
 
 
@@ -255,13 +237,7 @@ def _bollinger_bands(close: pd.Series, period: int = 20, std_mult: float = 2.0) 
     squeeze = bandwidth is not None and bandwidth < 0.10
     latest = float(close.iloc[-1])
     bb_pct = round((latest - bb_lower) / (bb_upper - bb_lower), 3) if (bb_upper - bb_lower) > 0 else None
-    return {
-        "bb_upper": bb_upper,
-        "bb_middle": bb_middle,
-        "bb_lower": bb_lower,
-        "bb_squeeze": squeeze,
-        "bb_pct": bb_pct,
-    }
+    return {"bb_upper": bb_upper, "bb_middle": bb_middle, "bb_lower": bb_lower, "bb_squeeze": squeeze, "bb_pct": bb_pct}
 
 
 def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> dict:
@@ -272,11 +248,9 @@ def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> 
     macd_line = ema_fast - ema_slow
     signal_line = macd_line.ewm(span=signal, adjust=False).mean()
     hist = macd_line - signal_line
-
     ml = round(float(macd_line.iloc[-1]), 4)
     sl = round(float(signal_line.iloc[-1]), 4)
     hl = round(float(hist.iloc[-1]), 4)
-
     if len(macd_line) >= 2:
         prev_diff = float(macd_line.iloc[-2]) - float(signal_line.iloc[-2])
         curr_diff = float(macd_line.iloc[-1]) - float(signal_line.iloc[-1])
@@ -288,78 +262,54 @@ def _macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> 
             crossover = "none"
     else:
         crossover = "none"
-
     return {"macd_line": ml, "macd_signal": sl, "macd_hist": hl, "macd_crossover": crossover}
 
 
 def _candlestick_patterns(df: pd.DataFrame) -> dict:
-    """
-    Detect bullish/bearish candlestick patterns on the last 3 bars.
-
-    Patterns: hammer, inverted_hammer, bullish_engulfing,
-              bearish_engulfing, morning_star, doji
-    """
     result = {"candle_pattern": "none", "candle_bullish": None}
-
     required = {"open", "high", "low", "close"}
     if not required.issubset(df.columns):
         return result
     if len(df) < 3:
         return result
-
     df_c = df.tail(3).reset_index(drop=True)
     o = df_c["open"].astype(float)
     h = df_c["high"].astype(float)
     l = df_c["low"].astype(float)
     c = df_c["close"].astype(float)
-
     o0, h0, l0, c0 = o.iloc[-1], h.iloc[-1], l.iloc[-1], c.iloc[-1]
     o1, h1, l1, c1 = o.iloc[-2], h.iloc[-2], l.iloc[-2], c.iloc[-2]
     o2, h2, l2, c2 = o.iloc[-3], h.iloc[-3], l.iloc[-3], c.iloc[-3]
-
     body0 = abs(c0 - o0)
     body1 = abs(c1 - o1)
     range0 = h0 - l0 if h0 - l0 > 0 else 0.001
     range1 = h1 - l1 if h1 - l1 > 0 else 0.001
-
     upper_shadow0 = h0 - max(o0, c0)
     lower_shadow0 = min(o0, c0) - l0
-
-    # Doji
     if body0 < 0.10 * range0:
         result["candle_pattern"] = "doji"
         result["candle_bullish"] = None
         return result
-
-    # Hammer
-    if (lower_shadow0 >= 2 * body0 and
-            upper_shadow0 <= 0.3 * body0 and
-            min(o0, c0) > l0 + range0 * 0.5):
+    if (lower_shadow0 >= 2 * body0 and upper_shadow0 <= 0.3 * body0 and min(o0, c0) > l0 + range0 * 0.5):
         result["candle_pattern"] = "hammer"
         result["candle_bullish"] = True
         return result
-
-    # Inverted Hammer
-    if (upper_shadow0 >= 2 * body0 and
-            lower_shadow0 <= 0.3 * body0 and
-            max(o0, c0) < h0 - range0 * 0.5):
+    if (upper_shadow0 >= 2 * body0 and lower_shadow0 <= 0.3 * body0 and max(o0, c0) < h0 - range0 * 0.5):
         result["candle_pattern"] = "inverted_hammer"
         result["candle_bullish"] = True
         return result
-
-    # Bullish Engulfing
-    if c1 < o1 and c0 > o0 and o0 < c1 and c0 > o1:
+    prev_bearish = c1 < o1
+    today_bullish = c0 > o0
+    if prev_bearish and today_bullish and o0 < c1 and c0 > o1:
         result["candle_pattern"] = "bullish_engulfing"
         result["candle_bullish"] = True
         return result
-
-    # Bearish Engulfing
-    if c1 > o1 and c0 < o0 and o0 > c1 and c0 < o1:
+    prev_bullish = c1 > o1
+    today_bearish = c0 < o0
+    if prev_bullish and today_bearish and o0 > c1 and c0 < o1:
         result["candle_pattern"] = "bearish_engulfing"
         result["candle_bullish"] = False
         return result
-
-    # Morning Star
     bar2_bearish = c2 < o2 and abs(c2 - o2) > 0.5 * (h2 - l2)
     bar1_small = abs(c1 - o1) < 0.3 * (h1 - l1 if h1 - l1 > 0 else 0.001)
     bar0_bullish = c0 > o0 and abs(c0 - o0) > 0.5 * range0
@@ -367,7 +317,6 @@ def _candlestick_patterns(df: pd.DataFrame) -> dict:
         result["candle_pattern"] = "morning_star"
         result["candle_bullish"] = True
         return result
-
     return result
 
 
@@ -429,6 +378,7 @@ def calculate_indicators(symbol: str) -> dict:
         "weekly_trend": None,
         "candle_pattern": "none",
         "candle_bullish": None,
+        "close_20d": None,
     }
 
     df = load_history(symbol)
@@ -475,10 +425,10 @@ def calculate_indicators(symbol: str) -> dict:
     else:
         stop_loss = round(support * 0.97, 2)
 
+    range_20 = high20 - low20
     if resistance > latest_close * 1.01:
         target_1 = resistance
     else:
-        range_20 = high20 - low20
         target_1 = round(latest_close + range_20 * 0.618, 2)
 
     risk = latest_close - stop_loss
@@ -505,6 +455,8 @@ def calculate_indicators(symbol: str) -> dict:
         risk = latest_close - stop_loss
         if risk > 0 and reward > 0:
             risk_reward = min(round(reward / risk, 2), 10.0)
+
+    close_20d = ",".join(str(int(round(float(v), 0))) for v in close.iloc[-20:].tolist())
 
     return {
         "symbol": symbol,
@@ -542,4 +494,5 @@ def calculate_indicators(symbol: str) -> dict:
         "weekly_trend": weekly["weekly_trend"],
         "candle_pattern": candle["candle_pattern"],
         "candle_bullish": candle["candle_bullish"],
+        "close_20d": close_20d,
     }
