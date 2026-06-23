@@ -1,427 +1,324 @@
-"""
-Generate docs/index.html from output/decision_report.csv
-Dashboard Level 2: sparkline charts + status change column + auto-refresh
-"""
+"""Generate static HTML dashboard from decision_report.csv."""
 
 import os
+import sys
 import csv
 import json
 from datetime import datetime
 
-INPUT_CSV = os.path.join("output", "decision_report.csv")
-SIGNAL_LOG = os.path.join("output", "signal_log.csv")
-OUTPUT_HTML = os.path.join("docs", "index.html")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config.settings import DECISION_REPORT_CSV, OUTPUT_DIR
 
+SIGNAL_LOG = os.path.join(OUTPUT_DIR, "signal_log.csv")
+DASHBOARD_PATH = os.path.join("docs", "index.html")
 
-def load_csv(path):
-    if not os.path.exists(path):
-        return []
-    with open(path, encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+LABEL_FA = {
+    "Entry Candidate": "ورود قوی",
+    "Technical Entry Watch": "ورود",
+    "Wait for Pullback": "تماشا",
+    "Watch - Needs Volume Confirmation": "تماشا",
+    "Watch Only": "نگهداری",
+    "Avoid Entry Now - Overbought": "خروج",
+    "Missing Technical Data": "داده ناقص",
+}
 
+def label_fa(label: str) -> str:
+    return LABEL_FA.get(label, label)
 
-def load_prev_labels(rows):
-    """Return dict of symbol -> previous label from signal_log (second-to-last entry per symbol)."""
+def label_color(label: str) -> str:
+    fa = label_fa(label)
+    if fa in ("ورود قوی",): return "#00c853"
+    if fa in ("ورود",): return "#69f0ae"
+    if fa in ("تماشا",): return "#ffd740"
+    if fa in ("نگهداری",): return "#40c4ff"
+    if fa in ("خروج",): return "#ff5252"
+    return "#9e9e9e"
+
+def label_bg(label: str) -> str:
+    fa = label_fa(label)
+    if fa in ("ورود قوی",): return "#003300"
+    if fa in ("ورود",): return "#003322"
+    if fa in ("تماشا",): return "#333300"
+    if fa in ("نگهداری",): return "#003344"
+    if fa in ("خروج",): return "#330000"
+    return "#222"
+
+def grade_color(grade: str) -> str:
+    g = grade.upper() if grade else ""
+    if g == "A+": return "#00e676"
+    if g == "A": return "#69f0ae"
+    if g == "B": return "#ffd740"
+    if g == "C": return "#ff9100"
+    return "#9e9e9e"
+
+def load_prev_labels() -> dict:
+    """Load previous decision_label per symbol from signal_log."""
     prev = {}
     if not os.path.exists(SIGNAL_LOG):
         return prev
-    by_symbol = {}
-    with open(SIGNAL_LOG, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
+    with open(SIGNAL_LOG, encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
             sym = row.get("symbol", "")
-            if sym:
-                by_symbol.setdefault(sym, []).append(row.get("label", ""))
-    for sym, labels in by_symbol.items():
-        if len(labels) >= 2:
-            prev[sym] = labels[-2]
-    return prev
+            lbl = row.get("decision_label", "")
+            dt = row.get("date", "")
+            if sym and lbl:
+                if sym not in prev or dt > prev[sym]["date"]:
+                    prev[sym] = {"label": lbl, "date": dt}
+    return {k: v["label"] for k, v in prev.items()}
 
+def build_html(rows: list, generated_at: str) -> str:
+    prev_labels = load_prev_labels()
 
-def label_color(label):
-    colors = {
-        "ورود قوی": "#16a34a",
-        "ورود": "#22c55e",
-        "تماشا": "#ca8a04",
-        "خروج": "#dc2626",
-        "نگهداری": "#2563eb",
-    }
-    for key, col in colors.items():
-        if key in str(label):
-            return col
-    return "#6b7280"
-
-
-def label_bg(label):
-    bgs = {
-        "ورود قوی": "rgba(22,163,74,0.12)",
-        "ورود": "rgba(34,197,94,0.10)",
-        "تماشا": "rgba(202,138,4,0.10)",
-        "خروج": "rgba(220,38,38,0.10)",
-        "نگهداری": "rgba(37,99,235,0.10)",
-    }
-    for key, bg in bgs.items():
-        if key in str(label):
-            return bg
-    return "transparent"
-
-
-def build_html(rows, prev_labels):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-    label_counts = {}
-    for r in rows:
-        lbl = r.get("label", "نامشخص")
-        label_counts[lbl] = label_counts.get(lbl, 0) + 1
-
-    entry_strong = sum(v for k, v in label_counts.items() if "ورود قوی" in k)
-    entry = sum(v for k, v in label_counts.items() if "ورود" in k and "قوی" not in k)
-    watch = sum(v for k, v in label_counts.items() if "تماشا" in k)
-    exit_ = sum(v for k, v in label_counts.items() if "خروج" in k)
-    hold = sum(v for k, v in label_counts.items() if "نگهداری" in k)
-    total = len(rows)
-
-    sector_counts = {}
-    for r in rows:
-        sec = r.get("sector", "سایر") or "سایر"
-        sector_counts[sec] = sector_counts.get(sec, 0) + 1
-
-    sector_chips = ""
-    sector_options = '<option value="">همه سکتورها</option>'
-    for sec, cnt in sorted(sector_counts.items(), key=lambda x: -x[1]):
-        sector_chips += f'<span class="chip">{sec} <b>{cnt}</b></span>'
-        sector_options += f'<option value="{sec}">{sec} ({cnt})</option>'
-
-    table_rows_html = ""
+    table_rows = ""
     for r in rows:
         sym = r.get("symbol", "")
-        label = r.get("label", "")
-        grade = r.get("grade", "")
-        sector = r.get("sector", "سایر") or "سایر"
-        confidence = r.get("confidence_score", "")
+        label = r.get("decision_label", "")
+        grade = r.get("confidence_grade", "")
+        score = r.get("confidence_score", "")
+        sector = r.get("sector", "")
         rsi = r.get("rsi", "")
-        close = r.get("latest_close", "")
-        support = r.get("support", "")
-        resistance = r.get("resistance", "")
-        stop_loss = r.get("stop_loss", "")
-        target_1 = r.get("target_1", "")
-        rr = r.get("risk_reward", "")
-        bp = r.get("buyer_power", "")
-        flow = r.get("real_money_flow", "")
-        macd_x = r.get("macd_crossover", "")
-        candle = r.get("candle_pattern", "")
-        bb_sq = r.get("bb_squeeze", "")
-        trend = r.get("trend_score", "")
+        price = r.get("latest_close", "")
+        sm = r.get("smart_money_signal", "")
+        q = r.get("queue_signal", "")
+        reasons = r.get("decision_reasons", "")
         close_20d = r.get("close_20d", "")
+        factors = r.get("confidence_factors", "")
 
+        # Status change
         prev = prev_labels.get(sym, "")
         if prev and prev != label:
-            arrow = "⬆️" if "ورود" in label else "⬇️" if "خروج" in label else "↔️"
-            change_cell = f'<span title="{prev} → {label}">{arrow}</span>'
+            prev_fa = label_fa(prev)
+            cur_fa = label_fa(label)
+            change_icon = "⬆️" if label in ("Entry Candidate", "Technical Entry Watch") and prev not in ("Entry Candidate", "Technical Entry Watch") else "⬇️" if prev in ("Entry Candidate", "Technical Entry Watch") and label not in ("Entry Candidate", "Technical Entry Watch") else "🔄"
+            change_cell = f'<span title="از {prev_fa} به {cur_fa}">{change_icon}</span>'
         else:
-            change_cell = '<span style="color:#9ca3af">—</span>'
+            change_cell = ""
 
-        spark_attr = f'data-spark="{close_20d}"' if close_20d else ""
         color = label_color(label)
         bg = label_bg(label)
+        gc = grade_color(grade)
 
         try:
-            flow_b = float(flow) / 1e9
-            flow_str = f"{flow_b:+.1f}B"
+            score_val = float(score)
+            score_bar = f'<div style="background:#333;border-radius:4px;height:6px;margin-top:3px"><div style="background:{color};width:{min(score_val,100):.0f}%;height:6px;border-radius:4px"></div></div>'
         except Exception:
-            flow_str = flow or "—"
+            score_bar = ""
 
-        popup_data = json.dumps({
-            "symbol": sym, "label": label, "grade": grade,
-            "sector": sector, "confidence": confidence,
-            "rsi": rsi, "close": close, "support": support,
-            "resistance": resistance, "stop_loss": stop_loss,
-            "target_1": target_1, "rr": rr, "bp": bp,
-            "flow": flow_str, "macd_x": macd_x,
-            "candle": candle, "bb_sq": bb_sq, "trend": trend,
-        }, ensure_ascii=False).replace("'", "&#39;")
+        sparkline = ""
+        if close_20d:
+            sparkline = f'<canvas class="spark" data-prices="{close_20d}" width="80" height="30"></canvas>'
 
-        table_rows_html += f"""
-<tr style="background:{bg}" data-label="{label}" data-grade="{grade}" data-sector="{sector}"
-    onclick="showPopup('{sym}', '{popup_data.replace('"', '&quot;')}')">
-  <td><b style="color:{color}">{sym}</b></td>
-  <td><span style="color:{color};font-weight:600">{label}</span></td>
-  <td>{grade}</td>
-  <td>{sector}</td>
-  <td>{confidence}</td>
-  <td>{rsi}</td>
-  <td>{close}</td>
-  <td>{flow_str}</td>
-  <td>{bp}</td>
-  <td>{change_cell}</td>
-  <td><canvas class="sparkline" width="80" height="30" {spark_attr}></canvas></td>
+        label_display = label_fa(label)
+
+        popup_id = f"pop_{sym}"
+        row_html = f"""<tr onclick="showPopup('{popup_id}')" style="cursor:pointer">
+  <td><b>{sym}</b> {change_cell}</td>
+  <td style="color:{color};background:{bg};text-align:center;border-radius:4px;padding:2px 6px">{label_display}</td>
+  <td style="color:{gc};text-align:center">{grade}</td>
+  <td style="text-align:center">{score_val:.0f if score else score}<br>{score_bar}</td>
+  <td style="text-align:center">{rsi}</td>
+  <td style="text-align:center">{price}</td>
+  <td style="text-align:center;font-size:11px">{sector}</td>
+  <td style="text-align:center">{sm}</td>
+  <td style="text-align:center">{q}</td>
+  <td>{sparkline}</td>
 </tr>"""
+
+        popup_html = f"""<div id="{popup_id}" class="popup" style="display:none">
+  <div class="popup-box">
+    <button onclick="closePopup('{popup_id}')" style="float:left;background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>
+    <h3 style="color:{color}">{sym} — {label_display}</h3>
+    <p><b>امتیاز:</b> {score} | <b>رتبه:</b> <span style="color:{gc}">{grade}</span></p>
+    <p><b>سکتور:</b> {sector}</p>
+    <p><b>RSI:</b> {rsi} | <b>قیمت:</b> {price}</p>
+    <p><b>پول هوشمند:</b> {sm} — {r.get('smart_money_fa','')}</p>
+    <p><b>صف:</b> {q} — {r.get('queue_fa','')}</p>
+    <p><b>دلایل:</b> {reasons}</p>
+    <p style="font-size:11px;color:#aaa"><b>عوامل:</b> {factors}</p>
+    <div style="margin-top:10px">{sparkline.replace('width="80" height="30"','width="280" height="80"') if close_20d else ''}</div>
+  </div>
+</div>"""
+
+        table_rows += row_html + popup_html
 
     return f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="refresh" content="900">
-<title>داشبورد بازار ایران</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Iran Stock AI Dashboard</title>
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: Tahoma, Arial, sans-serif; background: #0f172a; color: #e2e8f0; direction: rtl; }}
-  header {{ background: linear-gradient(135deg, #1e3a5f, #0f2940); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }}
-  header h1 {{ font-size: 1.4rem; color: #60a5fa; }}
-  header small {{ color: #94a3b8; font-size: 0.8rem; }}
-  .top-bar {{ display: flex; gap: 12px; padding: 12px 24px; flex-wrap: wrap; align-items: center; }}
-  input#search {{ flex: 1; min-width: 180px; padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 0.9rem; }}
-  select {{ padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 0.9rem; cursor: pointer; }}
-  .btn {{ padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; cursor: pointer; font-size: 0.9rem; font-family: Tahoma; }}
-  .btn:hover {{ background: #1d4ed8; }}
-  .stats {{ display: flex; gap: 10px; padding: 0 24px 12px; flex-wrap: wrap; }}
-  .stat-card {{ background: #1e293b; border-radius: 10px; padding: 10px 16px; text-align: center; min-width: 80px; border: 1px solid #334155; }}
-  .stat-card .num {{ font-size: 1.5rem; font-weight: bold; }}
-  .stat-card .lbl {{ font-size: 0.7rem; color: #94a3b8; }}
-  .chips {{ padding: 0 24px 12px; display: flex; flex-wrap: wrap; gap: 6px; }}
-  .chip {{ background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 4px 10px; font-size: 0.75rem; color: #94a3b8; }}
-  .table-wrap {{ overflow-x: auto; padding: 0 24px 80px; }}
-  table {{ width: 100%; border-collapse: collapse; font-size: 0.85rem; }}
-  thead th {{ background: #1e293b; color: #94a3b8; padding: 10px 8px; text-align: right; cursor: pointer; user-select: none; position: sticky; top: 0; border-bottom: 2px solid #334155; white-space: nowrap; }}
-  thead th:hover {{ color: #60a5fa; }}
-  tbody tr {{ border-bottom: 1px solid #1e293b; cursor: pointer; transition: filter 0.15s; }}
-  tbody tr:hover {{ filter: brightness(1.2); }}
-  td {{ padding: 8px 8px; white-space: nowrap; }}
-  .popup-overlay {{ display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }}
-  .popup-overlay.active {{ display: flex; }}
-  .popup {{ background: #1e293b; border-radius: 14px; padding: 24px; max-width: 480px; width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid #334155; position: relative; }}
-  .popup h2 {{ font-size: 1.3rem; margin-bottom: 14px; color: #60a5fa; }}
-  .popup-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
-  .popup-item {{ background: #0f172a; border-radius: 8px; padding: 8px 10px; }}
-  .popup-item .k {{ font-size: 0.7rem; color: #94a3b8; }}
-  .popup-item .v {{ font-size: 0.95rem; font-weight: 600; margin-top: 2px; }}
-  .close-btn {{ position: absolute; top: 12px; left: 16px; background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; }}
-  .close-btn:hover {{ color: #e2e8f0; }}
-  footer {{ position: fixed; bottom: 0; left: 0; right: 0; background: #0f172a; border-top: 1px solid #1e293b; padding: 8px 24px; font-size: 0.75rem; color: #475569; display: flex; justify-content: space-between; }}
-  .refresh-badge {{ color: #22c55e; }}
-  canvas.sparkline {{ display: block; }}
+  body{{background:#121212;color:#e0e0e0;font-family:Tahoma,Arial,sans-serif;margin:0;padding:10px;font-size:13px}}
+  h1{{text-align:center;color:#90caf9;margin:10px 0 4px}}
+  .meta{{text-align:center;color:#888;font-size:11px;margin-bottom:8px}}
+  .controls{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}}
+  input,select{{background:#1e1e1e;border:1px solid #333;color:#e0e0e0;padding:4px 8px;border-radius:4px;font-size:12px}}
+  button.btn{{background:#1565c0;color:#fff;border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:12px}}
+  button.btn:hover{{background:#1976d2}}
+  table{{width:100%;border-collapse:collapse}}
+  th{{background:#1e1e1e;color:#90caf9;padding:6px 8px;text-align:center;position:sticky;top:0;cursor:pointer;user-select:none}}
+  th:hover{{background:#263238}}
+  td{{padding:5px 8px;border-bottom:1px solid #222;vertical-align:middle}}
+  tr:hover{{background:#1a1a2e}}
+  .popup{{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center}}
+  .popup-box{{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:20px;max-width:400px;width:90%;direction:rtl}}
+  #countdown{{display:inline-block;background:#1a237e;padding:2px 10px;border-radius:10px;font-size:11px;color:#90caf9}}
+  .spark{{display:block}}
 </style>
 </head>
 <body>
-<header>
-  <h1>📈 داشبورد بازار سهام ایران</h1>
-  <small>آخرین به‌روزرسانی: {now} | <span class="refresh-badge">🔄 هر ۱۵ دقیقه</span></small>
-</header>
+<h1>🇮🇷 Iran Stock AI Dashboard</h1>
+<div class="meta">
+  آخرین بروزرسانی: {generated_at} |
+  <span id="countdown"></span>
+  <span style="margin-right:10px;color:#546e7a">⟳ هر ۱۵ دقیقه خودکار بروز می‌شود</span>
+</div>
 
-<div class="top-bar">
-  <input type="text" id="search" placeholder="🔍 جستجوی نماد...">
-  <select id="filter-label">
-    <option value="">همه تصمیم‌ها</option>
+<div class="controls">
+  <input type="text" id="searchBox" placeholder="🔍 جستجو نماد..." oninput="filterTable()" style="width:150px">
+  <select id="labelFilter" onchange="filterTable()">
+    <option value="">همه وضعیت‌ها</option>
     <option value="ورود قوی">ورود قوی</option>
     <option value="ورود">ورود</option>
     <option value="تماشا">تماشا</option>
     <option value="نگهداری">نگهداری</option>
     <option value="خروج">خروج</option>
+    <option value="داده ناقص">داده ناقص</option>
   </select>
-  <select id="filter-grade">
-    <option value="">همه درجات</option>
+  <select id="gradeFilter" onchange="filterTable()">
+    <option value="">همه رتبه‌ها</option>
+    <option value="A+">A+</option>
     <option value="A">A</option>
     <option value="B">B</option>
     <option value="C">C</option>
     <option value="D">D</option>
   </select>
-  <select id="filter-sector">{sector_options}</select>
-  <button class="btn" onclick="exportCSV()">⬇️ خروجی Excel</button>
+  <button class="btn" onclick="exportCSV()">📥 خروجی Excel</button>
 </div>
 
-<div class="stats">
-  <div class="stat-card"><div class="num" style="color:#16a34a">{entry_strong}</div><div class="lbl">ورود قوی</div></div>
-  <div class="stat-card"><div class="num" style="color:#22c55e">{entry}</div><div class="lbl">ورود</div></div>
-  <div class="stat-card"><div class="num" style="color:#ca8a04">{watch}</div><div class="lbl">تماشا</div></div>
-  <div class="stat-card"><div class="num" style="color:#2563eb">{hold}</div><div class="lbl">نگهداری</div></div>
-  <div class="stat-card"><div class="num" style="color:#dc2626">{exit_}</div><div class="lbl">خروج</div></div>
-  <div class="stat-card"><div class="num" style="color:#94a3b8">{total}</div><div class="lbl">کل</div></div>
-</div>
-
-<div class="chips">{sector_chips}</div>
-
-<div class="table-wrap">
-<table id="main-table">
-  <thead>
-    <tr>
-      <th onclick="sortTable(0)">نماد ↕</th>
-      <th onclick="sortTable(1)">تصمیم ↕</th>
-      <th onclick="sortTable(2)">درجه ↕</th>
-      <th onclick="sortTable(3)">سکتور ↕</th>
-      <th onclick="sortTable(4)">اطمینان ↕</th>
-      <th onclick="sortTable(5)">RSI ↕</th>
-      <th onclick="sortTable(6)">قیمت ↕</th>
-      <th onclick="sortTable(7)">جریان پول ↕</th>
-      <th onclick="sortTable(8)">قدرت خریدار ↕</th>
-      <th>تغییر وضعیت</th>
-      <th>نمودار ۲۰ روز</th>
-    </tr>
-  </thead>
-  <tbody id="table-body">
-    {table_rows_html}
-  </tbody>
+<table id="mainTable">
+<thead>
+<tr>
+  <th onclick="sortTable(0)">نماد ↕</th>
+  <th onclick="sortTable(1)">وضعیت ↕</th>
+  <th onclick="sortTable(2)">رتبه ↕</th>
+  <th onclick="sortTable(3)">امتیاز ↕</th>
+  <th onclick="sortTable(4)">RSI ↕</th>
+  <th onclick="sortTable(5)">قیمت ↕</th>
+  <th onclick="sortTable(6)">سکتور ↕</th>
+  <th onclick="sortTable(7)">پول هوشمند ↕</th>
+  <th onclick="sortTable(8)">صف ↕</th>
+  <th>نمودار</th>
+</tr>
+</thead>
+<tbody id="tableBody">
+{table_rows}
+</tbody>
 </table>
-</div>
-
-<div class="popup-overlay" id="popup-overlay" onclick="closePopup(event)">
-  <div class="popup" id="popup-box">
-    <button class="close-btn" onclick="closePopupDirect()">✕</button>
-    <h2 id="popup-title"></h2>
-    <div class="popup-grid" id="popup-content"></div>
-  </div>
-</div>
-
-<footer>
-  <span>Iran Stock AI Dashboard</span>
-  <span id="countdown"></span>
-</footer>
 
 <script>
-function drawSparkline(canvas, dataStr) {{
-  if (!dataStr) return;
-  const prices = dataStr.split(',').map(Number).filter(n => !isNaN(n));
-  if (prices.length < 2) return;
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  const min = Math.min(...prices), max = Math.max(...prices);
-  const range = max - min || 1;
-  const pts = prices.map((p, i) => [
-    (i / (prices.length - 1)) * w,
-    h - ((p - min) / range) * (h - 4) - 2
-  ]);
-  ctx.clearRect(0, 0, w, h);
-  const last = prices[prices.length - 1];
-  const first = prices[0];
-  const lineColor = last >= first ? '#22c55e' : '#ef4444';
-  const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, last >= first ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.beginPath();
-  ctx.moveTo(pts[0][0], h);
-  pts.forEach(([x, y]) => ctx.lineTo(x, y));
-  ctx.lineTo(pts[pts.length-1][0], h);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.beginPath();
-  pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-  ctx.strokeStyle = lineColor;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  const [lx, ly] = pts[pts.length - 1];
-  ctx.beginPath();
-  ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
-  ctx.fillStyle = lineColor;
-  ctx.fill();
+// Countdown timer
+var refreshSecs = 900;
+function updateCountdown() {{
+  var m = Math.floor(refreshSecs/60), s = refreshSecs%60;
+  document.getElementById('countdown').textContent = 'بروزرسانی بعدی: '+m+':'+(s<10?'0':'')+s;
+  if(refreshSecs>0) refreshSecs--;
+  setTimeout(updateCountdown,1000);
 }}
+updateCountdown();
 
-document.querySelectorAll('canvas.sparkline').forEach(c => {{
-  drawSparkline(c, c.dataset.spark);
+// Sparklines
+window.addEventListener('load', function() {{
+  document.querySelectorAll('.spark').forEach(function(c) {{
+    var prices = c.dataset.prices.split(',').map(Number).filter(n=>!isNaN(n));
+    if(!prices.length) return;
+    var ctx = c.getContext('2d');
+    var w=c.width, h=c.height, n=prices.length;
+    var mn=Math.min(...prices), mx=Math.max(...prices), rng=mx-mn||1;
+    ctx.strokeStyle = prices[n-1]>=prices[0]?'#00e676':'#ff5252';
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    prices.forEach(function(p,i) {{
+      var x=i/(n-1)*w, y=h-(p-mn)/rng*(h-4)-2;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }});
+    ctx.stroke();
+  }});
 }});
 
-function showPopup(sym, dataStr) {{
-  const d = JSON.parse(dataStr);
-  document.getElementById('popup-title').textContent = '📌 ' + sym;
-  const fields = [
-    ['تصمیم', d.label], ['درجه', d.grade], ['سکتور', d.sector],
-    ['اطمینان', d.confidence], ['RSI', d.rsi], ['قیمت', d.close],
-    ['حمایت', d.support], ['مقاومت', d.resistance],
-    ['حد ضرر', d.stop_loss], ['هدف', d.target_1],
-    ['R/R', d.rr], ['قدرت خریدار', d.bp],
-    ['جریان پول', d.flow], ['MACD', d.macd_x],
-    ['کندل', d.candle], ['BB Squeeze', d.bb_sq],
-    ['ترند', d.trend],
-  ];
-  document.getElementById('popup-content').innerHTML = fields.map(([k,v]) =>
-    `<div class="popup-item"><div class="k">${{k}}</div><div class="v">${{v || '—'}}</div></div>`
-  ).join('');
-  document.getElementById('popup-overlay').classList.add('active');
-}}
-function closePopup(e) {{
-  if (e.target === document.getElementById('popup-overlay')) closePopupDirect();
-}}
-function closePopupDirect() {{
-  document.getElementById('popup-overlay').classList.remove('active');
-}}
-
-function applyFilters() {{
-  const search = document.getElementById('search').value.toLowerCase();
-  const label = document.getElementById('filter-label').value;
-  const grade = document.getElementById('filter-grade').value;
-  const sector = document.getElementById('filter-sector').value;
-  document.querySelectorAll('#table-body tr').forEach(tr => {{
-    const sym = tr.cells[0]?.textContent.toLowerCase() || '';
-    const lbl = tr.dataset.label || '';
-    const grd = tr.dataset.grade || '';
-    const sec = tr.dataset.sector || '';
-    const ok = (!search || sym.includes(search))
-      && (!label || lbl.includes(label))
-      && (!grade || grd === grade)
-      && (!sector || sec === sector);
-    tr.style.display = ok ? '' : 'none';
+// Filter
+function filterTable() {{
+  var q=document.getElementById('searchBox').value.toLowerCase();
+  var lf=document.getElementById('labelFilter').value;
+  var gf=document.getElementById('gradeFilter').value;
+  document.querySelectorAll('#tableBody tr.data-row').forEach(function(tr) {{
+    var sym=tr.cells[0].textContent.toLowerCase();
+    var lbl=tr.cells[1].textContent;
+    var grd=tr.cells[2].textContent;
+    var show=sym.includes(q)&&(lf===''||lbl.includes(lf))&&(gf===''||grd===gf);
+    tr.style.display=show?'':'none';
   }});
 }}
-document.getElementById('search').addEventListener('input', applyFilters);
-document.getElementById('filter-label').addEventListener('change', applyFilters);
-document.getElementById('filter-grade').addEventListener('change', applyFilters);
-document.getElementById('filter-sector').addEventListener('change', applyFilters);
 
-let sortDir = {{}};
+// Sort
+var sortDir={{}};
 function sortTable(col) {{
-  const tb = document.getElementById('table-body');
-  const rows = Array.from(tb.querySelectorAll('tr'));
-  sortDir[col] = !sortDir[col];
-  rows.sort((a, b) => {{
-    const av = a.cells[col]?.textContent.trim() || '';
-    const bv = b.cells[col]?.textContent.trim() || '';
-    const an = parseFloat(av), bn = parseFloat(bv);
-    if (!isNaN(an) && !isNaN(bn)) return sortDir[col] ? an - bn : bn - an;
-    return sortDir[col] ? av.localeCompare(bv, 'fa') : bv.localeCompare(av, 'fa');
+  var tb=document.getElementById('tableBody');
+  var rows=Array.from(tb.querySelectorAll('tr.data-row'));
+  var asc=!sortDir[col]; sortDir[col]=asc;
+  rows.sort(function(a,b) {{
+    var av=a.cells[col].textContent.trim(), bv=b.cells[col].textContent.trim();
+    var an=parseFloat(av), bn=parseFloat(bv);
+    if(!isNaN(an)&&!isNaN(bn)) return asc?an-bn:bn-an;
+    return asc?av.localeCompare(bv,'fa'):bv.localeCompare(av,'fa');
   }});
-  rows.forEach(r => tb.appendChild(r));
+  rows.forEach(r=>tb.appendChild(r));
 }}
 
+// Popup
+function showPopup(id) {{ document.getElementById(id).style.display='flex'; }}
+function closePopup(id) {{ document.getElementById(id).style.display='none'; }}
+document.addEventListener('keydown',function(e){{if(e.key==='Escape')document.querySelectorAll('.popup').forEach(p=>p.style.display='none');}});
+
+// CSV Export
 function exportCSV() {{
-  const rows = Array.from(document.querySelectorAll('#main-table tr'));
-  const csv = rows.filter(r => r.style.display !== 'none').map(r =>
-    Array.from(r.cells).slice(0, 9).map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"').join(',')
-  ).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], {{type: 'text/csv;charset=utf-8;'}});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'iran-stock-signals.csv';
-  a.click();
+  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','قیمت','سکتور','پول هوشمند','صف']];
+  document.querySelectorAll('#tableBody tr.data-row').forEach(function(tr) {{
+    if(tr.style.display==='none') return;
+    rows.push(Array.from(tr.cells).slice(0,9).map(td=>td.textContent.trim()));
+  }});
+  var csv=rows.map(r=>r.join(',')).join('\\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\\uFEFF'+encodeURIComponent(csv);
+  a.download='stock_dashboard.csv';a.click();
 }}
-
-(function() {{
-  const start = Date.now();
-  const interval = 900;
-  function tick() {{
-    const elapsed = Math.floor((Date.now() - start) / 1000);
-    const left = interval - (elapsed % interval);
-    const m = Math.floor(left / 60), s = left % 60;
-    document.getElementById('countdown').textContent =
-      'به‌روزرسانی بعدی: ' + m + ':' + String(s).padStart(2,'0');
-  }}
-  tick();
-  setInterval(tick, 1000);
-}})();
 </script>
 </body>
 </html>"""
 
 
 def run():
-    rows = load_csv(INPUT_CSV)
-    if not rows:
-        print("No data to generate dashboard.")
+    if not os.path.exists(DECISION_REPORT_CSV):
+        print(f"[dashboard] {DECISION_REPORT_CSV} not found")
         return
-    prev_labels = load_prev_labels(rows)
-    html = build_html(rows, prev_labels)
+
+    rows = []
+    with open(DECISION_REPORT_CSV, encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append(row)
+
+    rows.sort(key=lambda r: float(r.get("confidence_score", 0) or 0), reverse=True)
+
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    html = build_html(rows, generated_at)
+
     os.makedirs("docs", exist_ok=True)
-    with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
+    with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"Dashboard generated: {OUTPUT_HTML} ({len(rows)} rows)")
+    print(f"[dashboard] Saved to {DASHBOARD_PATH} ({len(rows)} rows)")
 
 
 if __name__ == "__main__":
