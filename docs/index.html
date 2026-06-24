@@ -100,6 +100,8 @@ tr.row.is-stale td{opacity:.72}
 .recent-table th{background:#0d1117;color:#8b949e;padding:5px 8px;text-align:center;border-bottom:1px solid #21262d}
 .recent-table td{padding:5px 8px;border-bottom:1px solid #1c2128;text-align:center}
 .perf-empty{color:#484f58;text-align:center;padding:40px;font-size:13px;line-height:2}
+.sym-link{cursor:pointer;color:#58a6ff;text-decoration:underline dotted;font-weight:600}
+.sym-link:hover{color:#79c0ff}
 .disc{text-align:center;color:#484f58;font-size:10px;padding:14px 16px;border-top:1px solid #21262d;line-height:1.7}
 #stt{position:fixed;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:6px 10px;font-size:11px;color:#e6edf3;pointer-events:none;display:none;z-index:200;direction:rtl;max-width:180px}
 @media(max-width:700px){
@@ -115,7 +117,7 @@ tr.row.is-stale td{opacity:.72}
 <div class="header">
   <h1>🇮🇷 Iran Stock AI Dashboard</h1>
   <div class="hm">
-    <span>آخرین بروزرسانی: <b style="color:#e6edf3">2026-06-24 10:14</b></span>
+    <span>آخرین بروزرسانی: <b style="color:#e6edf3">2026-06-24 10:47</b></span>
     <span>|</span><span id="cd">...</span><span>|</span>
     <span style="color:#ffd740">● هشدار</span>
     <span>|</span><span>Asia/Tehran</span>
@@ -353,7 +355,8 @@ function render(){
   });
   document.getElementById('tb').innerHTML=html;
   document.getElementById('emp').style.display=rows.length?'none':'block';
-  drawSparks();drawTopPicks();drawDist();drawScatter();drawHeat();
+  drawSparks();drawTopPicks();
+  requestAnimationFrame(function(){drawDist();drawScatter();drawHeat();});
 }
 
 function drawSparks(){
@@ -396,8 +399,8 @@ function drawDist(){
   ctx.font='11px Tahoma,Arial,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
   labels.forEach(function(l,i){
     var y=pad+i*rowH+rowH/2,bw=Math.max((counts[i]/mx)*barMaxW,1);
-    ctx.fillStyle='#21262d';ctx.beginPath();ctx.roundRect(barX,y-8,barMaxW,16,3);ctx.fill();
-    ctx.fillStyle=colors[i];ctx.beginPath();ctx.roundRect(barX,y-8,bw,16,3);ctx.fill();
+    ctx.fillStyle='#21262d';ctx.fillRect(barX,y-8,barMaxW,16);
+    ctx.fillStyle=colors[i];ctx.fillRect(barX,y-8,bw,16);
     ctx.fillStyle='#c9d1d9';ctx.fillText(l,labelW,y);
     ctx.fillStyle=colors[i];ctx.textAlign='left';ctx.fillText(counts[i],barX+bw+4,y);ctx.textAlign='right';
   });
@@ -615,18 +618,137 @@ function renderPerf(){
   });
   var recentRows=(PERF.recent||[]).map(function(r){
     var rc=r.ret>0?'#00c853':r.ret<0?'#ff5252':'#aaa';
-    return '<tr><td>'+e(r.sym)+'</td><td style="color:'+(lc[r.label_fa]||'#aaa')+'">'+e(r.label_fa)+'</td>'
+    return '<tr>'
+      +'<td><span class="sym-link" onclick="openSymDrill(''+e(r.sym)+'')">'+e(r.sym)+'</span></td>'
+      +'<td style="color:'+(lc[r.label_fa]||'#aaa')+'">'+e(r.label_fa)+'</td>'
       +'<td>'+e(r.grade)+'</td><td>'+e(r.date.slice(0,10))+'</td>'
       +'<td>'+e(r.entry)+'</td><td>'+e(r.exit)+'</td>'
       +'<td style="color:'+rc+';font-weight:600">'+(r.ret>0?'+':'')+r.ret+'%</td></tr>';
   }).join('');
+  var curve=PERF.equity_curve||[];
+  var rwr=PERF.rolling_wr||[];
   el.innerHTML='<div class="perf-section">'+cards
+    +'<div class="perf-grid" style="margin-bottom:14px">'
+    +'<div class="perf-box"><h3>📈 منحنی سرمایه (شاخص ۱۰۰)</h3>'
+    +(curve.length>1?'<canvas id="eqCurve" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">نیاز به حداقل ۲ معامله</div>')
+    +'</div>'
+    +'<div class="perf-box"><h3>🎯 نرخ موفقیت ۳۰ روزه (رولینگ)</h3>'
+    +(rwr.length>1?'<canvas id="rwrChart" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">نیاز به داده بیشتر</div>')
+    +'</div></div>'
     +'<div class="perf-grid">'
     +'<div class="perf-box"><h3>📊 عملکرد به تفکیک وضعیت</h3>'+(labelRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
     +'<div class="perf-box"><h3>🏅 عملکرد به تفکیک رتبه</h3>'+(gradeRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
     +'</div><div style="margin-top:14px"><div class="perf-box"><h3>🕐 آخرین معاملات بک‌تست‌شده</h3>'
     +'<table class="recent-table"><thead><tr><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>تاریخ</th><th>ورود</th><th>خروج</th><th>بازده</th></tr></thead>'
     +'<tbody>'+recentRows+'</tbody></table></div></div></div>';
+  if(curve.length>1)setTimeout(function(){drawEquity(curve,'eqCurve');},0);
+  if(rwr.length>1)setTimeout(function(){drawRollingWR(rwr);},0);
+}
+
+function drawEquity(curve,canvasId){
+  var c=document.getElementById(canvasId||'eqCurve');if(!c)return;
+  var dpr=window.devicePixelRatio||1;
+  var W=c.offsetWidth,H=c.offsetHeight||140;
+  c.width=W*dpr;c.height=H*dpr;
+  var ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  var vals=curve.map(function(p){return p.e;});
+  var dates=curve.map(function(p){return p.d;});
+  var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),n=vals.length;
+  var pad={t:12,r:8,b:24,l:44};
+  var cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  function xp(i){return pad.l+i/(n-1)*cw;}
+  function yp(v){return pad.t+ch-(v-mn)/((mx-mn)||1)*ch;}
+  ctx.strokeStyle='#30363d';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(pad.l,yp(100));ctx.lineTo(pad.l+cw,yp(100));ctx.stroke();
+  ctx.setLineDash([]);
+  var isUp=vals[n-1]>=100;
+  var grad=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+  grad.addColorStop(0,isUp?'rgba(0,200,83,.3)':'rgba(255,82,82,.3)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath();ctx.moveTo(xp(0),yp(vals[0]));
+  for(var i=1;i<n;i++)ctx.lineTo(xp(i),yp(vals[i]));
+  ctx.lineTo(xp(n-1),pad.t+ch);ctx.lineTo(xp(0),pad.t+ch);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.lineWidth=2;ctx.strokeStyle=isUp?'#00c853':'#ff5252';
+  ctx.moveTo(xp(0),yp(vals[0]));
+  for(var j=1;j<n;j++)ctx.lineTo(xp(j),yp(vals[j]));
+  ctx.stroke();
+  ctx.fillStyle='#8b949e';ctx.font='10px sans-serif';ctx.textAlign='right';
+  ctx.fillText(mn.toFixed(1),pad.l-3,yp(mn)+3);
+  ctx.fillText(mx.toFixed(1),pad.l-3,yp(mx)+3);
+  ctx.textAlign='center';ctx.font='9px sans-serif';
+  ctx.fillText(dates[0],xp(0),H-6);ctx.fillText(dates[n-1],xp(n-1),H-6);
+  var lx=xp(n-1),ly=yp(vals[n-1]);
+  ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fillStyle=isUp?'#00c853':'#ff5252';ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='left';
+  ctx.fillText(vals[n-1].toFixed(1),lx+6,ly+4);
+}
+
+function drawRollingWR(rwr){
+  var c=document.getElementById('rwrChart');if(!c)return;
+  var dpr=window.devicePixelRatio||1;
+  var W=c.offsetWidth,H=c.offsetHeight||140;
+  c.width=W*dpr;c.height=H*dpr;
+  var ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  var vals=rwr.map(function(p){return p.wr;});
+  var dates=rwr.map(function(p){return p.d;});
+  var n=vals.length;
+  var pad={t:12,r:8,b:24,l:36};
+  var cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  function xp(i){return pad.l+i/(n-1)*cw;}
+  function yp(v){return pad.t+ch-(v/100)*ch;}
+  [[50,'#30363d'],[60,'#1f3a1f']].forEach(function(pair){
+    ctx.strokeStyle=pair[1];ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(pad.l,yp(pair[0]));ctx.lineTo(pad.l+cw,yp(pair[0]));ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#484f58';ctx.font='9px sans-serif';ctx.textAlign='right';
+    ctx.fillText(pair[0]+'%',pad.l-2,yp(pair[0])+3);
+  });
+  var grad=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+  grad.addColorStop(0,'rgba(88,166,255,.25)');grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath();ctx.moveTo(xp(0),yp(vals[0]));
+  for(var i=1;i<n;i++)ctx.lineTo(xp(i),yp(vals[i]));
+  ctx.lineTo(xp(n-1),pad.t+ch);ctx.lineTo(xp(0),pad.t+ch);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.lineWidth=2;ctx.strokeStyle='#58a6ff';
+  ctx.moveTo(xp(0),yp(vals[0]));
+  for(var j=1;j<n;j++)ctx.lineTo(xp(j),yp(vals[j]));
+  ctx.stroke();
+  ctx.textAlign='center';ctx.font='9px sans-serif';ctx.fillStyle='#8b949e';
+  ctx.fillText(dates[0],xp(0),H-6);ctx.fillText(dates[n-1],xp(n-1),H-6);
+  var lx=xp(n-1),ly=yp(vals[n-1]);
+  ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fillStyle='#58a6ff';ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='left';
+  ctx.fillText(vals[n-1]+'%',lx+6,ly+4);
+}
+
+function openSymDrill(sym){
+  var trades=(PERF.by_symbol||{})[sym];if(!trades||!trades.length)return;
+  var wins=trades.filter(function(t){return t.win;}).length;
+  var wr=Math.round(wins/trades.length*100);
+  var avgRet=trades.reduce(function(s,t){return s+t.ret;},0)/trades.length;
+  var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
+  var arColor=avgRet>0?'#00c853':avgRet<0?'#ff5252':'#aaa';
+  var rows=trades.slice().reverse().map(function(t){
+    var rc=t.ret>0?'#00c853':t.ret<0?'#ff5252':'#aaa';
+    return '<tr><td>'+e(t.label_fa)+'</td><td>'+e(t.grade)+'</td><td>'+e(t.date.slice(0,10))+'</td>'
+      +'<td>'+e(t.entry)+'</td><td>'+e(t.exit)+'</td>'
+      +'<td style="color:'+rc+';font-weight:600">'+(t.ret>0?'+':'')+t.ret+'%</td></tr>';
+  }).join('');
+  var eq=100,symCurve=trades.map(function(t){eq*=(1+t.ret/100);return {d:t.date.slice(0,10),e:Math.round(eq*100)/100};});
+  document.getElementById('dc').innerHTML=
+    '<div style="margin-bottom:12px">'
+    +'<div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px">📌 '+e(sym)+'</div>'
+    +'<div style="display:flex;gap:18px;font-size:12px;margin-bottom:14px">'
+    +'<span>معاملات: <b style="color:#c9d1d9">'+trades.length+'</b></span>'
+    +'<span>موفق: <b style="color:'+wrColor+'">'+wr+'%</b></span>'
+    +'<span>میانگین: <b style="color:'+arColor+'">'+(avgRet>0?'+':'')+avgRet.toFixed(2)+'%</b></span></div>'
+    +(symCurve.length>1?'<canvas id="symEq" style="width:100%;height:100px;display:block;margin-bottom:12px"></canvas>':'')
+    +'<table class="recent-table"><thead><tr><th>وضعیت</th><th>رتبه</th><th>تاریخ</th><th>ورود</th><th>خروج</th><th>بازده</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table></div>';
+  document.getElementById('ov').classList.add('open');
+  document.body.style.overflow='hidden';
+  if(symCurve.length>1)setTimeout(function(){drawEquity([{d:'شروع',e:100}].concat(symCurve),'symEq');},0);
 }
 
 document.getElementById('a3').textContent='↓';
