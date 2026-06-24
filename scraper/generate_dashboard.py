@@ -64,7 +64,7 @@ def _escape_js(html):
     def _ec(c):
         cp = ord(c)
         if cp < 128: return c
-        if cp <= 0xFFFF: return f'\\\\\u{cp:04x}'
+                if cp <= 0xFFFF: return '\\u' + f'{cp:04x}'
         return '\\\\\u{' + f'{cp:x}' + '}'
     def _block(m):
         return '<script>' + ''.join(_ec(c) for c in m.group(1)) + '</script>'
