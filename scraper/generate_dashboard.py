@@ -64,8 +64,8 @@ def _escape_js(html):
     def _ec(c):
         cp = ord(c)
         if cp < 128: return c
-        if cp <= 0xFFFF: return f'\\u{cp:04x}'
-        return '\\u{' + f'{cp:x}' + '}'
+        if cp <= 0xFFFF: return f'\\\\\u{cp:04x}'
+        return '\\\\\u{' + f'{cp:x}' + '}'
     def _block(m):
         return '<script>' + ''.join(_ec(c) for c in m.group(1)) + '</script>'
     return re.sub(r'<script>([\s\S]*?)</script>', _block, html)
@@ -675,7 +675,7 @@ function drawHeat(){{
   el.innerHTML=arr.map(function(s){{
     var pct=maxAvg?s.avg/maxAvg*100:0;
     var bc=s.avg>=80?'#00c853':s.avg>=65?'#ffd740':s.avg>=50?'#ff9100':'#ff5252';
-    var meta=(s.entry?'\u{1f7e2}'+s.entry+' ':'')+(s.over?'\u{1f534}'+s.over+' ':'')+(s.miss?'\u25a1'+s.miss:'');
+    var meta=(s.entry?'\\\\u{1f7e2}'+s.entry+' ':'')+(s.over?'\\\\u{1f534}'+s.over+' ':'')+(s.miss?'\u25a1'+s.miss:'');
     return '<div class="hm-row" onclick="filterBySector(\''+e(s.name)+'\')">'
       +'<div class="hm-name">'+e(s.name)+'</div>'
       +'<div class="hm-bar-wrap"><div class="hm-bar" style="width:'+pct+'%;background:'+bc+'">'+s.avg+'</div></div>'
@@ -758,7 +758,7 @@ function doExport(){{
 function renderPerf(){{
   var el=document.getElementById('perfContent');
   if(!PERF||!PERF.completed){{
-    el.innerHTML='<div class="perf-empty"><div style="font-size:2rem;margin-bottom:12px">\u{1f4ed}</div>'
+    el.innerHTML='<div class="perf-empty"><div style="font-size:2rem;margin-bottom:12px">\\\\u{1f4ed}</div>'
       +'<div>\u0647\u0646\u0648\u0632 \u062f\u0627\u062f\u0647\u200c\u0627\u06cc \u0628\u0631\u0627\u06cc \u0628\u06a9\u200c\u062a\u0633\u062a \u062b\u0628\u062a \u0646\u0634\u062f\u0647 \u0627\u0633\u062a.</div>'
       +'<div style="font-size:11px;margin-top:8px;color:#484f58">'
       +'\u067e\u0633 \u0627\u0632 \u06f5 \u0631\u0648\u0632 \u0645\u0639\u0627\u0645\u0644\u0627\u062a\u06cc \u0627\u0632 \u0627\u0648\u0644\u06cc\u0646 \u0633\u06cc\u06af\u0646\u0627\u0644\u060c \u0646\u062a\u0627\u06cc\u062c \u0627\u06cc\u0646\u062c\u0627 \u0646\u0645\u0627\u06cc\u0634 \u062f\u0627\u062f\u0647 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f.<br>'
@@ -816,16 +816,16 @@ function renderPerf(){{
   var rwr=PERF.rolling_wr||[];
   el.innerHTML='<div class="perf-section">'+cards
     +'<div class="perf-grid" style="margin-bottom:14px">'
-    +'<div class="perf-box"><h3>\u{1f4c8} \u0645\u0646\u062d\u0646\u06cc \u0633\u0631\u0645\u0627\u06cc\u0647 (\u0634\u0627\u062e\u0635 \u06f1\u06f0\u06f0)</h3>'
+    +'<div class="perf-box"><h3>\\\\u{1f4c8} \u0645\u0646\u062d\u0646\u06cc \u0633\u0631\u0645\u0627\u06cc\u0647 (\u0634\u0627\u062e\u0635 \u06f1\u06f0\u06f0)</h3>'
     +(curve.length>1?'<canvas id="eqCurve" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">\u0646\u06cc\u0627\u0632 \u0628\u0647 \u062d\u062f\u0627\u0642\u0644 \u06f2 \u0645\u0639\u0627\u0645\u0644\u0647</div>')
     +'</div>'
-    +'<div class="perf-box"><h3>\u{1f3af} \u0646\u0631\u062e \u0645\u0648\u0641\u0642\u06cc\u062a \u06f3\u06f0 \u0631\u0648\u0632\u0647 (\u0631\u0648\u0644\u06cc\u0646\u06af)</h3>'
+    +'<div class="perf-box"><h3>\\\\u{1f3af} \u0646\u0631\u062e \u0645\u0648\u0641\u0642\u06cc\u062a \u06f3\u06f0 \u0631\u0648\u0632\u0647 (\u0631\u0648\u0644\u06cc\u0646\u06af)</h3>'
     +(rwr.length>1?'<canvas id="rwrChart" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">\u0646\u06cc\u0627\u0632 \u0628\u0647 \u062f\u0627\u062f\u0647 \u0628\u06cc\u0634\u062a\u0631</div>')
     +'</div></div>'
     +'<div class="perf-grid">'
-    +'<div class="perf-box"><h3>\u{1f4ca} \u0639\u0645\u0644\u06a9\u0631\u062f \u0628\u0647 \u062a\u0641\u06a9\u06cc\u06a9 \u0648\u0636\u0639\u06cc\u062a</h3>'+(labelRows||'<div style="color:#484f58">\u062f\u0627\u062f\u0647 \u06a9\u0627\u0641\u06cc \u0646\u06cc\u0633\u062a</div>')+'</div>'
-    +'<div class="perf-box"><h3>\u{1f3c5} \u0639\u0645\u0644\u06a9\u0631\u062f \u0628\u0647 \u062a\u0641\u06a9\u06cc\u06a9 \u0631\u062a\u0628\u0647</h3>'+(gradeRows||'<div style="color:#484f58">\u062f\u0627\u062f\u0647 \u06a9\u0627\u0641\u06cc \u0646\u06cc\u0633\u062a</div>')+'</div>'
-    +'</div><div style="margin-top:14px"><div class="perf-box"><h3>\u{1f550} \u0622\u062e\u0631\u06cc\u0646 \u0645\u0639\u0627\u0645\u0644\u0627\u062a \u0628\u06a9\u200c\u062a\u0633\u062a\u200c\u0634\u062f\u0647</h3>'
+    +'<div class="perf-box"><h3>\\\\u{1f4ca} \u0639\u0645\u0644\u06a9\u0631\u062f \u0628\u0647 \u062a\u0641\u06a9\u06cc\u06a9 \u0648\u0636\u0639\u06cc\u062a</h3>'+(labelRows||'<div style="color:#484f58">\u062f\u0627\u062f\u0647 \u06a9\u0627\u0641\u06cc \u0646\u06cc\u0633\u062a</div>')+'</div>'
+    +'<div class="perf-box"><h3>\\\\u{1f3c5} \u0639\u0645\u0644\u06a9\u0631\u062f \u0628\u0647 \u062a\u0641\u06a9\u06cc\u06a9 \u0631\u062a\u0628\u0647</h3>'+(gradeRows||'<div style="color:#484f58">\u062f\u0627\u062f\u0647 \u06a9\u0627\u0641\u06cc \u0646\u06cc\u0633\u062a</div>')+'</div>'
+    +'</div><div style="margin-top:14px"><div class="perf-box"><h3>\\\\u{1f550} \u0622\u062e\u0631\u06cc\u0646 \u0645\u0639\u0627\u0645\u0644\u0627\u062a \u0628\u06a9\u200c\u062a\u0633\u062a\u200c\u0634\u062f\u0647</h3>'
     +'<table class="recent-table"><thead><tr><th>\u0646\u0645\u0627\u062f</th><th>\u0648\u0636\u0639\u06cc\u062a</th><th>\u0631\u062a\u0628\u0647</th><th>\u062a\u0627\u0631\u06cc\u062e</th><th>\u0648\u0631\u0648\u062f</th><th>\u062e\u0631\u0648\u062c</th><th>\u0628\u0627\u0632\u062f\u0647</th></tr></thead>'
     +'<tbody>'+recentRows+'</tbody></table></div></div></div>';
   if(curve.length>1)setTimeout(function(){{drawEquity(curve,'eqCurve');}},0);
@@ -922,7 +922,7 @@ function openSymDrill(sym){{
   var eq=100,symCurve=trades.map(function(t){{eq*=(1+t.ret/100);return {{d:t.date.slice(0,10),e:Math.round(eq*100)/100}};}});
   document.getElementById('dc').innerHTML=
     '<div style="margin-bottom:12px">'
-    +'<div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px">\u{1f4cc} '+e(sym)+'</div>'
+    +'<div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px">\\\\u{1f4cc} '+e(sym)+'</div>'
     +'<div style="display:flex;gap:18px;font-size:12px;margin-bottom:14px">'
     +'<span>\u0645\u0639\u0627\u0645\u0644\u0627\u062a: <b style="color:#c9d1d9">'+trades.length+'</b></span>'
     +'<span>\u0645\u0648\u0641\u0642: <b style="color:'+wrColor+'">'+wr+'%</b></span>'
