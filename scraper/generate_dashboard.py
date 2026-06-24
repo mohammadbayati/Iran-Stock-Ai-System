@@ -104,7 +104,6 @@ def load_prev_labels():
     return {k:v["label"] for k,v in prev.items()}
 
 def load_perf_data():
-    """Read signal_log.csv and compute performance metrics. Returns None if no data."""
     if not os.path.exists(SIGNAL_LOG):
         return None
     rows = []
@@ -171,14 +170,12 @@ def load_perf_data():
     recent = sorted(results, key=lambda r: r.get("date",""), reverse=True)[:25]
     sorted_by_date = sorted(results, key=lambda r: r.get("date",""))
 
-    # Equity curve: base 100, compound each trade
     equity = 100.0
     curve = []
     for r in sorted_by_date:
         equity *= (1 + r["ret"] / 100)
         curve.append({"d": r["date"][:10], "e": round(equity, 2)})
 
-    # Rolling 30-day win rate
     from datetime import timedelta
     rolling_wr = []
     for i, r in enumerate(sorted_by_date):
@@ -191,7 +188,6 @@ def load_perf_data():
             continue
         rolling_wr.append({"d": r["date"][:10], "wr": round(sum(1 for x in window if x["win"]) / len(window) * 100, 1), "n": len(window)})
 
-    # Per-symbol history for drill-down
     by_symbol = {}
     for r in sorted_by_date:
         by_symbol.setdefault(r["sym"], []).append(r)
@@ -278,8 +274,8 @@ def calc_kpi(data):
 def build_html(data, generated_at, kpi, perf):
     sectors     = sorted(set(d["sector"] for d in data if d["sector"]))
     sector_opts = "".join(f'<option value="{_esc(s)}">{_esc(s)}</option>' for s in sectors)
-    data_json   = json.dumps(data, ensure_ascii=False)
-    perf_json   = json.dumps(perf or {}, ensure_ascii=False)
+    data_json   = json.dumps(data, ensure_ascii=False).replace('</', '<\\/')
+    perf_json   = json.dumps(perf or {}, ensure_ascii=False).replace('</', '<\\/')
     mp          = kpi["miss_pct"]
 
     return f"""<!DOCTYPE html>
@@ -683,8 +679,8 @@ function drawDist(){{
   ctx.font='11px Tahoma,Arial,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
   labels.forEach(function(l,i){{
     var y=pad+i*rowH+rowH/2,bw=Math.max((counts[i]/mx)*barMaxW,1);
-    ctx.fillStyle='#21262d';ctx.beginPath();ctx.roundRect(barX,y-8,barMaxW,16,3);ctx.fill();
-    ctx.fillStyle=colors[i];ctx.beginPath();ctx.roundRect(barX,y-8,bw,16,3);ctx.fill();
+    ctx.fillStyle='#21262d';ctx.fillRect(barX,y-8,barMaxW,16);
+    ctx.fillStyle=colors[i];ctx.fillRect(barX,y-8,bw,16);
     ctx.fillStyle='#c9d1d9';ctx.fillText(l,labelW,y);
     ctx.fillStyle=colors[i];ctx.textAlign='left';ctx.fillText(counts[i],barX+bw+4,y);ctx.textAlign='right';
   }});
