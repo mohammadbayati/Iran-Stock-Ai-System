@@ -60,12 +60,21 @@ Q_FA = {
     "mild_sell_pressure":  "فشار فروش ملایم",
 }
 
+def _surr(cp):
+    """Return JS unicode escape(s) for a codepoint."""
+    if cp <= 0xFFFF:
+        return '\\u' + format(cp, '04x')
+    cp -= 0x10000
+    hi = 0xD800 + (cp >> 10)
+    lo = 0xDC00 + (cp & 0x3FF)
+    return '\\u' + format(hi, '04x') + '\\u' + format(lo, '04x')
+
 def _escape_js(html):
     def _ec(c):
         cp = ord(c)
-        if cp < 128: return c
-                if cp <= 0xFFFF: return '\\u' + f'{cp:04x}'
-        return '\\\\\u{' + f'{cp:x}' + '}'
+        if cp < 128:
+            return c
+        return _surr(cp)
     def _block(m):
         return '<script>' + ''.join(_ec(c) for c in m.group(1)) + '</script>'
     return re.sub(r'<script>([\s\S]*?)</script>', _block, html)
@@ -220,7 +229,7 @@ def build_html(data, generated_at, kpi, perf):
     data_json=json.dumps(data,ensure_ascii=True).replace("</","<\\/")
     perf_json=json.dumps(perf or {},ensure_ascii=True).replace("</","<\\/")
     mp=kpi["miss_pct"]
-    return f"""<!DOCTYPE html>
+    html = f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -469,7 +478,7 @@ function switchTab(t){{
 var _s=900;
 (function tick(){{
   var m=Math.floor(_s/60),s=_s%60;
-  document.getElementById('cd').textContent='\u0628\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06cc: '+m+':'+(s<10?'0':'')+s;
+  document.getElementById('cd').textContent='بروزرسانی: '+m+':'+(s<10?'0':'')+s;
   if(_s>0)_s--;setTimeout(tick,1000);
 }})();
 var _tags={{}},_sk='score',_sa=false,_kf=null,_chartsOpen=true;
@@ -525,7 +534,7 @@ function sorted(arr){{
 function srt(k,c){{
   if(_sk===k)_sa=!_sa;else{{_sk=k;_sa=false;}}
   document.querySelectorAll('.arr').forEach(function(el){{el.textContent='';}});
-  var a=document.getElementById('a'+c);if(a)a.textContent=_sa?'\u2191':'\u2193';
+  var a=document.getElementById('a'+c);if(a)a.textContent=_sa?'↑':'↓';
   render();
 }}
 function e(s){{return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}}
@@ -534,9 +543,9 @@ function render(){{
   rows.forEach(function(d){{
     var cls='row'+(d.missing?' is-missing':'')+(d.stale&&!d.missing?' is-stale':'');
     var sb=d.score?'<div class="sb-wrap"><div class="sb" style="width:'+Math.min(d.score,100)+'%;background:'+e(d.label_color)+'"></div></div>':'';
-    var ci=d.change==='up'?'<span title="\u0627\u0631\u062a\u0642\u0627\u0621"> \u2b06\ufe0f</span>':d.change==='down'?'<span title="\u0627\u0641\u062a"> \u2b07\ufe0f</span>':d.change==='changed'?'<span title="\u062a\u063a\u06cc\u06cc\u0631"> \u1f504</span>':'';
-    var wi=d.conflict?'<span title="\u26a0\ufe0f Risk Conflict" style="color:#ff9100;font-size:11px"> \u26a0\ufe0f</span>':'';
-    var si=d.stale&&!d.missing?'<span title="\u062f\u0627\u062f\u0647 \u0642\u062f\u06cc\u0645\u06cc" style="color:#78909c;font-size:10px"> \u1f550</span>':'';
+    var ci=d.change==='up'?'<span title="ارتقاء"> ⬆️</span>':d.change==='down'?'<span title="افت"> ⬇️</span>':d.change==='changed'?'<span title="تغییر"> ὐ4</span>':'';
+    var wi=d.conflict?'<span title="⚠️ Risk Conflict" style="color:#ff9100;font-size:11px"> ⚠️</span>':'';
+    var si=d.stale&&!d.missing?'<span title="داده قدیمی" style="color:#78909c;font-size:10px"> ὕ0</span>':'';
     var vol=parseFloat(d.vol)||0,vc=vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c';
     var sp=d.close_20d?'<canvas class="spark" data-p="'+e(d.close_20d)+'" width="80" height="26"></canvas>':'';
     html+='<tr class="'+cls+'" onclick="openDr('+DATA.indexOf(d)+')">'
@@ -547,7 +556,7 @@ function render(){{
       +'<td style="text-align:center"><span class="rbadge" style="color:'+e(d.rsi_color)+'">'+e(d.rsi)+'</span></td>'
       +'<td style="text-align:center">'+e(d.price)+'</td>'
       +'<td style="text-align:center;color:#90caf9;font-size:11px">'+e(d.sector)+'</td>'
-      +'<td style="text-align:center;color:'+vc+'">'+(vol>0?vol.toFixed(1)+'x':'\u2014')+'</td>'
+      +'<td style="text-align:center;color:'+vc+'">'+(vol>0?vol.toFixed(1)+'x':'—')+'</td>'
       +'<td style="font-size:11px">'+e(d.sm)+'</td>'
       +'<td>'+sp+'</td></tr>';
   }});
@@ -578,7 +587,7 @@ function drawTopPicks(){{
   document.getElementById('tpRow').innerHTML=picks.map(function(d){{
     return '<div class="pick" onclick="openDr('+DATA.indexOf(d)+')">'
       +'<div class="pick-sym">'+e(d.sym)+'</div>'
-      +'<div class="pick-sc">\u0627\u0645\u062a\u06cc\u0627\u0632 '+d.score.toFixed(0)+' | <span style="color:'+e(d.grade_color)+'">'+e(d.grade)+'</span></div>'
+      +'<div class="pick-sc">امتیاز '+d.score.toFixed(0)+' | <span style="color:'+e(d.grade_color)+'">'+e(d.grade)+'</span></div>'
       +'<div class="pick-gr">'+e(d.rsi_band)+' | '+e(d.sector)+'</div></div>';
   }}).join('');
 }}
@@ -586,7 +595,7 @@ function drawDist(){{
   var c=document.getElementById('cDist');if(!c)return;
   var W=c.offsetWidth||300;c.width=W;c.height=190;
   var ctx=c.getContext('2d');ctx.clearRect(0,0,W,190);
-  var labels=['\u0648\u0631\u0648\u062f \u0642\u0648\u06cc','\u0648\u0631\u0648\u062f','\u062a\u0645\u0627\u0634\u0627 \u2014 \u067e\u0648\u0644\u0628\u06a9','\u062a\u0645\u0627\u0634\u0627 \u2014 \u062d\u062c\u0645','\u0646\u06af\u0647\u062f\u0627\u0631\u06cc','\u062e\u0631\u0648\u062c / \u0627\u0634\u0628\u0627\u0639','\u062f\u0627\u062f\u0647 \u0646\u0627\u0642\u0635'];
+  var labels=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع','داده ناقص'];
   var colors=['#00c853','#69f0ae','#ffd740','#ffab40','#40c4ff','#ff5252','#78909c'];
   var counts=labels.map(function(l){{return DATA.filter(function(d){{return d.label_fa===l;}}).length;}});
   var mx=Math.max.apply(null,counts)||1;
@@ -675,7 +684,7 @@ function drawHeat(){{
   el.innerHTML=arr.map(function(s){{
     var pct=maxAvg?s.avg/maxAvg*100:0;
     var bc=s.avg>=80?'#00c853':s.avg>=65?'#ffd740':s.avg>=50?'#ff9100':'#ff5252';
-    var meta=(s.entry?'\\\\u{1f7e2}'+s.entry+' ':'')+(s.over?'\\\\u{1f534}'+s.over+' ':'')+(s.miss?'\u25a1'+s.miss:'');
+    var meta=(s.entry?'🟢'+s.entry+' ':'')+(s.over?'🔴'+s.over+' ':'')+(s.miss?'□'+s.miss:'');
     return '<div class="hm-row" onclick="filterBySector(\''+e(s.name)+'\')">'
       +'<div class="hm-name">'+e(s.name)+'</div>'
       +'<div class="hm-bar-wrap"><div class="hm-bar" style="width:'+pct+'%;background:'+bc+'">'+s.avg+'</div></div>'
@@ -688,13 +697,13 @@ function filterBySector(sec){{
 }}
 function openDr(idx){{
   var d=DATA[idx];if(!d)return;
-  var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">\u26a0\ufe0f \u0627\u0645\u062a\u06cc\u0627\u0632 \u0628\u0627\u0644\u0627 \u0627\u0645\u0627 RSI \u062e\u0637\u0631\u0646\u0627\u06a9 \u2014 \u0648\u0631\u0648\u062f \u0628\u0627 \u0627\u062d\u062a\u06cc\u0627\u0637</div>':'';
-  var mw=d.missing?'<div class="wbox" style="background:#111518;border:1px solid #78909c88;color:#78909c">\u062f\u0627\u062f\u0647 \u062a\u06a9\u0646\u06cc\u06a9\u0627\u0644 \u0646\u0627\u0642\u0635 \u2014 \u0633\u06cc\u06af\u0646\u0627\u0644 \u0642\u0627\u0628\u0644 \u0627\u0639\u062a\u0645\u0627\u062f \u0646\u06cc\u0633\u062a</div>':'';
-  var sw=d.stale&&!d.missing?'<div class="wbox" style="background:#0d1117;border:1px solid #ffd74044;color:#ffd740">\u1f550 \u062f\u0627\u062f\u0647 \u0642\u062f\u06cc\u0645\u06cc</div>':'';
+  var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ امتیاز بالا اما RSI خطرناک — ورود با احتیاط</div>':'';
+  var mw=d.missing?'<div class="wbox" style="background:#111518;border:1px solid #78909c88;color:#78909c">داده تکنیکال ناقص — سیگنال قابل اعتماد نیست</div>':'';
+  var sw=d.stale&&!d.missing?'<div class="wbox" style="background:#0d1117;border:1px solid #ffd74044;color:#ffd740">ὕ0 داده قدیمی</div>':'';
   var chg='';
   if(d.change){{
-    var ar=d.change==='up'?'\u2b06\ufe0f':d.change==='down'?'\u2b07\ufe0f':'\u1f504';
-    chg='<div style="color:#8b949e;font-size:11px;margin-top:6px">'+ar+' \u0627\u0632 <b>'+e(d.prev_label_fa)+'</b> \u0628\u0647 <b style="color:'+e(d.label_color)+'">'+e(d.label_fa)+'</b></div>';
+    var ar=d.change==='up'?'⬆️':d.change==='down'?'⬇️':'ὐ4';
+    chg='<div style="color:#8b949e;font-size:11px;margin-top:6px">'+ar+' از <b>'+e(d.prev_label_fa)+'</b> به <b style="color:'+e(d.label_color)+'">'+e(d.label_fa)+'</b></div>';
   }}
   var sp=d.close_20d?'<canvas id="dsp" data-p="'+e(d.close_20d)+'" width="340" height="70" style="margin-top:10px;display:block"></canvas>':'';
   function r(l,v){{return v?'<dt>'+l+'</dt><dd>'+e(v)+'</dd>':''}}
@@ -705,20 +714,20 @@ function openDr(idx){{
     +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
     +'<span class="badge" style="color:'+e(d.label_color)+';background:'+e(d.label_bg)+'">'+e(d.label_fa)+'</span>'
     +'<span style="color:'+e(d.grade_color)+';font-weight:700;font-size:15px">'+e(d.grade)+'</span>'
-    +'<span style="color:#8b949e">\u0627\u0645\u062a\u06cc\u0627\u0632 '+d.score.toFixed(0)+'</span>'
+    +'<span style="color:#8b949e">امتیاز '+d.score.toFixed(0)+'</span>'
     +'</div>'+chg+'</div>'
     +cw+mw+sw
-    +'<div class="dsec"><h4>\u062f\u0644\u0627\u06cc\u0644 \u062a\u0635\u0645\u06cc\u0645</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+e(d.reasons)+'</p></div>'
-    +'<div class="dsec"><h4>\u0639\u0648\u0627\u0645\u0644 \u0627\u0645\u062a\u06cc\u0627\u0632\u062f\u0647\u06cc</h4><p style="color:#8b949e;font-size:11px;line-height:1.8">'+e(d.factors)+'</p></div>'
-    +'<div class="dsec"><h4>\u0645\u0634\u062e\u0635\u0627\u062a \u0641\u0646\u06cc</h4><dl class="dl">'
+    +'<div class="dsec"><h4>دلایل تصمیم</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+e(d.reasons)+'</p></div>'
+    +'<div class="dsec"><h4>عوامل امتیازدهی</h4><p style="color:#8b949e;font-size:11px;line-height:1.8">'+e(d.factors)+'</p></div>'
+    +'<div class="dsec"><h4>مشخصات فنی</h4><dl class="dl">'
     +r('RSI',d.rsi+(d.rsi_band?' ('+d.rsi_band+')':''))
-    +r('\u0642\u06cc\u0645\u062a',d.price)+r('\u0631\u0648\u0646\u062f',d.trend?d.trend+'/6':'')
-    +r('\u0646\u0633\u0628\u062a \u062d\u062c\u0645',vol>0?vol.toFixed(2)+'x':'')
-    +r('\u0633\u06a9\u062a\u0648\u0631',d.sector)+r('\u062d\u0645\u0627\u06cc\u062a',d.support)+r('\u0645\u0642\u0627\u0648\u0645\u062a',d.resistance)
-    +r('\u062d\u062f \u0636\u0631\u0631',d.stop_loss)+r('\u0647\u062f\u0641',d.target_1)+r('R/R',d.rr)
+    +r('قیمت',d.price)+r('روند',d.trend?d.trend+'/6':'')
+    +r('نسبت حجم',vol>0?vol.toFixed(2)+'x':'')
+    +r('سکتور',d.sector)+r('حمایت',d.support)+r('مقاومت',d.resistance)
+    +r('حد ضرر',d.stop_loss)+r('هدف',d.target_1)+r('R/R',d.rr)
     +'</dl></div>'
-    +'<div class="dsec"><h4>\u067e\u0648\u0644 \u0647\u0648\u0634\u0645\u0646\u062f \u0648 \u0635\u0641</h4><dl class="dl">'
-    +r('\u067e\u0648\u0644 \u0647\u0648\u0634\u0645\u0646\u062f',d.sm)+r('\u062a\u0648\u0636\u06cc\u062d',d.sm_fa)+r('\u0635\u0641',d.q)+r('\u062a\u0648\u0636\u06cc\u062d \u0635\u0641',d.q_fa)
+    +'<div class="dsec"><h4>پول هوشمند و صف</h4><dl class="dl">'
+    +r('پول هوشمند',d.sm)+r('توضیح',d.sm_fa)+r('صف',d.q)+r('توضیح صف',d.q_fa)
     +'</dl></div>'+sp;
   document.getElementById('ov').classList.add('open');
   document.body.style.overflow='hidden';
@@ -743,7 +752,7 @@ function closeDr(ev){{
 }}
 document.addEventListener('keydown',function(ev){{if(ev.key==='Escape')closeDr();}});
 function doExport(){{
-  var rows=[['\u0646\u0645\u0627\u062f','\u0648\u0636\u0639\u06cc\u062a','\u0631\u062a\u0628\u0647','\u0627\u0645\u062a\u06cc\u0627\u0632','RSI','\u0628\u0627\u0646\u062f RSI','\u0642\u06cc\u0645\u062a','\u0633\u06a9\u062a\u0648\u0631','\u062d\u062c\u0645\xd7','\u067e\u0648\u0644 \u0647\u0648\u0634\u0645\u0646\u062f','\u0635\u0641','\u062f\u0644\u0627\u06cc\u0644']];
+  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم\xd7','پول هوشمند','صف','دلایل']];
   filtered().forEach(function(d){{
     var vol=parseFloat(d.vol)||0;
     rows.push([d.sym,d.label_fa,d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
@@ -751,32 +760,32 @@ function doExport(){{
   }});
   var csv=rows.map(function(r){{return r.map(function(c){{return'"'+String(c||'').replace(/"/g,'""')+'"'}}).join(',')}}).join('\n');
   var a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
   a.download='iran_stock_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }}
 function renderPerf(){{
   var el=document.getElementById('perfContent');
   if(!PERF||!PERF.completed){{
-    el.innerHTML='<div class="perf-empty"><div style="font-size:2rem;margin-bottom:12px">\\\\u{1f4ed}</div>'
-      +'<div>\u0647\u0646\u0648\u0632 \u062f\u0627\u062f\u0647\u200c\u0627\u06cc \u0628\u0631\u0627\u06cc \u0628\u06a9\u200c\u062a\u0633\u062a \u062b\u0628\u062a \u0646\u0634\u062f\u0647 \u0627\u0633\u062a.</div>'
+    el.innerHTML='<div class="perf-empty"><div style="font-size:2rem;margin-bottom:12px">📭</div>'
+      +'<div>هنوز داده‌ای برای بک‌تست ثبت نشده است.</div>'
       +'<div style="font-size:11px;margin-top:8px;color:#484f58">'
-      +'\u067e\u0633 \u0627\u0632 \u06f5 \u0631\u0648\u0632 \u0645\u0639\u0627\u0645\u0644\u0627\u062a\u06cc \u0627\u0632 \u0627\u0648\u0644\u06cc\u0646 \u0633\u06cc\u06af\u0646\u0627\u0644\u060c \u0646\u062a\u0627\u06cc\u062c \u0627\u06cc\u0646\u062c\u0627 \u0646\u0645\u0627\u06cc\u0634 \u062f\u0627\u062f\u0647 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f.<br>'
-      +'\u062a\u0639\u062f\u0627\u062f \u0633\u06cc\u06af\u0646\u0627\u0644 \u062b\u0628\u062a\u200c\u0634\u062f\u0647: '+(PERF.total_logged||0)+'</div></div>';
+      +'پس از ۵ روز معاملاتی از اولین سیگنال، نتایج اینجا نمایش داده می‌شوند.<br>'
+      +'تعداد سیگنال ثبت‌شده: '+(PERF.total_logged||0)+'</div></div>';
     return;
   }}
   var wr=PERF.win_rate,ar=PERF.avg_ret;
   var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
   var arColor=ar>0?'#00c853':ar<0?'#ff5252':'#ffd740';
   var cards='<div class="perf-kpi">'
-    +'<div class="perf-card" style="border-color:#1f3a5f"><div class="pv" style="color:#90caf9">'+PERF.total_logged+'</div><div class="pl">\u06a9\u0644 \u0633\u06cc\u06af\u0646\u0627\u0644 \u062b\u0628\u062a\u200c\u0634\u062f\u0647</div></div>'
-    +'<div class="perf-card" style="border-color:#21262d"><div class="pv" style="color:#c9d1d9">'+PERF.completed+'</div><div class="pl">\u062f\u0627\u0631\u0627\u06cc \u0646\u062a\u06cc\u062c\u0647 (\u06f5 \u0631\u0648\u0632\u0647)</div></div>'
-    +'<div class="perf-card" style="border-color:'+wrColor+'44"><div class="pv" style="color:'+wrColor+'">'+wr+'%</div><div class="pl">\u0646\u0631\u062e \u0645\u0648\u0641\u0642\u06cc\u062a \u06a9\u0644\u06cc</div></div>'
-    +'<div class="perf-card" style="border-color:'+arColor+'44"><div class="pv" style="color:'+arColor+'">'+(ar>0?'+':'')+ar+'%</div><div class="pl">\u0645\u06cc\u0627\u0646\u06af\u06cc\u0646 \u0628\u0627\u0632\u062f\u0647 \u06f5 \u0631\u0648\u0632\u0647</div></div>'
+    +'<div class="perf-card" style="border-color:#1f3a5f"><div class="pv" style="color:#90caf9">'+PERF.total_logged+'</div><div class="pl">کل سیگنال ثبت‌شده</div></div>'
+    +'<div class="perf-card" style="border-color:#21262d"><div class="pv" style="color:#c9d1d9">'+PERF.completed+'</div><div class="pl">دارای نتیجه (۵ روزه)</div></div>'
+    +'<div class="perf-card" style="border-color:'+wrColor+'44"><div class="pv" style="color:'+wrColor+'">'+wr+'%</div><div class="pl">نرخ موفقیت کلی</div></div>'
+    +'<div class="perf-card" style="border-color:'+arColor+'44"><div class="pv" style="color:'+arColor+'">'+(ar>0?'+':'')+ar+'%</div><div class="pl">میانگین بازده ۵ روزه</div></div>'
     +'</div>';
   var byLabel=PERF.by_label||{{}};
-  var labelOrder=['\u0648\u0631\u0648\u062f \u0642\u0648\u06cc','\u0648\u0631\u0648\u062f','\u062a\u0645\u0627\u0634\u0627 \u2014 \u067e\u0648\u0644\u0628\u06a9','\u062a\u0645\u0627\u0634\u0627 \u2014 \u062d\u062c\u0645','\u0646\u06af\u0647\u062f\u0627\u0631\u06cc','\u062e\u0631\u0648\u062c / \u0627\u0634\u0628\u0627\u0639'];
-  var lc={{'\u0648\u0631\u0648\u062f \u0642\u0648\u06cc':'#00c853','\u0648\u0631\u0648\u062f':'#69f0ae','\u062a\u0645\u0627\u0634\u0627 \u2014 \u067e\u0648\u0644\u0628\u06a9':'#ffd740','\u062a\u0645\u0627\u0634\u0627 \u2014 \u062d\u062c\u0645':'#ffab40','\u0646\u06af\u0647\u062f\u0627\u0631\u06cc':'#40c4ff','\u062e\u0631\u0648\u062c / \u0627\u0634\u0628\u0627\u0639':'#ff5252'}};
+  var labelOrder=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع'];
+  var lc={{'ورود قوی':'#00c853','ورود':'#69f0ae','تماشا — پولبک':'#ffd740','تماشا — حجم':'#ffab40','نگهداری':'#40c4ff','خروج / اشباع':'#ff5252'}};
   var labelRows='';
   labelOrder.forEach(function(l){{
     var v=byLabel[l];if(!v||!v.n)return;
@@ -785,7 +794,7 @@ function renderPerf(){{
     labelRows+='<div class="perf-row">'
       +'<div class="perf-label" style="color:'+(lc[l]||'#8b949e')+'">'+e(l)+'</div>'
       +'<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+v.win_rate+'%;background:'+wc+'"></div></div>'
-      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'% \u0645\u0648\u0641\u0642</div>'
+      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'% موفق</div>'
       +'<div style="font-size:11px;color:'+ac+';min-width:70px;text-align:left">'+(v.avg_ret>0?'+':'')+v.avg_ret+'%</div>'
       +'<div style="font-size:10px;color:#484f58;min-width:40px">n='+v.n+'</div></div>';
   }});
@@ -799,7 +808,7 @@ function renderPerf(){{
     gradeRows+='<div class="perf-row">'
       +'<div class="perf-label" style="color:'+(gc[g]||'#78909c')+';font-weight:700;font-size:15px">'+e(g)+'</div>'
       +'<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+v.win_rate+'%;background:'+wc+'"></div></div>'
-      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'% \u0645\u0648\u0641\u0642</div>'
+      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'% موفق</div>'
       +'<div style="font-size:11px;color:'+ac+';min-width:70px;text-align:left">'+(v.avg_ret>0?'+':'')+v.avg_ret+'%</div>'
       +'<div style="font-size:10px;color:#484f58;min-width:40px">n='+v.n+'</div></div>';
   }});
@@ -816,17 +825,17 @@ function renderPerf(){{
   var rwr=PERF.rolling_wr||[];
   el.innerHTML='<div class="perf-section">'+cards
     +'<div class="perf-grid" style="margin-bottom:14px">'
-    +'<div class="perf-box"><h3>\\\\u{1f4c8} \u0645\u0646\u062d\u0646\u06cc \u0633\u0631\u0645\u0627\u06cc\u0647 (\u0634\u0627\u062e\u0635 \u06f1\u06f0\u06f0)</h3>'
-    +(curve.length>1?'<canvas id="eqCurve" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">\u0646\u06cc\u0627\u0632 \u0628\u0647 \u062d\u062f\u0627\u0642\u0644 \u06f2 \u0645\u0639\u0627\u0645\u0644\u0647</div>')
+    +'<div class="perf-box"><h3>📈 منحنی سرمایه (شاخص ۱۰۰)</h3>'
+    +(curve.length>1?'<canvas id="eqCurve" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">نیاز به حداقل ۲ معامله</div>')
     +'</div>'
-    +'<div class="perf-box"><h3>\\\\u{1f3af} \u0646\u0631\u062e \u0645\u0648\u0641\u0642\u06cc\u062a \u06f3\u06f0 \u0631\u0648\u0632\u0647 (\u0631\u0648\u0644\u06cc\u0646\u06af)</h3>'
-    +(rwr.length>1?'<canvas id="rwrChart" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">\u0646\u06cc\u0627\u0632 \u0628\u0647 \u062f\u0627\u062f\u0647 \u0628\u06cc\u0634\u062a\u0631</div>')
+    +'<div class="perf-box"><h3>🎯 نرخ موفقیت ۳۰ روزه (رولینگ)</h3>'
+    +(rwr.length>1?'<canvas id="rwrChart" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">نیاز به داده بیشتر</div>')
     +'</div></div>'
     +'<div class="perf-grid">'
-    +'<div class="perf-box"><h3>\\\\u{1f4ca} \u0639\u0645\u0644\u06a9\u0631\u062f \u0628\u0647 \u062a\u0641\u06a9\u06cc\u06a9 \u0648\u0636\u0639\u06cc\u062a</h3>'+(labelRows||'<div style="color:#484f58">\u062f\u0627\u062f\u0647 \u06a9\u0627\u0641\u06cc \u0646\u06cc\u0633\u062a</div>')+'</div>'
-    +'<div class="perf-box"><h3>\\\\u{1f3c5} \u0639\u0645\u0644\u06a9\u0631\u062f \u0628\u0647 \u062a\u0641\u06a9\u06cc\u06a9 \u0631\u062a\u0628\u0647</h3>'+(gradeRows||'<div style="color:#484f58">\u062f\u0627\u062f\u0647 \u06a9\u0627\u0641\u06cc \u0646\u06cc\u0633\u062a</div>')+'</div>'
-    +'</div><div style="margin-top:14px"><div class="perf-box"><h3>\\\\u{1f550} \u0622\u062e\u0631\u06cc\u0646 \u0645\u0639\u0627\u0645\u0644\u0627\u062a \u0628\u06a9\u200c\u062a\u0633\u062a\u200c\u0634\u062f\u0647</h3>'
-    +'<table class="recent-table"><thead><tr><th>\u0646\u0645\u0627\u062f</th><th>\u0648\u0636\u0639\u06cc\u062a</th><th>\u0631\u062a\u0628\u0647</th><th>\u062a\u0627\u0631\u06cc\u062e</th><th>\u0648\u0631\u0648\u062f</th><th>\u062e\u0631\u0648\u062c</th><th>\u0628\u0627\u0632\u062f\u0647</th></tr></thead>'
+    +'<div class="perf-box"><h3>📊 عملکرد به تفکیک وضعیت</h3>'+(labelRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
+    +'<div class="perf-box"><h3>🏅 عملکرد به تفکیک رتبه</h3>'+(gradeRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
+    +'</div><div style="margin-top:14px"><div class="perf-box"><h3>🕐 آخرین معاملات بک‌تست‌شده</h3>'
+    +'<table class="recent-table"><thead><tr><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>تاریخ</th><th>ورود</th><th>خروج</th><th>بازده</th></tr></thead>'
     +'<tbody>'+recentRows+'</tbody></table></div></div></div>';
   if(curve.length>1)setTimeout(function(){{drawEquity(curve,'eqCurve');}},0);
   if(rwr.length>1)setTimeout(function(){{drawRollingWR(rwr);}},0);
@@ -922,24 +931,25 @@ function openSymDrill(sym){{
   var eq=100,symCurve=trades.map(function(t){{eq*=(1+t.ret/100);return {{d:t.date.slice(0,10),e:Math.round(eq*100)/100}};}});
   document.getElementById('dc').innerHTML=
     '<div style="margin-bottom:12px">'
-    +'<div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px">\\\\u{1f4cc} '+e(sym)+'</div>'
+    +'<div style="font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:6px">📌 '+e(sym)+'</div>'
     +'<div style="display:flex;gap:18px;font-size:12px;margin-bottom:14px">'
-    +'<span>\u0645\u0639\u0627\u0645\u0644\u0627\u062a: <b style="color:#c9d1d9">'+trades.length+'</b></span>'
-    +'<span>\u0645\u0648\u0641\u0642: <b style="color:'+wrColor+'">'+wr+'%</b></span>'
-    +'<span>\u0645\u06cc\u0627\u0646\u06af\u06cc\u0646: <b style="color:'+arColor+'">'+(avgRet>0?'+':'')+avgRet.toFixed(2)+'%</b></span></div>'
+    +'<span>معاملات: <b style="color:#c9d1d9">'+trades.length+'</b></span>'
+    +'<span>موفق: <b style="color:'+wrColor+'">'+wr+'%</b></span>'
+    +'<span>میانگین: <b style="color:'+arColor+'">'+(avgRet>0?'+':'')+avgRet.toFixed(2)+'%</b></span></div>'
     +(symCurve.length>1?'<canvas id="symEq" style="width:100%;height:100px;display:block;margin-bottom:12px"></canvas>':'')
-    +'<table class="recent-table"><thead><tr><th>\u0648\u0636\u0639\u06cc\u062a</th><th>\u0631\u062a\u0628\u0647</th><th>\u062a\u0627\u0631\u06cc\u062e</th><th>\u0648\u0631\u0648\u062f</th><th>\u062e\u0631\u0648\u062c</th><th>\u0628\u0627\u0632\u062f\u0647</th></tr></thead>'
+    +'<table class="recent-table"><thead><tr><th>وضعیت</th><th>رتبه</th><th>تاریخ</th><th>ورود</th><th>خروج</th><th>بازده</th></tr></thead>'
     +'<tbody>'+rows+'</tbody></table></div>';
   document.getElementById('ov').classList.add('open');
   document.body.style.overflow='hidden';
-  if(symCurve.length>1)setTimeout(function(){{drawEquity([{{d:'\u0634\u0631\u0648\u0639',e:100}}].concat(symCurve),'symEq');}},0);
+  if(symCurve.length>1)setTimeout(function(){{drawEquity([{{d:'شروع',e:100}}].concat(symCurve),'symEq');}},0);
 }}
-document.getElementById('a3').textContent='\u2193';
+document.getElementById('a3').textContent='↓';
 window.addEventListener('resize',function(){{drawDist();drawScatter();drawHeat();}});
 render();
 </script>
 </body>
 </html>"""
+    return _escape_js(html)
 
 
 def run():
@@ -960,7 +970,7 @@ def run():
     os.makedirs("docs", exist_ok=True)
     with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(page)
-    print(f"[dashboard] Phase-3 → {DASHBOARD_PATH} | {len(rows)} symbols | perf: {perf['completed'] if perf else 0} completed")
+    print(f"[dashboard] Phase-3 -> {DASHBOARD_PATH} | {len(rows)} symbols | perf: {perf['completed'] if perf else 0} completed")
 
 
 if __name__ == "__main__":
