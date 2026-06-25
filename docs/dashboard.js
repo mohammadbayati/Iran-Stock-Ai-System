@@ -316,6 +316,11 @@ function renderPerf(){
   var h5=horizons['5D']||{};
   var h10=horizons['10D']||{};
   var total=PERF&&PERF.total_logged?PERF.total_logged:((h5&&h5.total_logged)||0);
+  var firstDate=(PERF&&PERF.first_signal_date)||'-';
+  var lastDate=(PERF&&PERF.last_signal_date)||'-';
+  var ageDays=(PERF&&PERF.track_age_days)||0;
+  var next5=(PERF&&PERF.earliest_5d_review)||'-';
+  var next10=(PERF&&PERF.earliest_10d_review)||'-';
   function num(v,d){v=Number(v||0);return isFinite(v)?v.toFixed(d||0):'0';}
   function pct(v){return num(v,1)+'%';}
   function card(title,value,sub,color){
@@ -344,6 +349,12 @@ function renderPerf(){
       +'</div>'+body+'</div>';
   }
   var html='<section style="padding:18px 10px 28px;max-width:1280px;margin:0 auto">'
+    +'<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px 14px;margin-bottom:12px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;color:#c9d1d9;font-size:12px">'
+    +'<div><span style="color:#8b949e">شروع Track Record</span><br><b style="color:#58a6ff">'+firstDate+'</b></div>'
+    +'<div><span style="color:#8b949e">آخرین سیگنال</span><br><b style="color:#58a6ff">'+lastDate+'</b></div>'
+    +'<div><span style="color:#8b949e">سن تاریخچه</span><br><b style="color:#ffd740">'+ageDays+' روز</b></div>'
+    +'<div><span style="color:#8b949e">اولین بررسی تقریبی</span><br><b style="color:#ffab40">5D: '+next5+' | 10D: '+next10+'</b></div>'
+    +'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">'
     +card('کل سیگنال‌های ثبت‌شده',String(total),'خوانده‌شده از signal_log.csv','#58a6ff')
     +card('نتیجه 5D کامل',String(h5.completed||0),'آماده ارزیابی','#00c853')
