@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Iran Stock AI Dashboard - Pilot Validation Report</title>
+  <style>
+    :root {
+      --bg:#0d1117; --panel:#161b22; --panel2:#101923; --border:#30363d;
+      --text:#c9d1d9; --muted:#8b949e; --blue:#58a6ff; --green:#00c853; --yellow:#ffd740; --orange:#ffab40;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Tahoma,Arial,sans-serif; line-height:1.9; }
+    main { max-width:1120px; margin:0 auto; padding:28px 18px 42px; }
+    header { border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:18px; }
+    h1 { margin:0; color:var(--blue); font-size:24px; }
+    h2 { margin:0 0 10px; color:#e6edf3; font-size:16px; }
+    p { margin:0 0 10px; }
+    .meta { color:var(--muted); font-size:12px; margin-top:8px; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:18px 0; }
+    .card, section { background:var(--panel); border:1px solid var(--border); border-radius:8px; }
+    .card { padding:14px; min-height:96px; }
+    .card span { display:block; color:var(--muted); font-size:12px; }
+    .card b { display:block; color:var(--blue); font-size:28px; margin-top:4px; }
+    .card small { display:block; color:var(--muted); font-size:11px; }
+    section { padding:16px; margin-top:14px; }
+    .summary { background:var(--panel2); border-color:#58a6ff55; }
+    .facts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .fact { background:#0d1117; border:1px solid var(--border); border-radius:8px; padding:12px; }
+    .fact span { color:var(--muted); font-size:12px; }
+    .fact b { display:block; color:var(--yellow); font-size:15px; }
+    ul { margin:8px 0 0; padding:0 18px 0 0; }
+    li { margin:5px 0; }
+    a.btn { display:inline-block; margin-top:14px; background:#238636; border:1px solid #2ea043; color:white; text-decoration:none; border-radius:6px; padding:8px 12px; font-size:13px; }
+    .warn { color:var(--orange); }
+    @media (max-width:800px) { .grid,.facts { grid-template-columns:1fr 1fr; } }
+    @media (max-width:520px) { .grid,.facts { grid-template-columns:1fr; } main { padding:18px 12px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Iran Stock AI Dashboard - Pilot Validation Report</h1>
+    <div class="meta">آخرین تولید گزارش: 2026-06-25 19:46 | این گزارش از داده‌های Track Record ساخته شده است.</div>
+    <a class="btn" href="./index.html">بازگشت به داشبورد</a>
+  </header>
+
+  <section class="summary">
+    <h2>خلاصه وضعیت پایلوت</h2>
+    <p>این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است.</p>
+    <p class="warn">تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و توصیه قطعی خرید/فروش یا ادعای بازدهی قطعی محسوب نمی‌شوند.</p>
+  </section>
+
+  <div class="facts">
+    <div class="fact"><span>شروع Track Record</span><b>2026-06-21</b></div>
+    <div class="fact"><span>آخرین سیگنال</span><b>2026-06-25</b></div>
+    <div class="fact"><span>سن تاریخچه</span><b>4 روز</b></div>
+    <div class="fact"><span>اولین بررسی تقریبی</span><b>5D: 2026-06-28 | 10D: 2026-07-05</b></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><span>کل سیگنال‌های ثبت‌شده</span><b>156</b><small>ثبت‌شده در signal_log.csv</small></div>
+<div class="card"><span>نتیجه 5D کامل</span><b>0</b><small>آماده ارزیابی</small></div>
+<div class="card"><span>در انتظار 5D</span><b>156</b><small>پس از 5 روز معاملاتی</small></div>
+<div class="card"><span>در انتظار 10D</span><b>156</b><small>پس از 10 روز معاملاتی</small></div>
+  </div>
+
+  <section>
+    <h2>معیارهای قضاوت آینده</h2>
+    <ul>
+      <li>نرخ موفقیت سیگنال‌ها پس از تکمیل 5D و 10D</li>
+      <li>میانگین بازده تحقق‌یافته در هر افق زمانی</li>
+      <li>تفکیک عملکرد سیگنال‌های High Confidence</li>
+      <li>مقایسه وضعیت‌های مختلف مثل کاندید بررسی، ریسک اشباع خرید و داده ناقص</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>محدودیت‌ها و مرز استفاده</h2>
+    <ul>
+      <li>این گزارش ابزار تصمیم‌یار و غربالگری است، نه توصیه قطعی خرید یا فروش.</li>
+      <li>داده‌های ناقص، قدیمی یا دارای هشدار ریسک باید قبل از تصمیم‌گیری دوباره بررسی شوند.</li>
+      <li>نتایج عملکرد تا زمانی که تعداد کافی سیگنال کامل‌شده وجود نداشته باشد، از نظر آماری قطعی نیستند.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -13,6 +13,7 @@ from config.settings import DECISION_REPORT_CSV, OUTPUT_DIR, DATA_DIR
 SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.csv")
 DASHBOARD_PATH = os.path.join("docs", "index.html")
 JS_PATH = os.path.join("docs", "dashboard.js")
+PILOT_REPORT_PATH = os.path.join("docs", "pilot-report.html")
 
 LABEL_FA = {
     "Entry Candidate":                   "کاندید بررسی قوی",
@@ -553,6 +554,119 @@ tr.row.is-stale td{{opacity:.72}}
 </html>"""
 
 
+
+def build_pilot_report_html(perf, generated_at):
+    h5 = (perf.get("horizons") or {}).get("5D", {})
+    h10 = (perf.get("horizons") or {}).get("10D", {})
+    total = perf.get("total_logged", 0)
+    first = perf.get("first_signal_date") or "-"
+    last = perf.get("last_signal_date") or "-"
+    age = perf.get("track_age_days", 0)
+    next5 = perf.get("earliest_5d_review") or "-"
+    next10 = perf.get("earliest_10d_review") or "-"
+
+    def n(value):
+        try:
+            return int(value or 0)
+        except Exception:
+            return 0
+
+    cards = [
+        ("کل سیگنال‌های ثبت‌شده", total, "ثبت‌شده در signal_log.csv"),
+        ("نتیجه 5D کامل", n(h5.get("completed")), "آماده ارزیابی"),
+        ("در انتظار 5D", n(h5.get("pending")), "پس از 5 روز معاملاتی"),
+        ("در انتظار 10D", n(h10.get("pending")), "پس از 10 روز معاملاتی"),
+    ]
+    card_html = "\n".join(
+        f'<div class="card"><span>{html_mod.escape(str(title))}</span><b>{html_mod.escape(str(value))}</b><small>{html_mod.escape(str(sub))}</small></div>'
+        for title, value, sub in cards
+    )
+    return f'''<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Iran Stock AI Dashboard - Pilot Validation Report</title>
+  <style>
+    :root {{
+      --bg:#0d1117; --panel:#161b22; --panel2:#101923; --border:#30363d;
+      --text:#c9d1d9; --muted:#8b949e; --blue:#58a6ff; --green:#00c853; --yellow:#ffd740; --orange:#ffab40;
+    }}
+    * {{ box-sizing:border-box; }}
+    body {{ margin:0; background:var(--bg); color:var(--text); font-family:Tahoma,Arial,sans-serif; line-height:1.9; }}
+    main {{ max-width:1120px; margin:0 auto; padding:28px 18px 42px; }}
+    header {{ border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:18px; }}
+    h1 {{ margin:0; color:var(--blue); font-size:24px; }}
+    h2 {{ margin:0 0 10px; color:#e6edf3; font-size:16px; }}
+    p {{ margin:0 0 10px; }}
+    .meta {{ color:var(--muted); font-size:12px; margin-top:8px; }}
+    .grid {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:18px 0; }}
+    .card, section {{ background:var(--panel); border:1px solid var(--border); border-radius:8px; }}
+    .card {{ padding:14px; min-height:96px; }}
+    .card span {{ display:block; color:var(--muted); font-size:12px; }}
+    .card b {{ display:block; color:var(--blue); font-size:28px; margin-top:4px; }}
+    .card small {{ display:block; color:var(--muted); font-size:11px; }}
+    section {{ padding:16px; margin-top:14px; }}
+    .summary {{ background:var(--panel2); border-color:#58a6ff55; }}
+    .facts {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }}
+    .fact {{ background:#0d1117; border:1px solid var(--border); border-radius:8px; padding:12px; }}
+    .fact span {{ color:var(--muted); font-size:12px; }}
+    .fact b {{ display:block; color:var(--yellow); font-size:15px; }}
+    ul {{ margin:8px 0 0; padding:0 18px 0 0; }}
+    li {{ margin:5px 0; }}
+    a.btn {{ display:inline-block; margin-top:14px; background:#238636; border:1px solid #2ea043; color:white; text-decoration:none; border-radius:6px; padding:8px 12px; font-size:13px; }}
+    .warn {{ color:var(--orange); }}
+    @media (max-width:800px) {{ .grid,.facts {{ grid-template-columns:1fr 1fr; }} }}
+    @media (max-width:520px) {{ .grid,.facts {{ grid-template-columns:1fr; }} main {{ padding:18px 12px; }} }}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Iran Stock AI Dashboard - Pilot Validation Report</h1>
+    <div class="meta">آخرین تولید گزارش: {html_mod.escape(str(generated_at))} | این گزارش از داده‌های Track Record ساخته شده است.</div>
+    <a class="btn" href="./index.html">بازگشت به داشبورد</a>
+  </header>
+
+  <section class="summary">
+    <h2>خلاصه وضعیت پایلوت</h2>
+    <p>این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است.</p>
+    <p class="warn">تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و توصیه قطعی خرید/فروش یا ادعای بازدهی قطعی محسوب نمی‌شوند.</p>
+  </section>
+
+  <div class="facts">
+    <div class="fact"><span>شروع Track Record</span><b>{html_mod.escape(str(first))}</b></div>
+    <div class="fact"><span>آخرین سیگنال</span><b>{html_mod.escape(str(last))}</b></div>
+    <div class="fact"><span>سن تاریخچه</span><b>{html_mod.escape(str(age))} روز</b></div>
+    <div class="fact"><span>اولین بررسی تقریبی</span><b>5D: {html_mod.escape(str(next5))} | 10D: {html_mod.escape(str(next10))}</b></div>
+  </div>
+
+  <div class="grid">
+    {card_html}
+  </div>
+
+  <section>
+    <h2>معیارهای قضاوت آینده</h2>
+    <ul>
+      <li>نرخ موفقیت سیگنال‌ها پس از تکمیل 5D و 10D</li>
+      <li>میانگین بازده تحقق‌یافته در هر افق زمانی</li>
+      <li>تفکیک عملکرد سیگنال‌های High Confidence</li>
+      <li>مقایسه وضعیت‌های مختلف مثل کاندید بررسی، ریسک اشباع خرید و داده ناقص</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>محدودیت‌ها و مرز استفاده</h2>
+    <ul>
+      <li>این گزارش ابزار تصمیم‌یار و غربالگری است، نه توصیه قطعی خرید یا فروش.</li>
+      <li>داده‌های ناقص، قدیمی یا دارای هشدار ریسک باید قبل از تصمیم‌گیری دوباره بررسی شوند.</li>
+      <li>نتایج عملکرد تا زمانی که تعداد کافی سیگنال کامل‌شده وجود نداشته باشد، از نظر آماری قطعی نیستند.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>'''
+
 def build_js():
     return r"""/* Iran Stock AI Dashboard — external JS */
 'use strict';
@@ -946,7 +1060,10 @@ function renderPerf(){
     +'<div style="background:#101923;border:1px solid #58a6ff55;border-radius:8px;padding:13px 15px;margin-bottom:12px;color:#c9d1d9;line-height:1.9">'
     +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:4px">'
     +'<div style="color:#58a6ff;font-weight:800;font-size:14px">خلاصه اعتبارسنجی پایلوت</div>'
+    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    +'<a href="pilot-report.html" target="_blank" style="background:#1f6feb;border:1px solid #388bfd;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;text-decoration:none">مشاهده گزارش رسمی</a>'
     +'<button type="button" onclick="copyPilotReport()" style="background:#238636;border:1px solid #2ea043;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش پایلوت</button>'
+    +'</div>'
     +'</div>'
     +'<div id="pilotCopyStatus" style="color:#00c853;font-size:11px;height:16px;margin-bottom:2px"></div>'
     +'<div style="font-size:12px;color:#c9d1d9">این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است. تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و ادعای بازدهی قطعی ندارند.</div>'
@@ -1083,12 +1200,15 @@ def run():
     gen   = datetime.now().strftime("%Y-%m-%d %H:%M")
     page  = build_html(data, gen, kpi, perf)
     js    = build_js()
+    report = build_pilot_report_html(perf, gen)
     os.makedirs("docs", exist_ok=True)
     with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(page)
     with open(JS_PATH, "w", encoding="utf-8") as f:
         f.write(js)
-    print(f"[dashboard] -> {DASHBOARD_PATH} + {JS_PATH} | {len(rows)} symbols")
+    with open(PILOT_REPORT_PATH, "w", encoding="utf-8") as f:
+        f.write(report)
+    print(f"[dashboard] -> {DASHBOARD_PATH} + {JS_PATH} + {PILOT_REPORT_PATH} | {len(rows)} symbols")
 
 
 if __name__ == "__main__":

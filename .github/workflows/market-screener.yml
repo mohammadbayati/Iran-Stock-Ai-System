@@ -67,7 +67,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html docs/dashboard.js data/signal_log.csv
+          git add docs/index.html docs/dashboard.js docs/pilot-report.html data/signal_log.csv
           git diff --staged --quiet || git commit -m "chore: update dashboard [skip ci]"
           git push
 
