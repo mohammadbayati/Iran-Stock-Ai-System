@@ -15,25 +15,25 @@ DASHBOARD_PATH = os.path.join("docs", "index.html")
 JS_PATH = os.path.join("docs", "dashboard.js")
 
 LABEL_FA = {
-    "Entry Candidate":                   "ورود قوی",
-    "Technical Entry Watch":             "ورود",
-    "Wait for Pullback":                 "تماشا — پولبک",
-    "Watch - Needs Volume Confirmation": "تماشا — حجم",
-    "Watch Only":                        "نگهداری",
-    "Avoid Entry Now - Overbought":      "خروج / اشباع",
+    "Entry Candidate":                   "کاندید بررسی قوی",
+    "Technical Entry Watch":             "کاندید بررسی",
+    "Wait for Pullback":                 "بررسی پس از پولبک",
+    "Watch - Needs Volume Confirmation": "نیازمند تایید حجم",
+    "Watch Only":                        "صرفا رصد",
+    "Avoid Entry Now - Overbought":      "ریسک اشباع خرید",
     "Missing Technical Data":            "داده ناقص",
 }
 LABEL_COLOR = {
-    "ورود قوی":       "#00c853", "ورود":           "#69f0ae",
-    "تماشا — پولبک": "#ffd740", "تماشا — حجم":   "#ffab40",
-    "نگهداری":        "#40c4ff", "خروج / اشباع":  "#ff5252",
-    "داده ناقص":      "#78909c",
+    "کاندید بررسی قوی": "#00c853", "کاندید بررسی": "#69f0ae",
+    "بررسی پس از پولبک": "#ffd740", "نیازمند تایید حجم": "#ffab40",
+    "صرفا رصد": "#40c4ff", "ریسک اشباع خرید": "#ff5252",
+    "داده ناقص": "#78909c",
 }
 LABEL_BG = {
-    "ورود قوی":       "#003300", "ورود":           "#003322",
-    "تماشا — پولبک": "#332e00", "تماشا — حجم":   "#332200",
-    "نگهداری":        "#002233", "خروج / اشباع":  "#330000",
-    "داده ناقص":      "#1c2529",
+    "کاندید بررسی قوی": "#003300", "کاندید بررسی": "#003322",
+    "بررسی پس از پولبک": "#332e00", "نیازمند تایید حجم": "#332200",
+    "صرفا رصد": "#002233", "ریسک اشباع خرید": "#330000",
+    "داده ناقص": "#1c2529",
 }
 GRADE_COLOR = {"A+": "#00e676", "A": "#69f0ae", "B": "#ffd740", "C": "#ff9100"}
 SM_FA = {
@@ -188,6 +188,15 @@ def build_data(rows, prev_labels):
             "vol":r.get("volume_ratio_20",""),"support":r.get("support",""),
             "resistance":r.get("resistance",""),"stop_loss":r.get("stop_loss",""),
             "target_1":r.get("target_1",""),"rr":r.get("risk_reward",""),
+            "latest_date":r.get("latest_date","") or r.get("date",""),
+            "data_quality":"ناقص" if _is_missing(r) else "قدیمی" if _is_stale(r) else "قابل اتکا",
+            "risk_flags":", ".join(x for x in [
+                "داده ناقص" if _is_missing(r) else "",
+                "داده قدیمی" if _is_stale(r) else "",
+                "تعارض RSI/امتیاز" if _is_conflict(r) else "",
+                "RSI اشباع خرید" if _f(r.get("rsi",0))>=80 else "",
+            ] if x) or "بدون هشدار",
+            "invalidation":"اگر داده ناقص/قدیمی شود، RSI وارد محدوده پرریسک شود، یا قیمت سطح ابطال را بشکند، این کاندید باید دوباره بررسی شود.",
             "missing":_is_missing(r),"stale":_is_stale(r),"conflict":_is_conflict(r),
             "change":change,"prev_label_fa":_fa(prev) if prev else ""})
     return out
@@ -344,7 +353,7 @@ tr.row.is-stale td{{opacity:.72}}
     <div class="kv" style="color:#90caf9">{kpi['total']}</div><div class="kl">&#x1f4ca; &#x6a9;&#x644; &#x646;&#x645;&#x627;&#x62f;&#x647;&#x627;</div>
   </div>
   <div class="kpi" style="background:#003300;border:1px solid #00c85355" onclick="kpiF('entry')">
-    <div class="kv" style="color:#00c853">{kpi['entry']}</div><div class="kl">&#x1f7e2; &#x6a9;&#x627;&#x646;&#x62f;&#x6cc;&#x62f; &#x648;&#x631;&#x648;&#x62f;</div>
+    <div class="kv" style="color:#00c853">{kpi['entry']}</div><div class="kl">&#x1f7e2; کاندید بررسی</div>
   </div>
   <div class="kpi" style="background:#1a1400;border:1px solid #ffd74055" onclick="kpiF('highc')">
     <div class="kv" style="color:#ffd740">{kpi['highc']}</div><div class="kl">&#x2b50; High Confidence</div>
@@ -377,7 +386,7 @@ tr.row.is-stale td{{opacity:.72}}
   </div>
 </div>
 <div class="top-picks" id="tpBar">
-  <h2>&#x1f3c6; &#x628;&#x647;&#x62a;&#x631;&#x6cc;&#x646; &#x641;&#x631;&#x635;&#x62a;&#x200c;&#x647;&#x627;</h2>
+  <h2>&#x1f3c6; کاندیدهای بررسی امروز</h2>
   <div class="picks-row" id="tpRow"></div>
 </div>
 <div class="controls">
@@ -441,7 +450,7 @@ tr.row.is-stale td{{opacity:.72}}
 </div>
 <div id="stt"></div>
 <div class="disc">
-  &#x26a0;&#xfe0f; &#x627;&#x6cc;&#x646; &#x62f;&#x627;&#x634;&#x628;&#x648;&#x631;&#x62f; &#x635;&#x631;&#x641;&#x627;&#x64b; &#x627;&#x628;&#x632;&#x627;&#x631; &#x62a;&#x62d;&#x644;&#x6cc;&#x644; &#x62a;&#x6a9;&#x646;&#x6cc;&#x6a9;&#x627;&#x644; &#x627;&#x633;&#x62a;.
+  &#x26a0;&#xfe0f; این داشبورد ابزار تصمیم‌یار و غربالگری است، نه توصیه قطعی خرید یا فروش. هر خروجی باید همراه با ریسک، کیفیت داده و سناریوی ابطال بررسی شود.
   Iran Stock AI &copy; {generated_at[:4]}
 </div>
 <script id="__DATA__" type="application/json">{data_json}</script>
@@ -585,7 +594,7 @@ function drawDist(){
   var c=document.getElementById('cDist');if(!c)return;
   var W=c.offsetWidth||300;c.width=W;c.height=190;
   var ctx=c.getContext('2d');ctx.clearRect(0,0,W,190);
-  var labels=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع','داده ناقص'];
+  var labels=['کاندید بررسی قوی','کاندید بررسی','بررسی پس از پولبک','نیازمند تایید حجم','صرفا رصد','ریسک اشباع خرید','داده ناقص'];
   var colors=['#00c853','#69f0ae','#ffd740','#ffab40','#40c4ff','#ff5252','#78909c'];
   var counts=labels.map(function(l){return DATA.filter(function(d){return d.label_fa===l;}).length;});
   var mx=Math.max.apply(null,counts)||1;
@@ -687,7 +696,7 @@ function filterBySector(sec){
 }
 function openDr(idx){
   var d=DATA[idx];if(!d)return;
-  var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ امتیاز بالا اما RSI خطرناک</div>':'';
+  var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ تعارض ریسک: امتیاز بالا همراه با RSI پرریسک</div>':'';
   var mw=d.missing?'<div class="wbox" style="background:#111518;border:1px solid #78909c88;color:#78909c">داده تکنیکال ناقص</div>':'';
   var sw=d.stale&&!d.missing?'<div class="wbox" style="background:#0d1117;border:1px solid #ffd74044;color:#ffd740">داده قدیمی</div>':'';
   var chg='';
@@ -707,14 +716,18 @@ function openDr(idx){
     +'<span style="color:#8b949e">امتیاز '+d.score.toFixed(0)+'</span>'
     +'</div>'+chg+'</div>'
     +cw+mw+sw
-    +'<div class="dsec"><h4>دلایل تصمیم</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+e(d.reasons)+'</p></div>'
+    +'<div class="wbox" style="background:#101923;border:1px solid #58a6ff55;color:#90caf9">این خروجی کاندید بررسی است و توصیه قطعی خرید/فروش نیست.</div>'
+    +'<div class="dsec"><h4>کیفیت داده و هشدار ریسک</h4><dl class="dl">'
+    +r('آخرین داده',d.latest_date)+r('کیفیت داده',d.data_quality)+r('هشدارها',d.risk_flags)
+    +'</dl><p style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">'+e(d.invalidation)+'</p></div>'
+    +'<div class="dsec"><h4>دلایل وضعیت/کاندید بررسی</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+e(d.reasons)+'</p></div>'
     +'<div class="dsec"><h4>عوامل امتیاز</h4><p style="color:#8b949e;font-size:11px;line-height:1.8">'+e(d.factors)+'</p></div>'
     +'<div class="dsec"><h4>مشخصات فنی</h4><dl class="dl">'
     +r('RSI',d.rsi+(d.rsi_band?' ('+d.rsi_band+')':''))
     +r('قیمت',d.price)+r('روند',d.trend?d.trend+'/6':'')
     +r('نسبت حجم',vol>0?vol.toFixed(2)+'x':'')
     +r('سکتور',d.sector)+r('حمایت',d.support)+r('مقاومت',d.resistance)
-    +r('حد ضرر',d.stop_loss)+r('هدف',d.target_1)+r('R/R',d.rr)
+    +r('سطح ابطال',d.stop_loss)+r('هدف تحلیلی',d.target_1)+r('R/R',d.rr)
     +'</dl></div>'
     +'<div class="dsec"><h4>پول هوشمند</h4><dl class="dl">'
     +r('پول هوشمند',d.sm)+r('توضیح',d.sm_fa)+r('صف',d.q)+r('توضیح صف',d.q_fa)
@@ -742,11 +755,11 @@ function closeDr(ev){
 }
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeDr();});
 function doExport(){
-  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','پول هوشمند','صف','دلایل']];
+  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','کیفیت داده','هشدار ریسک','پول هوشمند','صف','دلایل','سناریوی ابطال']];
   filtered().forEach(function(d){
     var vol=parseFloat(d.vol)||0;
     rows.push([d.sym,d.label_fa,d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
-      vol>0?vol.toFixed(2)+'x':'',d.sm,d.q,d.reasons]);
+      vol>0?vol.toFixed(2)+'x':'',d.data_quality,d.risk_flags,d.sm,d.q,d.reasons,d.invalidation]);
   });
   var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c||'').replace(/"/g,'""')+'"'}).join(',')}).join('\n');
   var a=document.createElement('a');
@@ -765,7 +778,7 @@ function renderPerf(){
   var wr=PERF.win_rate,ar=PERF.avg_ret;
   var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
   var arColor=ar>0?'#00c853':ar<0?'#ff5252':'#ffd740';
-  var lc={'ورود قوی':'#00c853','ورود':'#69f0ae','تماشا — پولبک':'#ffd740','تماشا — حجم':'#ffab40','نگهداری':'#40c4ff','خروج / اشباع':'#ff5252'};
+  var lc={'کاندید بررسی قوی':'#00c853','کاندید بررسی':'#69f0ae','بررسی پس از پولبک':'#ffd740','نیازمند تایید حجم':'#ffab40','صرفا رصد':'#40c4ff','ریسک اشباع خرید':'#ff5252'};
   var cards='<div class="perf-kpi">'
     +'<div class="perf-card" style="border-color:#1f3a5f"><div class="pv" style="color:#90caf9">'+PERF.total_logged+'</div><div class="pl">کل سیگنال</div></div>'
     +'<div class="perf-card"><div class="pv" style="color:#c9d1d9">'+PERF.completed+'</div><div class="pl">دارای نتیجه</div></div>'
@@ -773,7 +786,7 @@ function renderPerf(){
     +'<div class="perf-card" style="border-color:'+arColor+'44"><div class="pv" style="color:'+arColor+'">'+(ar>0?'+':'')+ar+'%</div><div class="pl">میانگین بازده</div></div>'
     +'</div>';
   var byLabel=PERF.by_label||{};
-  var labelOrder=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع'];
+  var labelOrder=['کاندید بررسی قوی','کاندید بررسی','بررسی پس از پولبک','نیازمند تایید حجم','صرفا رصد','ریسک اشباع خرید'];
   var labelRows='';
   labelOrder.forEach(function(l){
     var v=byLabel[l];if(!v||!v.n)return;

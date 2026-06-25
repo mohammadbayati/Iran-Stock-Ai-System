@@ -131,7 +131,7 @@ function drawDist(){
   var c=document.getElementById('cDist');if(!c)return;
   var W=c.offsetWidth||300;c.width=W;c.height=190;
   var ctx=c.getContext('2d');ctx.clearRect(0,0,W,190);
-  var labels=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع','داده ناقص'];
+  var labels=['کاندید بررسی قوی','کاندید بررسی','بررسی پس از پولبک','نیازمند تایید حجم','صرفا رصد','ریسک اشباع خرید','داده ناقص'];
   var colors=['#00c853','#69f0ae','#ffd740','#ffab40','#40c4ff','#ff5252','#78909c'];
   var counts=labels.map(function(l){return DATA.filter(function(d){return d.label_fa===l;}).length;});
   var mx=Math.max.apply(null,counts)||1;
@@ -233,7 +233,7 @@ function filterBySector(sec){
 }
 function openDr(idx){
   var d=DATA[idx];if(!d)return;
-  var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ امتیاز بالا اما RSI خطرناک</div>':'';
+  var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ تعارض ریسک: امتیاز بالا همراه با RSI پرریسک</div>':'';
   var mw=d.missing?'<div class="wbox" style="background:#111518;border:1px solid #78909c88;color:#78909c">داده تکنیکال ناقص</div>':'';
   var sw=d.stale&&!d.missing?'<div class="wbox" style="background:#0d1117;border:1px solid #ffd74044;color:#ffd740">داده قدیمی</div>':'';
   var chg='';
@@ -253,14 +253,18 @@ function openDr(idx){
     +'<span style="color:#8b949e">امتیاز '+d.score.toFixed(0)+'</span>'
     +'</div>'+chg+'</div>'
     +cw+mw+sw
-    +'<div class="dsec"><h4>دلایل تصمیم</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+e(d.reasons)+'</p></div>'
+    +'<div class="wbox" style="background:#101923;border:1px solid #58a6ff55;color:#90caf9">این خروجی کاندید بررسی است و توصیه قطعی خرید/فروش نیست.</div>'
+    +'<div class="dsec"><h4>کیفیت داده و هشدار ریسک</h4><dl class="dl">'
+    +r('آخرین داده',d.latest_date)+r('کیفیت داده',d.data_quality)+r('هشدارها',d.risk_flags)
+    +'</dl><p style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">'+e(d.invalidation)+'</p></div>'
+    +'<div class="dsec"><h4>دلایل وضعیت/کاندید بررسی</h4><p style="color:#ccc;font-size:12px;line-height:1.8">'+e(d.reasons)+'</p></div>'
     +'<div class="dsec"><h4>عوامل امتیاز</h4><p style="color:#8b949e;font-size:11px;line-height:1.8">'+e(d.factors)+'</p></div>'
     +'<div class="dsec"><h4>مشخصات فنی</h4><dl class="dl">'
     +r('RSI',d.rsi+(d.rsi_band?' ('+d.rsi_band+')':''))
     +r('قیمت',d.price)+r('روند',d.trend?d.trend+'/6':'')
     +r('نسبت حجم',vol>0?vol.toFixed(2)+'x':'')
     +r('سکتور',d.sector)+r('حمایت',d.support)+r('مقاومت',d.resistance)
-    +r('حد ضرر',d.stop_loss)+r('هدف',d.target_1)+r('R/R',d.rr)
+    +r('سطح ابطال',d.stop_loss)+r('هدف تحلیلی',d.target_1)+r('R/R',d.rr)
     +'</dl></div>'
     +'<div class="dsec"><h4>پول هوشمند</h4><dl class="dl">'
     +r('پول هوشمند',d.sm)+r('توضیح',d.sm_fa)+r('صف',d.q)+r('توضیح صف',d.q_fa)
@@ -288,11 +292,11 @@ function closeDr(ev){
 }
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeDr();});
 function doExport(){
-  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','پول هوشمند','صف','دلایل']];
+  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','کیفیت داده','هشدار ریسک','پول هوشمند','صف','دلایل','سناریوی ابطال']];
   filtered().forEach(function(d){
     var vol=parseFloat(d.vol)||0;
     rows.push([d.sym,d.label_fa,d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
-      vol>0?vol.toFixed(2)+'x':'',d.sm,d.q,d.reasons]);
+      vol>0?vol.toFixed(2)+'x':'',d.data_quality,d.risk_flags,d.sm,d.q,d.reasons,d.invalidation]);
   });
   var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c||'').replace(/"/g,'""')+'"'}).join(',')}).join('\n');
   var a=document.createElement('a');
@@ -311,7 +315,7 @@ function renderPerf(){
   var wr=PERF.win_rate,ar=PERF.avg_ret;
   var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
   var arColor=ar>0?'#00c853':ar<0?'#ff5252':'#ffd740';
-  var lc={'ورود قوی':'#00c853','ورود':'#69f0ae','تماشا — پولبک':'#ffd740','تماشا — حجم':'#ffab40','نگهداری':'#40c4ff','خروج / اشباع':'#ff5252'};
+  var lc={'کاندید بررسی قوی':'#00c853','کاندید بررسی':'#69f0ae','بررسی پس از پولبک':'#ffd740','نیازمند تایید حجم':'#ffab40','صرفا رصد':'#40c4ff','ریسک اشباع خرید':'#ff5252'};
   var cards='<div class="perf-kpi">'
     +'<div class="perf-card" style="border-color:#1f3a5f"><div class="pv" style="color:#90caf9">'+PERF.total_logged+'</div><div class="pl">کل سیگنال</div></div>'
     +'<div class="perf-card"><div class="pv" style="color:#c9d1d9">'+PERF.completed+'</div><div class="pl">دارای نتیجه</div></div>'
@@ -319,7 +323,7 @@ function renderPerf(){
     +'<div class="perf-card" style="border-color:'+arColor+'44"><div class="pv" style="color:'+arColor+'">'+(ar>0?'+':'')+ar+'%</div><div class="pl">میانگین بازده</div></div>'
     +'</div>';
   var byLabel=PERF.by_label||{};
-  var labelOrder=['ورود قوی','ورود','تماشا — پولبک','تماشا — حجم','نگهداری','خروج / اشباع'];
+  var labelOrder=['کاندید بررسی قوی','کاندید بررسی','بررسی پس از پولبک','نیازمند تایید حجم','صرفا رصد','ریسک اشباع خرید'];
   var labelRows='';
   labelOrder.forEach(function(l){
     var v=byLabel[l];if(!v||!v.n)return;
