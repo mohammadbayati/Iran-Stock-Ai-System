@@ -305,78 +305,55 @@ function doExport(){
   a.click();
 }
 function renderPerf(){
-  var el=document.getElementById('perfContent');
-  if(!PERF||!PERF.completed){
-    el.innerHTML='<div class="perf-empty"><div style="font-size:2rem;margin-bottom:12px">📭</div>'
-      +'<div>هنوز داده‌ای برای بک‌تست ثبت نشده.</div>'
-      +'<div style="font-size:11px;margin-top:8px;color:#484f58">تعداد: '+(PERF.total_logged||0)+'</div></div>';
-    return;
+  var rootId='perfContent';
+  try{
+    var current=arguments.callee.__rootId;
+    if(current){rootId=current;}
+  }catch(_){}
+  var root=document.getElementById(rootId)||document.getElementById('performance')||document.getElementById('perfTab')||document.querySelector('[data-tab="perf"]')||document.querySelector('[data-view="perf"]');
+  if(!root)return;
+  var horizons=(PERF&&PERF.horizons)?PERF.horizons:{'5D':PERF||{}};
+  var h5=horizons['5D']||{};
+  var h10=horizons['10D']||{};
+  var total=PERF&&PERF.total_logged?PERF.total_logged:((h5&&h5.total_logged)||0);
+  function num(v,d){v=Number(v||0);return isFinite(v)?v.toFixed(d||0):'0';}
+  function pct(v){return num(v,1)+'%';}
+  function card(title,value,sub,color){
+    return '<div class="pcard" style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;min-height:86px">'
+      +'<div style="color:#8b949e;font-size:12px">'+title+'</div>'
+      +'<div style="color:'+(color||'#58a6ff')+';font-size:26px;font-weight:800;margin-top:6px">'+value+'</div>'
+      +'<div style="color:#8b949e;font-size:11px;margin-top:4px">'+sub+'</div></div>';
   }
-  var wr=PERF.win_rate,ar=PERF.avg_ret;
-  var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
-  var arColor=ar>0?'#00c853':ar<0?'#ff5252':'#ffd740';
-  var lc={'کاندید بررسی قوی':'#00c853','کاندید بررسی':'#69f0ae','بررسی پس از پولبک':'#ffd740','نیازمند تایید حجم':'#ffab40','صرفا رصد':'#40c4ff','ریسک اشباع خرید':'#ff5252'};
-  var cards='<div class="perf-kpi">'
-    +'<div class="perf-card" style="border-color:#1f3a5f"><div class="pv" style="color:#90caf9">'+PERF.total_logged+'</div><div class="pl">کل سیگنال</div></div>'
-    +'<div class="perf-card"><div class="pv" style="color:#c9d1d9">'+PERF.completed+'</div><div class="pl">دارای نتیجه</div></div>'
-    +'<div class="perf-card" style="border-color:'+wrColor+'44"><div class="pv" style="color:'+wrColor+'">'+wr+'%</div><div class="pl">موفقیت</div></div>'
-    +'<div class="perf-card" style="border-color:'+arColor+'44"><div class="pv" style="color:'+arColor+'">'+(ar>0?'+':'')+ar+'%</div><div class="pl">میانگین بازده</div></div>'
-    +'</div>';
-  var byLabel=PERF.by_label||{};
-  var labelOrder=['کاندید بررسی قوی','کاندید بررسی','بررسی پس از پولبک','نیازمند تایید حجم','صرفا رصد','ریسک اشباع خرید'];
-  var labelRows='';
-  labelOrder.forEach(function(l){
-    var v=byLabel[l];if(!v||!v.n)return;
-    var wc=v.win_rate>=60?'#00c853':v.win_rate>=45?'#ffd740':'#ff5252';
-    var ac=v.avg_ret>0?'#00c853':v.avg_ret<0?'#ff5252':'#aaa';
-    labelRows+='<div class="perf-row">'
-      +'<div class="perf-label" style="color:'+(lc[l]||'#8b949e')+'">'+e(l)+'</div>'
-      +'<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+v.win_rate+'%;background:'+wc+'"></div></div>'
-      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'%</div>'
-      +'<div style="font-size:11px;color:'+ac+';min-width:70px">'+(v.avg_ret>0?'+':'')+v.avg_ret+'%</div>'
-      +'<div style="font-size:10px;color:#484f58;min-width:40px">n='+v.n+'</div></div>';
-  });
-  var byGrade=PERF.by_grade||{};
-  var gc={'A+':'#00e676','A':'#69f0ae','B':'#ffd740','C':'#ff9100','D':'#ff5252'};
-  var gradeRows='';
-  ['A+','A','B','C','D'].forEach(function(g){
-    var v=byGrade[g];if(!v||!v.n)return;
-    var wc=v.win_rate>=60?'#00c853':v.win_rate>=45?'#ffd740':'#ff5252';
-    var ac=v.avg_ret>0?'#00c853':v.avg_ret<0?'#ff5252':'#aaa';
-    gradeRows+='<div class="perf-row">'
-      +'<div class="perf-label" style="color:'+(gc[g]||'#78909c')+';font-weight:700;font-size:15px">'+e(g)+'</div>'
-      +'<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+v.win_rate+'%;background:'+wc+'"></div></div>'
-      +'<div class="perf-val" style="color:'+wc+'">'+v.win_rate+'%</div>'
-      +'<div style="font-size:11px;color:'+ac+';min-width:70px">'+(v.avg_ret>0?'+':'')+v.avg_ret+'%</div>'
-      +'<div style="font-size:10px;color:#484f58;min-width:40px">n='+v.n+'</div></div>';
-  });
-  var recentRows=(PERF.recent||[]).map(function(r){
-    var rc=r.ret>0?'#00c853':r.ret<0?'#ff5252':'#aaa';
-    return '<tr>'
-      +'<td><span class="sym-link" onclick="openSymDrill(\''+e(r.sym)+'\')">'+e(r.sym)+'</span></td>'
-      +'<td style="color:'+(lc[r.label_fa]||'#aaa')+'">'+e(r.label_fa)+'</td>'
-      +'<td>'+e(r.grade)+'</td><td>'+e(r.date.slice(0,10))+'</td>'
-      +'<td>'+e(r.entry)+'</td><td>'+e(r.exit)+'</td>'
-      +'<td style="color:'+rc+';font-weight:600">'+(r.ret>0?'+':'')+r.ret+'%</td></tr>';
-  }).join('');
-  var curve=PERF.equity_curve||[];
-  var rwr=PERF.rolling_wr||[];
-  el.innerHTML='<div class="perf-section">'+cards
-    +'<div class="perf-grid" style="margin-bottom:14px">'
-    +'<div class="perf-box"><h3>📈 منحنی سرمایه</h3>'
-    +(curve.length>1?'<canvas id="eqCurve" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">داده کافی نیست</div>')
+  function horizonBox(name,h){
+    var completed=Number(h.completed||0), pending=Number(h.pending||0);
+    var body='';
+    if(completed<=0){
+      body='<div style="color:#ffd740;font-weight:700;margin-top:8px">در انتظار تکمیل روزهای معاملاتی</div>'
+        +'<div style="color:#8b949e;font-size:12px;line-height:1.9;margin-top:8px">برای '+name+' باید '+(name==='5D'?'5':'10')+' روز معاملاتی بعد از تاریخ سیگنال کامل شود. فعلا نتیجه قابل قضاوت ثبت نشده است.</div>';
+    }else{
+      body='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px">'
+        +card('نرخ موفقیت',pct(h.win_rate),'سیگنال‌های کامل‌شده','#00c853')
+        +card('میانگین بازده',pct(h.avg_ret),'بر اساس بازده تحقق‌یافته',Number(h.avg_ret||0)>=0?'#00c853':'#ff5252')
+        +card('High Confidence',pct(h.high_conf_win_rate),'تعداد: '+(h.high_conf_completed||0),'#ffd740')
+        +'</div>';
+    }
+    return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px">'
+      +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'
+      +'<h3 style="margin:0;color:#c9d1d9;font-size:15px">Track Record '+name+'</h3>'
+      +'<span style="color:#8b949e;font-size:12px">کامل‌شده: '+completed+' | در انتظار: '+pending+'</span>'
+      +'</div>'+body+'</div>';
+  }
+  var html='<section style="padding:18px 10px 28px;max-width:1280px;margin:0 auto">'
+    +'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">'
+    +card('کل سیگنال‌های ثبت‌شده',String(total),'خوانده‌شده از signal_log.csv','#58a6ff')
+    +card('نتیجه 5D کامل',String(h5.completed||0),'آماده ارزیابی','#00c853')
+    +card('نتیجه 10D کامل',String(h10.completed||0),'آماده ارزیابی','#ffd740')
+    +card('در انتظار تکمیل',String((h5.pending||0)+(h10.pending||0)),'جمع انتظار 5D و 10D','#ffab40')
     +'</div>'
-    +'<div class="perf-box"><h3>🎯 نرخ موفقیت رولینگ</h3>'
-    +(rwr.length>1?'<canvas id="rwrChart" style="width:100%;height:140px;display:block"></canvas>':'<div style="color:#484f58;font-size:12px">داده کافی نیست</div>')
-    +'</div></div>'
-    +'<div class="perf-grid">'
-    +'<div class="perf-box"><h3>📊 به تفکیک وضعیت</h3>'+(labelRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
-    +'<div class="perf-box"><h3>🏅 به تفکیک رتبه</h3>'+(gradeRows||'<div style="color:#484f58">داده کافی نیست</div>')+'</div>'
-    +'</div><div style="margin-top:14px"><div class="perf-box"><h3>🕐 آخرین معاملات</h3>'
-    +'<table class="recent-table"><thead><tr><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>تاریخ</th><th>ورود</th><th>خروج</th><th>بازده</th></tr></thead>'
-    +'<tbody>'+recentRows+'</tbody></table></div></div></div>';
-  if(curve.length>1)setTimeout(function(){drawEquity(curve,'eqCurve');},0);
-  if(rwr.length>1)setTimeout(function(){drawRollingWR(rwr);},0);
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+horizonBox('5D',h5)+horizonBox('10D',h10)+'</div>'
+    +'<div style="margin-top:14px;color:#8b949e;font-size:12px;line-height:1.9;text-align:center">این بخش سابقه عملکرد را پس از کامل شدن روزهای معاملاتی نشان می‌دهد و توصیه قطعی خرید/فروش نیست.</div>'
+    +'</section>';
+  root.innerHTML=html;
 }
 function drawEquity(curve,canvasId){
   var c=document.getElementById(canvasId||'eqCurve');if(!c)return;
