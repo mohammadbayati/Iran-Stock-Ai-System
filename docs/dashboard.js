@@ -291,6 +291,38 @@ function closeDr(ev){
   document.body.style.overflow='';
 }
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeDr();});
+function copyPilotReport(){
+  var horizons=(PERF&&PERF.horizons)?PERF.horizons:{};
+  var h5=horizons['5D']||{},h10=horizons['10D']||{};
+  var total=(PERF&&PERF.total_logged)||0;
+  var first=(PERF&&PERF.first_signal_date)||'-';
+  var last=(PERF&&PERF.last_signal_date)||'-';
+  var age=(PERF&&PERF.track_age_days)||0;
+  var lines=[
+    'گزارش پایلوت Iran Stock AI Dashboard',
+    'شروع Track Record: '+first,
+    'آخرین سیگنال: '+last,
+    'سن تاریخچه: '+age+' روز',
+    'کل سیگنال‌های ثبت‌شده: '+total,
+    'نتیجه 5D کامل: '+(h5.completed||0)+' | در انتظار 5D: '+(h5.pending||0),
+    'نتیجه 10D کامل: '+(h10.completed||0)+' | در انتظار 10D: '+(h10.pending||0),
+    '',
+    'وضعیت اعتبارسنجی: سیستم وارد مرحله Track Record شده است. ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است.',
+    'مرز استفاده: خروجی‌ها کاندید بررسی هستند و توصیه قطعی خرید/فروش یا ادعای بازدهی قطعی محسوب نمی‌شوند.',
+    'معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.'
+  ];
+  var text=lines.join('\n');
+  function done(){
+    var el=document.getElementById('pilotCopyStatus');
+    if(el){el.textContent='کپی شد';setTimeout(function(){el.textContent='';},1800);}
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){window.prompt('گزارش پایلوت را کپی کنید:',text);});
+  }else{
+    window.prompt('گزارش پایلوت را کپی کنید:',text);
+  }
+}
+
 function doExport(){
   var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','کیفیت داده','هشدار ریسک','پول هوشمند','صف','دلایل','سناریوی ابطال']];
   filtered().forEach(function(d){
@@ -356,7 +388,11 @@ function renderPerf(){
     +'<div><span style="color:#8b949e">اولین بررسی تقریبی</span><br><b style="color:#ffab40">5D: '+next5+' | 10D: '+next10+'</b></div>'
     +'</div>'
     +'<div style="background:#101923;border:1px solid #58a6ff55;border-radius:8px;padding:13px 15px;margin-bottom:12px;color:#c9d1d9;line-height:1.9">'
-    +'<div style="color:#58a6ff;font-weight:800;font-size:14px;margin-bottom:4px">خلاصه اعتبارسنجی پایلوت</div>'
+    +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:4px">'
+    +'<div style="color:#58a6ff;font-weight:800;font-size:14px">خلاصه اعتبارسنجی پایلوت</div>'
+    +'<button type="button" onclick="copyPilotReport()" style="background:#238636;border:1px solid #2ea043;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش پایلوت</button>'
+    +'</div>'
+    +'<div id="pilotCopyStatus" style="color:#00c853;font-size:11px;height:16px;margin-bottom:2px"></div>'
     +'<div style="font-size:12px;color:#c9d1d9">این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است. تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و ادعای بازدهی قطعی ندارند.</div>'
     +'<div style="margin-top:7px;font-size:11px;color:#8b949e">معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.</div>'
     +'</div>'
