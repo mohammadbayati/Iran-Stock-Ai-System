@@ -56,6 +56,10 @@ jobs:
           FETCH_HISTORY_IN_CI: ${{ github.event.inputs.refresh_history || 'false' }}
         run: python run_all.py
 
+      - name: Refresh track record outcomes
+        run: |
+          python -c "from src.backtest_engine import fill_outcomes; print('5D filled:', fill_outcomes(5)); print('10D filled:', fill_outcomes(10))"
+
       - name: Generate HTML dashboard
         run: python scraper/generate_dashboard.py
 
@@ -63,7 +67,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html docs/dashboard.js docs/dashboard.js docs/dashboard.js docs/dashboard.js
+          git add docs/index.html docs/dashboard.js data/signal_log.csv
           git diff --staged --quiet || git commit -m "chore: update dashboard [skip ci]"
           git push
 
