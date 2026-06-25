@@ -881,8 +881,8 @@ function renderPerf(){
     +'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">'
     +card('کل سیگنال‌های ثبت‌شده',String(total),'خوانده‌شده از signal_log.csv','#58a6ff')
     +card('نتیجه 5D کامل',String(h5.completed||0),'آماده ارزیابی','#00c853')
-    +card('نتیجه 10D کامل',String(h10.completed||0),'آماده ارزیابی','#ffd740')
-    +card('در انتظار تکمیل',String((h5.pending||0)+(h10.pending||0)),'جمع انتظار 5D و 10D','#ffab40')
+    +card('در انتظار 5D',String(h5.pending||0),'پس از 5 روز معاملاتی کامل می‌شود','#ffab40')
+    +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+horizonBox('5D',h5)+horizonBox('10D',h10)+'</div>'
     +'<div style="margin-top:14px;color:#8b949e;font-size:12px;line-height:1.9;text-align:center">این بخش سابقه عملکرد را پس از کامل شدن روزهای معاملاتی نشان می‌دهد و توصیه قطعی خرید/فروش نیست.</div>'
