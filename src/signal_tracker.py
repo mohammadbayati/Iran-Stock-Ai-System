@@ -22,14 +22,20 @@ BEARISH_LABELS = {"Avoid Entry Now - Overbought"}
 LOG_COLUMNS = [
     "date", "symbol", "decision_label", "confidence_score",
     "confidence_grade", "close_at_signal", "close_5d_later",
-    "return_5d_pct", "was_correct",
+    "return_5d_pct", "was_correct", "close_10d_later",
+    "return_10d_pct", "was_correct_10d",
 ]
 
 
 def _load_log() -> pd.DataFrame:
     if os.path.exists(SIGNAL_LOG):
-        return pd.read_csv(SIGNAL_LOG)
-    return pd.DataFrame(columns=LOG_COLUMNS)
+        df = pd.read_csv(SIGNAL_LOG)
+    else:
+        df = pd.DataFrame(columns=LOG_COLUMNS)
+    for col in LOG_COLUMNS:
+        if col not in df.columns:
+            df[col] = None
+    return df[LOG_COLUMNS]
 
 
 def _save_log(df: pd.DataFrame):
@@ -63,6 +69,9 @@ def log_signals(report_df: pd.DataFrame):
             "close_5d_later": None,
             "return_5d_pct": None,
             "was_correct": None,
+            "close_10d_later": None,
+            "return_10d_pct": None,
+            "was_correct_10d": None,
         })
 
     if new_rows:

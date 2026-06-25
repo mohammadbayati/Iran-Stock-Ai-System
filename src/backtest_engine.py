@@ -33,25 +33,45 @@ def _get_price_after(symbol: str, signal_date: str, trading_days: int = 5) -> fl
 
 
 def fill_outcomes(trading_days: int = 5) -> int:
-    """Read signal_log.csv, fill close_5d_later for rows that don't have it yet."""
+    """Read signal_log.csv and fill forward outcome columns such as 5D and 10D."""
     if not os.path.exists(SIGNAL_LOG):
         return 0
     df = pd.read_csv(SIGNAL_LOG)
-    if "close_5d_later" not in df.columns:
-        df["close_5d_later"] = None
+    close_col = f"close_{trading_days}d_later"
+    return_col = f"return_{trading_days}d_pct"
+    correct_col = "was_correct" if trading_days == 5 else f"was_correct_{trading_days}d"
+    for col in [close_col, return_col, correct_col]:
+        if col not in df.columns:
+            df[col] = None
     filled = 0
     for i, row in df.iterrows():
-        if pd.notna(df.at[i, "close_5d_later"]):
+        if pd.notna(df.at[i, close_col]):
             continue
         symbol = str(row.get("symbol", ""))
         date = str(row.get("date", ""))
-        if not symbol or not date:
+        entry = row.get("close_at_signal", "")
+        if not symbol or not date or pd.isna(entry):
             continue
         price = _get_price_after(symbol, date, trading_days)
-        if price is not None:
-            df.at[i, "close_5d_later"] = price
-            filled += 1
-    df.to_csv(SIGNAL_LOG, index=False)
+        if price is None:
+            continue
+        try:
+            entry_price = float(entry)
+            ret = (float(price) / entry_price - 1) * 100
+        except Exception:
+            continue
+        label = str(row.get("decision_label", ""))
+        if label in {"Entry Candidate", "Technical Entry Watch"}:
+            correct = ret > 0
+        elif label in {"Avoid Entry Now - Overbought"}:
+            correct = ret < 0
+        else:
+            correct = None
+        df.at[i, close_col] = price
+        df.at[i, return_col] = round(ret, 2)
+        df.at[i, correct_col] = correct
+        filled += 1
+    df.to_csv(SIGNAL_LOG, index=False, encoding="utf-8-sig")
     return filled
 
 
@@ -98,6 +118,7 @@ def generate_report() -> str:
 
 
 def run():
-    filled = fill_outcomes(trading_days=5)
-    print(f"Filled {filled} outcomes.")
+    filled_5d = fill_outcomes(trading_days=5)
+    filled_10d = fill_outcomes(trading_days=10)
+    print(f"Filled {filled_5d} 5D outcomes and {filled_10d} 10D outcomes.")
     print(generate_report())

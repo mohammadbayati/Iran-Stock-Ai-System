@@ -8,9 +8,9 @@ import html as html_mod
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.settings import DECISION_REPORT_CSV, OUTPUT_DIR
+from config.settings import DECISION_REPORT_CSV, OUTPUT_DIR, DATA_DIR
 
-SIGNAL_LOG = os.path.join(OUTPUT_DIR, "signal_log.csv")
+SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.csv")
 DASHBOARD_PATH = os.path.join("docs", "index.html")
 JS_PATH = os.path.join("docs", "dashboard.js")
 

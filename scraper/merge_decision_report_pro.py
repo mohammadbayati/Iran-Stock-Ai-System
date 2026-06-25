@@ -137,6 +137,7 @@ def run():
 
     # --- Backtest: fill outcomes using actual historical prices ---
     fill_outcomes(trading_days=5)
+    fill_outcomes(trading_days=10)
 
     # --- Summary print ---
     print("\n--- Pro Decision Summary ---")
