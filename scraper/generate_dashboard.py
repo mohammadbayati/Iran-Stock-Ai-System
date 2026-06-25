@@ -455,7 +455,7 @@ tr.row.is-stale td{{opacity:.72}}
 </div>
 <script id="__DATA__" type="application/json">{data_json}</script>
 <script id="__PERF__" type="application/json">{perf_json}</script>
-<script src="dashboard.js"></script>
+<script src="dashboard.js?v={generated_at.replace(' ', '-').replace(':', '')}"></script>
 </body>
 </html>"""
 
