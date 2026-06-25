@@ -355,6 +355,11 @@ function renderPerf(){
     +'<div><span style="color:#8b949e">سن تاریخچه</span><br><b style="color:#ffd740">'+ageDays+' روز</b></div>'
     +'<div><span style="color:#8b949e">اولین بررسی تقریبی</span><br><b style="color:#ffab40">5D: '+next5+' | 10D: '+next10+'</b></div>'
     +'</div>'
+    +'<div style="background:#101923;border:1px solid #58a6ff55;border-radius:8px;padding:13px 15px;margin-bottom:12px;color:#c9d1d9;line-height:1.9">'
+    +'<div style="color:#58a6ff;font-weight:800;font-size:14px;margin-bottom:4px">خلاصه اعتبارسنجی پایلوت</div>'
+    +'<div style="font-size:12px;color:#c9d1d9">این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است. تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و ادعای بازدهی قطعی ندارند.</div>'
+    +'<div style="margin-top:7px;font-size:11px;color:#8b949e">معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.</div>'
+    +'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">'
     +card('کل سیگنال‌های ثبت‌شده',String(total),'خوانده‌شده از signal_log.csv','#58a6ff')
     +card('نتیجه 5D کامل',String(h5.completed||0),'آماده ارزیابی','#00c853')
