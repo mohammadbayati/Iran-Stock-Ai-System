@@ -13,6 +13,8 @@ on:
     - cron: "50 8 * * 6,0,1,2,3"
     # 12:40 Iran = 09:10 UTC
     - cron: "10 9 * * 6,0,1,2,3"
+    # 18:15 Iran = 14:45 UTC (after gold/silver fund market close)
+    - cron: "45 14 * * 6,0,1,2,3"
 
   workflow_dispatch:
     inputs:
