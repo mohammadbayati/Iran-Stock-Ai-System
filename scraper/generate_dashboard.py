@@ -961,6 +961,8 @@ function positionCalcRows(price, stop, target){
     rows += '<dt>سود احتمالی با کل سرمایه</dt><dd>'+fmtMoney(targetAmount)+' ('+targetPct.toFixed(1)+'%)</dd>';
   }
   rows += '<dt>سرمایه مبنا</dt><dd>'+fmtMoney(cap)+'</dd>';
+  rows += '<dt>افق سناریو</dt><dd>5 تا 10 روز معاملاتی</dd>';
+  rows += '<dt>یادداشت زمان</dt><dd>سود/زیان بالا در صورت رسیدن قیمت به هدف یا حد ضرر است؛ زمان رسیدن به هدف تضمینی نیست.</dd>';
   return rows;
 }
 function entryGate(d){
