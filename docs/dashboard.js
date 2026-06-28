@@ -330,6 +330,12 @@ function buildTradePlan(d){
   var exitPlan='خروج دفاعی با شکست سطح ابطال؛ بازبینی در هدف تحلیلی یا پایان پنجره 5D/10D.';
   var note='این پلن سناریوی مشروط است و دستور قطعی خرید/فروش نیست.';
   var risk=[];
+  var calcGateNote = gate.code==='blocked'
+    ? 'محاسبه فقط آموزشی است؛ ورود توسط Gate مسدود شده.'
+    : gate.code==='wait'
+      ? 'محاسبه سناریویی است؛ ورود نیازمند تاییدهای Gate است.'
+      : '';
+  var calcGateColor = gate.code==='blocked' ? '#ff5252' : '#ffab40';
 
   if(gate.code==='blocked'){
     entry='ورود فعلا بررسی نشود تا علت‌های مسدودکننده رفع شوند.';
@@ -363,6 +369,7 @@ function buildTradePlan(d){
     +row('حد ضرر / ابطال',stop!==null?money(stop):'')
     +row('هدف / بازبینی سود',target!==null?money(target):'')
     +row('نسبت R/R',rr!==null&&rr>0?rr.toFixed(2):'')
+    +(calcGateNote?'<dt>وضعیت ماشین‌حساب</dt><dd><span style="color:'+calcGateColor+';font-weight:800">'+e(calcGateNote)+'</span></dd>':'')
     +'<dt>ماشین‌حساب سناریو</dt><dd><div style="display:flex;gap:6px;flex-wrap:wrap">'
     +'<input id="capitalInput" type="number" min="0" step="1000000" value="'+getCapital()+'" oninput="updatePositionCalc()" style="width:142px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:5px 7px" placeholder="سرمایه">'
     +'<input id="riskPctInput" type="number" min="0.1" max="100" step="0.1" value="'+getRiskPct()+'" oninput="updatePositionCalc()" style="width:86px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:5px 7px" placeholder="ریسک٪">'
