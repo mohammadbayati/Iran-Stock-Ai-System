@@ -17,7 +17,7 @@ var _s=900;
   if(_s>0)_s--;
   setTimeout(tick,1000);
 })();
-var _tags={},_sk='score',_sa=false,_kf=null,_chartsOpen=true;
+var _tags={},_sk='score',_sa=false,_kf=null,_chartsOpen=true,_openDrawerIdx=null;
 function toggleCharts(){
   _chartsOpen=!_chartsOpen;
   document.getElementById('chartsBody').style.display=_chartsOpen?'block':'none';
@@ -245,6 +245,44 @@ function money(v){
   var n=num(v);
   return n===null?'':String(Math.round(n));
 }
+function fmtMoney(v){
+  var n=num(v);
+  if(n===null)return '';
+  return Math.round(n).toLocaleString('en-US')+' تومان';
+}
+function getCapital(){
+  var el=document.getElementById('capitalInput');
+  var n=el?num(el.value):null;
+  return n&&n>0?n:0;
+}
+function getRiskPct(){
+  var el=document.getElementById('riskPctInput');
+  var n=el?num(el.value):null;
+  return n&&n>0?n:2;
+}
+function refreshDrawer(){
+  if(typeof _openDrawerIdx==='number')openDr(_openDrawerIdx);
+}
+function positionCalcRows(price, stop, target){
+  var cap=getCapital(), riskPct=getRiskPct();
+  if(!cap || price===null || price<=0)return '';
+  var rows='';
+  var stopPct=null, targetPct=null, stopAmount=null, targetAmount=null, riskBudget=cap*riskPct/100, sizedPosition=null;
+  if(stop!==null && stop<price){
+    stopPct=(price-stop)/price*100;
+    stopAmount=cap*stopPct/100;
+    sizedPosition=stopPct>0?riskBudget/(stopPct/100):null;
+    rows += '<dt>زیان احتمالی با کل سرمایه</dt><dd>'+fmtMoney(stopAmount)+' ('+stopPct.toFixed(1)+'%)</dd>';
+    rows += '<dt>پوزیشن برای ریسک '+riskPct.toFixed(1)+'٪</dt><dd>'+fmtMoney(Math.min(sizedPosition||0,cap))+'</dd>';
+  }
+  if(target!==null && target>price){
+    targetPct=(target-price)/price*100;
+    targetAmount=cap*targetPct/100;
+    rows += '<dt>سود احتمالی با کل سرمایه</dt><dd>'+fmtMoney(targetAmount)+' ('+targetPct.toFixed(1)+'%)</dd>';
+  }
+  rows += '<dt>سرمایه مبنا</dt><dd>'+fmtMoney(cap)+'</dd>';
+  return rows;
+}
 function entryGate(d){
   var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
   var blocked=[], wait=[], pass=[];
@@ -280,6 +318,7 @@ function buildTradePlan(d){
   function row(l,v){return v?'<dt>'+e(l)+'</dt><dd>'+e(v)+'</dd>':'';}
   var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
   var gate=entryGate(d);
+  var positionRows=positionCalcRows(price, stop, target);
   var status=gate.title;
   var entry='ورود فقط بعد از تایید داده، حجم و حفظ سطح ابطال بررسی شود.';
   var confirm='حفظ قیمت بالای سطح ابطال، تایید حجم و نبود هشدار داده.';
@@ -319,6 +358,7 @@ function buildTradePlan(d){
     +row('حد ضرر / ابطال',stop!==null?money(stop):'')
     +row('هدف / بازبینی سود',target!==null?money(target):'')
     +row('نسبت R/R',rr!==null&&rr>0?rr.toFixed(2):'')
+    +positionRows
     +row('سناریوی خروج',exitPlan)
     +'</dl>'
     +(risk.length?'<p style="color:#ffab40;font-size:11px;line-height:1.8;margin-top:8px">'+e(risk.join(' | '))+'</p>':'')
@@ -326,6 +366,7 @@ function buildTradePlan(d){
 }
 function openDr(idx){
   var d=DATA[idx];if(!d)return;
+  _openDrawerIdx=idx;
   var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ تعارض ریسک: امتیاز بالا همراه با RSI پرریسک</div>':'';
   var mw=d.missing?'<div class="wbox" style="background:#111518;border:1px solid #78909c88;color:#78909c">داده تکنیکال ناقص</div>':'';
   var sw=d.stale&&!d.missing?'<div class="wbox" style="background:#0d1117;border:1px solid #ffd74044;color:#ffd740">داده قدیمی</div>':'';
@@ -382,6 +423,7 @@ function openDr(idx){
 function closeDr(ev){
   if(ev&&ev.target!==document.getElementById('ov'))return;
   document.getElementById('ov').classList.remove('open');
+  _openDrawerIdx=null;
   document.body.style.overflow='';
 }
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeDr();});
