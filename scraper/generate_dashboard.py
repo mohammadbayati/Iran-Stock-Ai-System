@@ -374,7 +374,7 @@ input:focus,select:focus{{outline:1px solid #58a6ff;border-color:#58a6ff}}
 .tbtn.on{{background:#1f6feb;border-color:#1f6feb;color:#fff}}
 .tbtn.danger.on{{background:#b91c1c;border-color:#b91c1c}}
 .tbl-wrap{{overflow-x:auto;padding:0 16px 16px}}
-table{{width:100%;border-collapse:collapse;min-width:700px}}
+table{{width:100%;border-collapse:collapse;min-width:820px}}
 th{{background:#161b22;color:#58a6ff;padding:7px 8px;text-align:center;position:static;top:auto;z-index:auto;cursor:pointer;user-select:none;border-bottom:2px solid #30363d;font-size:12px;white-space:nowrap}}
 th:hover{{background:#1c2128}}
 .arr{{color:#484f58;margin-right:2px}}
@@ -527,6 +527,7 @@ tr.row.is-stale td{{opacity:.72}}
 <thead><tr>
   <th onclick="srt('sym',0)"><span class="arr" id="a0"></span>&#x646;&#x645;&#x627;&#x62f;</th>
   <th onclick="srt('label_fa',1)"><span class="arr" id="a1"></span>&#x648;&#x636;&#x639;&#x6cc;&#x62a;</th>
+  <th>گیت ورود</th>
   <th onclick="srt('grade',2)"><span class="arr" id="a2"></span>&#x631;&#x62a;&#x628;&#x647;</th>
   <th onclick="srt('score',3)"><span class="arr" id="a3"></span>&#x627;&#x645;&#x62a;&#x6cc;&#x627;&#x632;</th>
   <th onclick="srt('rsi',4)"><span class="arr" id="a4"></span>RSI</th>
@@ -761,9 +762,13 @@ function render(){
     var si=d.stale&&!d.missing?'<span style="color:#78909c;font-size:10px"> 🕐</span>':'';
     var vol=parseFloat(d.vol)||0,vc=vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c';
     var sp=d.close_20d?'<canvas class="spark" data-p="'+e(d.close_20d)+'" width="80" height="26"></canvas>':'';
+    var gate=entryGate(d);
+    var gateLabel=gate.code==='allowed'?'مجاز':gate.code==='wait'?'صبر':'مسدود';
+    var gateBadge='<span class="badge" title="'+e(gate.reasons.join(' | '))+'" style="color:'+gate.color+';background:'+gate.bg+'">'+gateLabel+'</span>';
     html+='<tr class="'+cls+'" onclick="openDr('+DATA.indexOf(d)+')">'
       +'<td><b>'+e(d.sym)+'</b>'+ci+wi+si+'</td>'
       +'<td><span class="badge" style="color:'+e(d.label_color)+';background:'+e(d.label_bg)+'">'+e(d.label_fa)+'</span></td>'
+      +'<td style="text-align:center">'+gateBadge+'</td>'
       +'<td style="text-align:center"><b style="color:'+e(d.grade_color)+'">'+e(d.grade)+'</b></td>'
       +'<td style="text-align:center">'+(d.score?d.score.toFixed(0):'')+sb+'</td>'
       +'<td style="text-align:center"><span class="rbadge" style="color:'+e(d.rsi_color)+'">'+e(d.rsi)+'</span></td>'

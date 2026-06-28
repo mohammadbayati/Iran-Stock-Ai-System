@@ -85,9 +85,13 @@ function render(){
     var si=d.stale&&!d.missing?'<span style="color:#78909c;font-size:10px"> 🕐</span>':'';
     var vol=parseFloat(d.vol)||0,vc=vol>=2?'#00c853':vol>=1?'#ffd740':'#78909c';
     var sp=d.close_20d?'<canvas class="spark" data-p="'+e(d.close_20d)+'" width="80" height="26"></canvas>':'';
+    var gate=entryGate(d);
+    var gateLabel=gate.code==='allowed'?'مجاز':gate.code==='wait'?'صبر':'مسدود';
+    var gateBadge='<span class="badge" title="'+e(gate.reasons.join(' | '))+'" style="color:'+gate.color+';background:'+gate.bg+'">'+gateLabel+'</span>';
     html+='<tr class="'+cls+'" onclick="openDr('+DATA.indexOf(d)+')">'
       +'<td><b>'+e(d.sym)+'</b>'+ci+wi+si+'</td>'
       +'<td><span class="badge" style="color:'+e(d.label_color)+';background:'+e(d.label_bg)+'">'+e(d.label_fa)+'</span></td>'
+      +'<td style="text-align:center">'+gateBadge+'</td>'
       +'<td style="text-align:center"><b style="color:'+e(d.grade_color)+'">'+e(d.grade)+'</b></td>'
       +'<td style="text-align:center">'+(d.score?d.score.toFixed(0):'')+sb+'</td>'
       +'<td style="text-align:center"><span class="rbadge" style="color:'+e(d.rsi_color)+'">'+e(d.rsi)+'</span></td>'
