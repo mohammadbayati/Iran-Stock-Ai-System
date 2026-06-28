@@ -240,42 +240,58 @@ function money(v){
   var n=num(v);
   return n===null?'':String(Math.round(n));
 }
+function entryGate(d){
+  var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
+  var blocked=[], wait=[], pass=[];
+
+  if(d.missing) blocked.push('داده تکنیکال ناقص');
+  if(d.stale) blocked.push('داده قدیمی');
+  if(rsi!==null && rsi>=80) blocked.push('RSI بالای 80 / اشباع خرید شدید');
+  if(price!==null && stop!==null && price<=stop) blocked.push('قیمت زیر یا نزدیک سطح ابطال');
+  if(target!==null && price!==null && target<=price) blocked.push('هدف تحلیلی بالاتر از قیمت فعلی نیست');
+  if(rr!==null && rr>0 && rr<1.2) blocked.push('R/R کمتر از 1.2');
+
+  if(d.conflict) wait.push('تعارض ریسک بین امتیاز و RSI/داده');
+  if(d.label==='Watch - Needs Volume Confirmation' || (vol!==null && vol<1.2)) wait.push('نیازمند تایید حجم');
+  if(d.label==='Wait for Pullback' || (rsi!==null && rsi>=70 && rsi<80)) wait.push('نیازمند پولبک یا کاهش RSI');
+  if(rr!==null && rr>=1.2 && rr<1.5) wait.push('R/R مرزی؛ نیازمند تایید قوی‌تر');
+
+  if(!d.missing && !d.stale) pass.push('داده قابل بررسی');
+  if(rsi===null || rsi<70) pass.push('RSI خارج از ناحیه پرریسک');
+  if(vol===null || vol>=1.2) pass.push('حجم قابل قبول');
+  if(rr===null || rr>=1.5) pass.push('R/R قابل قبول');
+  if(price!==null && stop!==null && price>stop) pass.push('قیمت بالای سطح ابطال');
+
+  if(blocked.length){
+    return {code:'blocked', title:'مسدود / ورود فعلا ممنوع', color:'#ff5252', bg:'#2a0505', reasons:blocked, passed:pass};
+  }
+  if(wait.length || !(d.label==='Entry Candidate' || d.label==='Technical Entry Watch')){
+    if(!(d.label==='Entry Candidate' || d.label==='Technical Entry Watch')) wait.push('وضعیت فعلی کاندید ورود مستقیم نیست');
+    return {code:'wait', title:'صبر / نیازمند تایید', color:'#ffab40', bg:'#241400', reasons:wait, passed:pass};
+  }
+  return {code:'allowed', title:'مجاز برای بررسی ورود', color:'#00c853', bg:'#06240f', reasons:['همه شروط اصلی ورود مشروط پاس شده‌اند'], passed:pass};
+}
 function buildTradePlan(d){
   function row(l,v){return v?'<dt>'+e(l)+'</dt><dd>'+e(v)+'</dd>':'';}
   var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
-  var status='نیازمند بررسی دستی';
+  var gate=entryGate(d);
+  var status=gate.title;
   var entry='ورود فقط بعد از تایید داده، حجم و حفظ سطح ابطال بررسی شود.';
   var confirm='حفظ قیمت بالای سطح ابطال، تایید حجم و نبود هشدار داده.';
   var exitPlan='خروج دفاعی با شکست سطح ابطال؛ بازبینی در هدف تحلیلی یا پایان پنجره 5D/10D.';
   var note='این پلن سناریوی مشروط است و دستور قطعی خرید/فروش نیست.';
   var risk=[];
 
-  if(d.missing){
-    status='ورود ممنوع';
-    entry='داده تکنیکال ناقص است؛ تا تکمیل داده ورود بررسی نشود.';
-    confirm='ابتدا داده قیمت/اندیکاتور باید کامل شود.';
-  }else if(d.stale){
-    status='صبر برای داده تازه';
-    entry='داده قدیمی است؛ ورود فقط پس از بروزرسانی و تایید دوباره.';
-    confirm='بروزرسانی داده و تکرار شرایط مثبت.';
-  }else if(d.label==='Avoid Entry Now - Overbought' || (rsi!==null && rsi>=80)){
-    status='ورود ممنوع فعلا';
-    entry='RSI در محدوده اشباع خرید است؛ ورود تا کاهش ریسک یا پولبک معتبر بررسی نشود.';
-    confirm='خروج RSI از محدوده پرریسک و حفظ حمایت.';
-  }else if(d.conflict){
-    status='صبر / تعارض ریسک';
-    entry='امتیاز بالا با ریسک RSI/داده تعارض دارد؛ ورود فقط پس از رفع تعارض.';
-    confirm='کاهش RSI، حفظ قیمت بالای ابطال و تایید حجم.';
+  if(gate.code==='blocked'){
+    entry='ورود فعلا بررسی نشود تا علت‌های مسدودکننده رفع شوند.';
+    confirm='رفع موارد مسدودکننده: '+gate.reasons.join(' | ');
   }else if(d.label==='Watch - Needs Volume Confirmation' || (vol!==null && vol<1.2)){
-    status='ورود مشروط به حجم';
     entry='تا وقتی حجم تایید نشده، فقط رصد؛ ورود بعد از افزایش حجم معتبر.';
     confirm='حجم نسبی حداقل 1.2x تا 1.5x و حفظ قیمت بالای حمایت.';
   }else if(d.label==='Wait for Pullback' || (rsi!==null && rsi>=70)){
-    status='ورود بعد از پولبک';
     entry='ورود مستقیم پرریسک است؛ بعد از پولبک و تثبیت بالای حمایت بررسی شود.';
     confirm='پولبک کنترل شده، RSI کمتر و برگشت حجم/قیمت.';
-  }else if(d.label==='Entry Candidate' || d.label==='Technical Entry Watch'){
-    status='کاندید ورود مشروط';
+  }else if(gate.code==='allowed'){
     entry='بررسی ورود نزدیک قیمت فعلی، فقط اگر قیمت بالای سطح ابطال بماند و حجم تایید شود.';
     confirm='حفظ سطح ابطال، حجم مناسب و نبود شکست حمایت.';
   }
@@ -287,7 +303,11 @@ function buildTradePlan(d){
   if(target!==null && price!==null && target<=price) risk.push('هدف تحلیلی بالاتر از قیمت فعلی نیست؛ ورود بازده انتظاری مناسبی ندارد.');
   if(rsi!==null && rsi>=80) risk.push('RSI اشباع خرید شدید؛ خطر ورود دیرهنگام.');
 
-  return '<div class="dsec"><h4>پلن ورود/خروج مشروط</h4><dl class="dl">'
+  return '<div class="dsec"><h4>پلن ورود/خروج مشروط</h4>'
+    +'<div class="wbox" style="background:'+gate.bg+';border:1px solid '+gate.color+'99;color:'+gate.color+';font-weight:800">Entry Gate: '+e(gate.title)+'</div>'
+    +'<dl class="dl">'
+    +row('علت تصمیم Gate',gate.reasons.join(' | '))
+    +row('شرط‌های پاس‌شده',gate.passed.join(' | '))
     +row('وضعیت ورود',status)
     +row('محدوده/روش ورود',entry)
     +row('شرط تایید',confirm)
@@ -299,7 +319,6 @@ function buildTradePlan(d){
     +(risk.length?'<p style="color:#ffab40;font-size:11px;line-height:1.8;margin-top:8px">'+e(risk.join(' | '))+'</p>':'')
     +'<p style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">'+e(note)+'</p></div>';
 }
-
 function openDr(idx){
   var d=DATA[idx];if(!d)return;
   var cw=d.conflict?'<div class="wbox" style="background:#1a0e00;border:1px solid #ff910088;color:#ff9100">⚠️ تعارض ریسک: امتیاز بالا همراه با RSI پرریسک</div>':'';
