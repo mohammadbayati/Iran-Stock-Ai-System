@@ -253,15 +253,18 @@ function fmtMoney(v){
 function getCapital(){
   var el=document.getElementById('capitalInput');
   var n=el?num(el.value):null;
-  return n&&n>0?n:0;
+  return n&&n>0?n:100000000;
 }
 function getRiskPct(){
   var el=document.getElementById('riskPctInput');
   var n=el?num(el.value):null;
   return n&&n>0?n:2;
 }
-function refreshDrawer(){
-  if(typeof _openDrawerIdx==='number')openDr(_openDrawerIdx);
+function updatePositionCalc(){
+  if(typeof _openDrawerIdx!=='number')return;
+  var d=DATA[_openDrawerIdx];if(!d)return;
+  var el=document.getElementById('positionCalcRows');if(!el)return;
+  el.innerHTML=positionCalcRows(num(d.price), num(d.stop_loss), num(d.target_1));
 }
 function positionCalcRows(price, stop, target){
   var cap=getCapital(), riskPct=getRiskPct();
@@ -358,7 +361,11 @@ function buildTradePlan(d){
     +row('حد ضرر / ابطال',stop!==null?money(stop):'')
     +row('هدف / بازبینی سود',target!==null?money(target):'')
     +row('نسبت R/R',rr!==null&&rr>0?rr.toFixed(2):'')
-    +positionRows
+    +'<dt>ماشین‌حساب سناریو</dt><dd><div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<input id="capitalInput" type="number" min="0" step="1000000" value="'+getCapital()+'" oninput="updatePositionCalc()" style="width:142px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:5px 7px" placeholder="سرمایه">'
+    +'<input id="riskPctInput" type="number" min="0.1" max="100" step="0.1" value="'+getRiskPct()+'" oninput="updatePositionCalc()" style="width:86px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:5px 7px" placeholder="ریسک٪">'
+    +'</div></dd>'
+    +'<div id="positionCalcRows" style="display:contents">'+positionRows+'</div>'
     +row('سناریوی خروج',exitPlan)
     +'</dl>'
     +(risk.length?'<p style="color:#ffab40;font-size:11px;line-height:1.8;margin-top:8px">'+e(risk.join(' | '))+'</p>':'')
