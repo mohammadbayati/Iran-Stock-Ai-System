@@ -30,7 +30,7 @@ function toggleTag(t){
 }
 function kpiF(type){
   _kf=_kf===type?null:type;
-  document.getElementById('fL').value='';document.getElementById('fG').value='';
+  document.getElementById('fL').value='';document.getElementById('fG').value='';document.getElementById('fGate').value='';
   Object.keys(_tags).forEach(function(t){
     _tags[t]=false;
     var el=document.getElementById('btn'+t.charAt(0).toUpperCase()+t.slice(1));
@@ -41,13 +41,14 @@ function kpiF(type){
 function filtered(){
   var q=(document.getElementById('q').value||'').toLowerCase();
   var fL=document.getElementById('fL').value,fG=document.getElementById('fG').value;
-  var fS=document.getElementById('fS').value,fR=document.getElementById('fR').value;
+  var fS=document.getElementById('fS').value,fR=document.getElementById('fR').value,fGate=document.getElementById('fGate').value;
   return DATA.filter(function(d){
     if(q&&!d.sym.toLowerCase().includes(q)&&!(d.sector||'').toLowerCase().includes(q))return false;
     if(fL&&d.label_fa!==fL)return false;
     if(fG&&d.grade!==fG)return false;
     if(fS&&d.sector!==fS)return false;
     if(fR&&d.rsi_band!==fR)return false;
+    if(fGate&&entryGate(d).code!==fGate)return false;
     if(_tags.complete&&d.missing)return false;
     if(_tags.conflict&&!d.conflict)return false;
     if(_tags.changes&&!d.change)return false;
