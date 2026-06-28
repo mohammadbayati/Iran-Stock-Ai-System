@@ -476,11 +476,19 @@ function copyPilotReport(){
 }
 
 function doExport(){
-  var rows=[['نماد','وضعیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','کیفیت داده','هشدار ریسک','پول هوشمند','صف','دلایل','سناریوی ابطال']];
+  var rows=[['نماد','وضعیت','گیت ورود','علت گیت','رتبه','امتیاز','RSI','باند RSI','قیمت','سکتور','حجم','حد ضرر/ابطال','هدف','R/R','افق سناریو','هشدار ماشین‌حساب','کیفیت داده','هشدار ریسک','پول هوشمند','صف','دلایل','سناریوی ابطال','خلاصه پلن']];
   filtered().forEach(function(d){
     var vol=parseFloat(d.vol)||0;
-    rows.push([d.sym,d.label_fa,d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
-      vol>0?vol.toFixed(2)+'x':'',d.data_quality,d.risk_flags,d.sm,d.q,d.reasons,d.invalidation]);
+    var gate=entryGate(d);
+    var calcWarn=gate.code==='blocked'
+      ? 'محاسبه فقط آموزشی است؛ ورود توسط Gate مسدود شده.'
+      : gate.code==='wait'
+        ? 'محاسبه سناریویی است؛ ورود نیازمند تاییدهای Gate است.'
+        : '';
+    var plan='ورود: '+gate.title+' | تایید: حفظ سطح ابطال، تایید حجم و کنترل ریسک | خروج: شکست سطح ابطال یا بازبینی نزدیک هدف';
+    rows.push([d.sym,d.label_fa,gate.title,gate.reasons.join(' | '),d.grade,d.score.toFixed(0),d.rsi,d.rsi_band,d.price,d.sector,
+      vol>0?vol.toFixed(2)+'x':'',d.stop_loss,d.target_1,d.rr,'5 تا 10 روز معاملاتی',calcWarn,
+      d.data_quality,d.risk_flags,d.sm,d.q,d.reasons,d.invalidation,plan]);
   });
   var csv=rows.map(function(r){return r.map(function(c){return'"'+String(c||'').replace(/"/g,'""')+'"'}).join(',')}).join('\n');
   var a=document.createElement('a');
