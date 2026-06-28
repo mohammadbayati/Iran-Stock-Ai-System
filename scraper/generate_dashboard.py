@@ -375,7 +375,7 @@ input:focus,select:focus{{outline:1px solid #58a6ff;border-color:#58a6ff}}
 .tbtn.danger.on{{background:#b91c1c;border-color:#b91c1c}}
 .tbl-wrap{{overflow-x:auto;padding:0 16px 16px}}
 table{{width:100%;border-collapse:collapse;min-width:700px}}
-th{{background:#161b22;color:#58a6ff;padding:7px 8px;text-align:center;position:sticky;top:52px;z-index:9;cursor:pointer;user-select:none;border-bottom:2px solid #30363d;font-size:12px;white-space:nowrap}}
+th{{background:#161b22;color:#58a6ff;padding:7px 8px;text-align:center;position:static;top:auto;z-index:auto;cursor:pointer;user-select:none;border-bottom:2px solid #30363d;font-size:12px;white-space:nowrap}}
 th:hover{{background:#1c2128}}
 .arr{{color:#484f58;margin-right:2px}}
 td{{padding:6px 8px;border-bottom:1px solid #1c2128;vertical-align:middle}}
@@ -412,7 +412,7 @@ tr.row.is-stale td{{opacity:.72}}
 .perf-bar{{height:12px;border-radius:3px;min-width:2px}}
 .perf-val{{font-size:11px;white-space:nowrap;min-width:80px;text-align:left}}
 .recent-table{{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}}
-.recent-table th{{background:#0d1117;color:#8b949e;padding:5px 8px;text-align:center;border-bottom:1px solid #21262d}}
+.recent-table th{{background:#0d1117;color:#8b949e;padding:5px 8px;text-align:center;border-bottom:1px solid #21262d;position:static;top:auto;z-index:auto;cursor:default}}
 .recent-table td{{padding:5px 8px;border-bottom:1px solid #1c2128;text-align:center}}
 .perf-empty{{color:#484f58;text-align:center;padding:40px;font-size:13px;line-height:2}}
 .sym-link{{cursor:pointer;color:#58a6ff;text-decoration:underline dotted;font-weight:600}}
