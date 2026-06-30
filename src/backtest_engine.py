@@ -43,6 +43,7 @@ def fill_outcomes(trading_days: int = 5) -> int:
     for col in [close_col, return_col, correct_col]:
         if col not in df.columns:
             df[col] = None
+    df[correct_col] = df[correct_col].astype("object")
     filled = 0
     for i, row in df.iterrows():
         if pd.notna(df.at[i, close_col]):
