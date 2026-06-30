@@ -1191,6 +1191,70 @@ function buildEvidenceChecklist(d){
     +'</div>';
 }
 
+function setupPlaybook(d){
+  var se=setupEvidence(d), s=se.setup;
+  var pb={
+    'Trend Continuation': {
+      trigger:'حفظ روند و ورود فقط بعد از تثبیت قیمت بالای سطح ابطال؛ ترجیحا با حجم حداقل 1.2x.',
+      confirm:'RSI زیر ناحیه اشباع شدید، حجم تاییدی و نبود هشدار ریسک/داده.',
+      invalid:'شکست سطح ابطال، برگشت حجم به زیر میانگین، یا هشدار نزولی MACD/کندل.',
+      review:'بازبینی نزدیک هدف تحلیلی یا پایان پنجره 5D/10D.'
+    },
+    'Pullback Watch': {
+      trigger:'ورود اصلی فقط بعد از اصلاح کنترل‌شده و برگشت قیمت از حمایت یا سطح معتبر.',
+      confirm:'کندل برگشتی، کاهش فشار فروش، و برگشت حجم در روز تایید.',
+      invalid:'شکست حمایت/سطح ابطال یا ادامه ضعف بعد از پولبک.',
+      review:'اگر پولبک تایید نشد، نماد فقط در لیست رصد بماند.'
+    },
+    'Volume Confirmation': {
+      trigger:'فعلا ورود کامل نیست؛ ورود فقط وقتی حجم تاییدی کنار سطح مهم ظاهر شود.',
+      confirm:'حجم حداقل 1.5x، حفظ قیمت، و نبود RSI پرریسک.',
+      invalid:'ماندن حجم زیر میانگین یا شکست سطح ابطال.',
+      review:'بعد از تایید حجم دوباره با Gate ورود بررسی شود.'
+    },
+    'Reversal Watch': {
+      trigger:'ورود فقط با ترکیب برگشت قیمت، کندل تاییدی و حفظ حمایت؛ واگرایی به‌تنهایی کافی نیست.',
+      confirm:'واگرایی مثبت/RSI بهتر، کندل برگشتی، و حد ضرر نزدیک و روشن.',
+      invalid:'ثبت کف جدید زیر حمایت یا شکست سطح ابطال.',
+      review:'اگر برگشت ضعیف بود سریع‌تر از سناریو خارج شو.'
+    },
+    'Support Bounce': {
+      trigger:'ورود نزدیک حمایت فقط بعد از نشانه برگشت و حفظ حمایت.',
+      confirm:'حمایت حفظ شود، حجم برگشتی دیده شود، و قیمت از حمایت فاصله منطقی بگیرد.',
+      invalid:'شکست حمایت یا بسته‌شدن زیر سطح ابطال.',
+      review:'هدف اول یا مقاومت بعدی محل بازبینی است.'
+    },
+    'Breakout Candidate': {
+      trigger:'ورود فقط بعد از شکست معتبر مقاومت و تثبیت بالای آن، نه صرفا نزدیک مقاومت.',
+      confirm:'حجم تاییدی، بسته‌شدن بالای مقاومت، و ترجیحا پولبک موفق به سطح شکسته‌شده.',
+      invalid:'شکست ناموفق و برگشت زیر مقاومت.',
+      review:'بعد از شکست، مقاومت قبلی باید نقش حمایت بگیرد.'
+    },
+    'Risky Late Entry': {
+      trigger:'ورود عملیاتی توصیه نمی‌شود؛ فقط سناریوی آموزشی یا رصد.',
+      confirm:'نیازمند خنک‌شدن RSI/ریسک و برگشت Gate از مسدود/صبر به مجاز.',
+      invalid:'هر افزایش ریسک، کندل نزولی یا تعارض شواهد.',
+      review:'بهتر است منتظر Setup تمیزتر بمانی.'
+    },
+    'General Entry Candidate': {
+      trigger:'ورود فقط بعد از عبور از Gate، روشن بودن حد ضرر، و تایید حداقل دو شاهد مستقل.',
+      confirm:'داده قابل اتکا، حجم، روند یا حمایت/مقاومت معتبر.',
+      invalid:'شکست سطح ابطال یا افت کیفیت داده.',
+      review:'بعد از کامل شدن 5D/10D با Track Record مقایسه شود.'
+    }
+  };
+  var p=pb[s]||pb['General Entry Candidate'];
+  return '<div class="dsec"><h4>Playbook عملیاتی این Setup</h4>'
+    +'<div class="wbox" style="background:#101923;border:1px solid '+se.color+'66;color:#c9d1d9">'
+    +'<b style="color:'+se.color+'">'+e(se.setupFa)+'</b><span style="color:#8b949e"> / '+e(se.setup)+'</span>'
+    +'</div><dl class="dl">'
+    +'<dt>تریگر ورود</dt><dd>'+e(p.trigger)+'</dd>'
+    +'<dt>تایید لازم</dt><dd>'+e(p.confirm)+'</dd>'
+    +'<dt>ابطال سناریو</dt><dd>'+e(p.invalid)+'</dd>'
+    +'<dt>بازبینی/خروج</dt><dd>'+e(p.review)+'</dd>'
+    +'</dl><p style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این Playbook قانون اجرایی قطعی نیست؛ چارچوب کنترل ریسک و تصمیم مشروط است.</p></div>';
+}
+
 function buildTradePlan(d){
   function row(l,v){return v?'<dt>'+e(l)+'</dt><dd>'+e(v)+'</dd>':'';}
   var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
@@ -1231,6 +1295,7 @@ function buildTradePlan(d){
   if(rsi!==null && rsi>=80) risk.push('RSI اشباع خرید شدید؛ خطر ورود دیرهنگام.');
 
   return buildEvidenceChecklist(d)
+    +setupPlaybook(d)
     +'<div class="dsec"><h4>پلن ورود/خروج مشروط</h4>'
     +'<div class="wbox" style="background:'+gate.bg+';border:1px solid '+gate.color+'99;color:'+gate.color+';font-weight:800">Entry Gate: '+e(gate.title)+'</div>'
     +'<dl class="dl">'
