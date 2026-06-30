@@ -188,6 +188,7 @@ def load_perf_data():
         entry_completed = []
         entry_judged = []
         entry_high_conf = []
+        entry_by_setup = {}
         entry_pending = 0
         recent = []
 
@@ -217,6 +218,8 @@ def load_perf_data():
                 "win": win,
                 "judgeable": win is not None,
                 "entry": row_is_entry,
+                "setup_type": str(row.get("setup_type", "") or "Legacy / Unknown"),
+                "setup_fa": str(row.get("setup_fa", "") or "قدیمی/نامشخص"),
             }
             completed.append(item)
             if win is not None:
@@ -229,6 +232,11 @@ def load_perf_data():
                     entry_judged.append(item)
                 if score >= 80 and win is not None:
                     entry_high_conf.append(item)
+                sb = entry_by_setup.setdefault(item['setup_type'], {'label': item['setup_fa'], 'n': 0, 'judged': 0, 'wins': 0, 'avg': 0.0})
+                sb['n'] += 1
+                sb['judged'] += 1 if win is not None else 0
+                sb['wins'] += 1 if win else 0
+                sb['avg'] += ret
 
             bucket = by_label.setdefault(label, {"n": 0, "judged": 0, "wins": 0, "avg": 0.0})
             bucket["n"] += 1
@@ -249,6 +257,21 @@ def load_perf_data():
 
         def avg_ret(items):
             return sum(x["ret"] for x in items) / len(items) if items else 0
+
+        def finalize_buckets(buckets):
+            out = []
+            for key, b in buckets.items():
+                n = b.get('n', 0) or 0
+                judged_n = b.get('judged', 0) or 0
+                out.append({
+                    'setup_type': key,
+                    'setup_fa': b.get('label') or key,
+                    'n': n,
+                    'judgeable': judged_n,
+                    'win_rate': (b.get('wins', 0) / judged_n * 100) if judged_n else 0,
+                    'avg_ret': (b.get('avg', 0.0) / n) if n else 0,
+                })
+            return sorted(out, key=lambda x: (-x['judgeable'], -x['n'], x['setup_fa']))
 
         def win_rate(items):
             judgeable = [x for x in items if x.get("win") is not None]
@@ -283,6 +306,7 @@ def load_perf_data():
                 "high_conf_win_rate": win_rate(entry_high_conf),
                 "high_conf_avg_ret": avg_ret(entry_high_conf),
                 "recent": entry_recent,
+                "by_setup": finalize_buckets(entry_by_setup),
             },
             "by_label": by_label,
             "by_grade": by_grade,
@@ -1385,6 +1409,7 @@ function renderPerf(){
         +'<td>'+e(item.date||'-')+'</td>'
         +'<td style="font-weight:800;color:#e6edf3">'+e(item.symbol||'-')+'</td>'
         +'<td>'+e(item.label||'-')+'</td>'
+        +'<td>'+e(item.setup_fa||'-')+'</td>'
         +'<td>'+e(item.grade||'-')+'</td>'
         +'<td style="color:'+retColor+';font-weight:800">'+pct(ret)+'</td>'
         +'<td>'+perfResultLabel(item)+'</td>'
@@ -1397,6 +1422,32 @@ function renderPerf(){
       +'</div>'
       +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
       +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">نرخ موفقیت فقط روی ردیف‌های درست/غلط محاسبه می‌شود؛ ردیف‌های خنثی در win rate نمی‌آیند.</div>'
+      +'</div>';
+  }
+  function setupPerformanceTable(ent){
+    var rows=(ent&&ent.by_setup)?ent.by_setup:[];
+    if(!rows.length){
+      return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;margin-top:12px;color:#8b949e;font-size:12px;line-height:1.9">از امروز به بعد نوع موقعیت داخل signal_log ثبت می‌شود؛ بعد از کامل شدن 5D، عملکرد هر Setup اینجا جدا می‌شود.</div>';
+    }
+    var body=rows.map(function(r){
+      var avg=Number(r.avg_ret||0), wr=Number(r.win_rate||0);
+      var avgColor=avg>0?'#00c853':avg<0?'#ff5252':'#8b949e';
+      var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
+      return '<tr>'
+        +'<td style="font-weight:800;color:#c9d1d9">'+e(r.setup_fa||r.setup_type||'-')+'</td>'
+        +'<td>'+e(r.setup_type||'-')+'</td>'
+        +'<td>'+e(r.n||0)+'</td>'
+        +'<td>'+e(r.judgeable||0)+'</td>'
+        +'<td style="color:'+wrColor+';font-weight:800">'+pct(wr)+'</td>'
+        +'<td style="color:'+avgColor+';font-weight:800">'+pct(avg)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="background:#0d1117;border:1px solid #58a6ff55;border-radius:8px;padding:14px;margin-top:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<h3 style="margin:0;color:#58a6ff;font-size:15px">عملکرد بر اساس نوع موقعیت</h3>'
+      +'<span style="color:#8b949e;font-size:12px">فقط کاندیدهای ورود کامل‌شده</span>'
+      +'</div>'
+      +'<table class="recent-table"><thead><tr><th>نوع موقعیت</th><th>Setup</th><th>کامل</th><th>قابل قضاوت</th><th>نرخ موفقیت</th><th>میانگین بازده</th></tr></thead><tbody>'+body+'</tbody></table>'
       +'</div>';
   }
   function entryPerformanceBox(h){
@@ -1418,7 +1469,7 @@ function renderPerf(){
       +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'
       +'<h3 style="margin:0;color:#58a6ff;font-size:16px">عملکرد کاندیدهای ورود</h3>'
       +'<span style="color:#8b949e;font-size:12px">در انتظار ورود 5D: '+pending+'</span>'
-      +'</div>'+body+'</div>';
+      +'</div>'+body+setupPerformanceTable(ent)+'</div>';
   }
   function entryOutcomeTable(h){
     var ent=(h&&h.entry)?h.entry:{};
@@ -1441,7 +1492,7 @@ function renderPerf(){
       +'<h3 style="margin:0;color:#58a6ff;font-size:15px">ورودهای 5D کامل‌شده</h3>'
       +'<span style="color:#8b949e;font-size:12px">قابل قضاوت: '+(ent.judgeable||0)+' از '+(ent.completed||0)+'</span>'
       +'</div>'
-      +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه ورود</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه ورود</th></tr></thead><tbody>'+body+'</tbody></table>'
       +'</div>';
   }
   function horizonBox(name,h){

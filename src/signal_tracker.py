@@ -20,12 +20,61 @@ BULLISH_LABELS = {"Entry Candidate", "Technical Entry Watch"}
 BEARISH_LABELS = {"Avoid Entry Now - Overbought"}
 
 LOG_COLUMNS = [
-    "date", "symbol", "decision_label", "confidence_score",
+    "date", "symbol", "decision_label", "setup_type", "setup_fa", "confidence_score",
     "confidence_grade", "close_at_signal", "close_5d_later",
     "return_5d_pct", "was_correct", "close_10d_later",
     "return_10d_pct", "was_correct_10d",
 ]
 
+
+
+def _num(value):
+    try:
+        if value is None or str(value).strip() == "":
+            return None
+        return float(value)
+    except Exception:
+        return None
+
+
+def infer_setup_type(row) -> tuple[str, str]:
+    label = str(row.get("decision_label", "") or "")
+    rsi = _num(row.get("rsi"))
+    trend = _num(row.get("trend_score")) or 0
+    vol = _num(row.get("volume_ratio_20"))
+    price = _num(row.get("latest_close"))
+    support = _num(row.get("support"))
+    resistance = _num(row.get("resistance"))
+    macd = str(row.get("macd_crossover", "") or "").lower()
+    div = str(row.get("rsi_divergence", "") or "").lower()
+    weekly = str(row.get("weekly_trend", "") or "").lower()
+    candle = str(row.get("candle_pattern", "") or "").lower()
+    candle_bull = str(row.get("candle_bullish", "") or "").lower() in {"true", "1", "yes"}
+
+    advanced_bear = ("bear" in macd) or ("bear" in div) or (candle not in {"", "none"} and not candle_bull)
+
+    def near(a, b, pct):
+        return a is not None and b not in (None, 0) and abs(a - b) / abs(b) * 100 <= pct
+
+    if "Wait for Pullback" in label or (rsi is not None and 70 <= rsi < 80):
+        return "Pullback Watch", "پولبک/انتظار اصلاح"
+    if div.find("bull") >= 0 and (rsi is None or rsi < 60):
+        return "Reversal Watch", "برگشت با واگرایی"
+    if weekly.find("up") >= 0 and trend >= 4 and (rsi is None or rsi < 70) and not advanced_bear:
+        return "Trend Continuation", "ادامه روند با تایید هفتگی"
+    if advanced_bear and (rsi is None or rsi >= 65):
+        return "Risky Late Entry", "ورود دیرهنگام/پرریسک"
+    if "Watch - Needs Volume" in label or (vol is not None and vol < 1.2):
+        return "Volume Confirmation", "نیازمند تایید حجم"
+    if rsi is not None and rsi < 35:
+        return "Reversal Watch", "برگشت احتمالی"
+    if trend >= 4 and (vol is None or vol >= 1.2) and (rsi is None or rsi < 70):
+        return "Trend Continuation", "ادامه روند"
+    if near(price, support, 4):
+        return "Support Bounce", "برگشت از حمایت"
+    if near(price, resistance, 3):
+        return "Breakout Candidate", "کاندید شکست مقاومت"
+    return "General Entry Candidate", "کاندید ورود عمومی"
 
 def _load_log() -> pd.DataFrame:
     if os.path.exists(SIGNAL_LOG):
@@ -54,6 +103,7 @@ def log_signals(report_df: pd.DataFrame):
         conf = row.get("confidence_score", 0)
         grade = row.get("confidence_grade", "")
         close = row.get("latest_close", None)
+        setup_type, setup_fa = infer_setup_type(row)
 
         already = log[(log["date"] == today) & (log["symbol"] == symbol)]
         if not already.empty:
@@ -63,6 +113,8 @@ def log_signals(report_df: pd.DataFrame):
             "date": today,
             "symbol": symbol,
             "decision_label": label,
+            "setup_type": setup_type,
+            "setup_fa": setup_fa,
             "confidence_score": conf,
             "confidence_grade": grade,
             "close_at_signal": close,

@@ -623,6 +623,7 @@ function renderPerf(){
         +'<td>'+e(item.date||'-')+'</td>'
         +'<td style="font-weight:800;color:#e6edf3">'+e(item.symbol||'-')+'</td>'
         +'<td>'+e(item.label||'-')+'</td>'
+        +'<td>'+e(item.setup_fa||'-')+'</td>'
         +'<td>'+e(item.grade||'-')+'</td>'
         +'<td style="color:'+retColor+';font-weight:800">'+pct(ret)+'</td>'
         +'<td>'+perfResultLabel(item)+'</td>'
@@ -635,6 +636,32 @@ function renderPerf(){
       +'</div>'
       +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
       +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">نرخ موفقیت فقط روی ردیف‌های درست/غلط محاسبه می‌شود؛ ردیف‌های خنثی در win rate نمی‌آیند.</div>'
+      +'</div>';
+  }
+  function setupPerformanceTable(ent){
+    var rows=(ent&&ent.by_setup)?ent.by_setup:[];
+    if(!rows.length){
+      return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;margin-top:12px;color:#8b949e;font-size:12px;line-height:1.9">از امروز به بعد نوع موقعیت داخل signal_log ثبت می‌شود؛ بعد از کامل شدن 5D، عملکرد هر Setup اینجا جدا می‌شود.</div>';
+    }
+    var body=rows.map(function(r){
+      var avg=Number(r.avg_ret||0), wr=Number(r.win_rate||0);
+      var avgColor=avg>0?'#00c853':avg<0?'#ff5252':'#8b949e';
+      var wrColor=wr>=60?'#00c853':wr>=45?'#ffd740':'#ff5252';
+      return '<tr>'
+        +'<td style="font-weight:800;color:#c9d1d9">'+e(r.setup_fa||r.setup_type||'-')+'</td>'
+        +'<td>'+e(r.setup_type||'-')+'</td>'
+        +'<td>'+e(r.n||0)+'</td>'
+        +'<td>'+e(r.judgeable||0)+'</td>'
+        +'<td style="color:'+wrColor+';font-weight:800">'+pct(wr)+'</td>'
+        +'<td style="color:'+avgColor+';font-weight:800">'+pct(avg)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="background:#0d1117;border:1px solid #58a6ff55;border-radius:8px;padding:14px;margin-top:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<h3 style="margin:0;color:#58a6ff;font-size:15px">عملکرد بر اساس نوع موقعیت</h3>'
+      +'<span style="color:#8b949e;font-size:12px">فقط کاندیدهای ورود کامل‌شده</span>'
+      +'</div>'
+      +'<table class="recent-table"><thead><tr><th>نوع موقعیت</th><th>Setup</th><th>کامل</th><th>قابل قضاوت</th><th>نرخ موفقیت</th><th>میانگین بازده</th></tr></thead><tbody>'+body+'</tbody></table>'
       +'</div>';
   }
   function entryPerformanceBox(h){
@@ -656,7 +683,7 @@ function renderPerf(){
       +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'
       +'<h3 style="margin:0;color:#58a6ff;font-size:16px">عملکرد کاندیدهای ورود</h3>'
       +'<span style="color:#8b949e;font-size:12px">در انتظار ورود 5D: '+pending+'</span>'
-      +'</div>'+body+'</div>';
+      +'</div>'+body+setupPerformanceTable(ent)+'</div>';
   }
   function entryOutcomeTable(h){
     var ent=(h&&h.entry)?h.entry:{};
@@ -679,7 +706,7 @@ function renderPerf(){
       +'<h3 style="margin:0;color:#58a6ff;font-size:15px">ورودهای 5D کامل‌شده</h3>'
       +'<span style="color:#8b949e;font-size:12px">قابل قضاوت: '+(ent.judgeable||0)+' از '+(ent.completed||0)+'</span>'
       +'</div>'
-      +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه ورود</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه ورود</th></tr></thead><tbody>'+body+'</tbody></table>'
       +'</div>';
   }
   function horizonBox(name,h){
