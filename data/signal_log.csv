@@ -1,4 +1,4 @@
-date,symbol,decision_label,setup_type,setup_fa,confidence_score,confidence_grade,close_at_signal,close_5d_later,return_5d_pct,was_correct,close_10d_later,return_10d_pct,was_correct_10d
+﻿date,symbol,decision_label,setup_type,setup_fa,confidence_score,confidence_grade,close_at_signal,close_5d_later,return_5d_pct,was_correct,close_10d_later,return_10d_pct,was_correct_10d
 2026-06-21,اهرم,Avoid Entry Now - Overbought,,,55,C,,,,,,,
 2026-06-21,شستا,Avoid Entry Now - Overbought,,,65,B,,,,,,,
 2026-06-21,خساپا,Entry Candidate,,,100,A,,,,,,,
