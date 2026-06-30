@@ -1069,6 +1069,88 @@ function entryGate(d){
   }
   return {code:'allowed', title:'مجاز برای بررسی ورود', color:'#00c853', bg:'#06240f', reasons:['همه شروط اصلی ورود مشروط پاس شده‌اند'], passed:pass};
 }
+
+function setupEvidence(d){
+  var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
+  var trend=Number(d.trend||0), label=String(d.label||''), labelFa=String(d.label_fa||''), txt=label+' '+labelFa;
+  function has(s){return txt.indexOf(s)>=0;}
+  function near(a,b,pct){
+    if(a===null||b===null||!a||!b)return false;
+    return Math.abs(a-b)/Math.abs(b)*100 <= pct;
+  }
+
+  var setup='General Entry Candidate';
+  var setupFa='کاندید ورود عمومی';
+  var setupNote='نوع دقیق موقعیت با شواهد فعلی قطعی نیست؛ باید با گیت ورود و سطح ابطال بررسی شود.';
+  if(has('Wait for Pullback') || has('پولبک') || (rsi!==null && rsi>=70 && rsi<80)){
+    setup='Pullback Watch';
+    setupFa='پولبک/انتظار برای اصلاح';
+    setupNote='قیمت یا RSI داغ است؛ ورود اصلی فقط بعد از اصلاح کنترل‌شده و برگشت معتبر بررسی شود.';
+  }else if(has('Watch - Needs Volume') || has('حجم') || (vol!==null && vol<1.2)){
+    setup='Volume Confirmation';
+    setupFa='نیازمند تایید حجم';
+    setupNote='ایده ورود بدون تایید حجم کامل نیست؛ حجم باید کنار سطح مهم یا شکست معتبر ظاهر شود.';
+  }else if(rsi!==null && rsi<35){
+    setup='Reversal Watch';
+    setupFa='برگشت احتمالی';
+    setupNote='RSI پایین می‌تواند نشانه برگشت باشد، اما بدون شکست خط روند/کندل تاییدی تریگر ورود نیست.';
+  }else if(trend>=4 && (vol===null || vol>=1.2) && (rsi===null || rsi<70)){
+    setup='Trend Continuation';
+    setupFa='ادامه روند';
+    setupNote='هم‌راستایی روند، حجم و RSI مناسب دیده می‌شود؛ ورود باید مشروط به حفظ سطح ابطال باشد.';
+  }else if(price!==null && d.support && near(price,num(d.support),4)){
+    setup='Support Bounce';
+    setupFa='برگشت از حمایت';
+    setupNote='قیمت نزدیک حمایت است؛ تایید برگشت و حفظ حمایت شرط اصلی ورود است.';
+  }else if(price!==null && d.resistance && near(price,num(d.resistance),3)){
+    setup='Breakout Candidate';
+    setupFa='کاندید شکست مقاومت';
+    setupNote='قیمت نزدیک مقاومت است؛ ورود فقط با شکست معتبر، بسته‌شدن بالای سطح و حجم تاییدی معنی دارد.';
+  }
+
+  var items=[];
+  function add(name, state, detail){
+    items.push({name:name, state:state, detail:detail||''});
+  }
+  add('کیفیت داده', (!d.missing&&!d.stale)?'pass':(d.missing?'fail':'warn'), d.missing?'داده ناقص':(d.stale?'داده قدیمی':'قابل بررسی'));
+  add('وضعیت ورود', (label==='Entry Candidate'||label==='Technical Entry Watch')?'pass':'warn', labelFa||label||'-');
+  add('روند', trend>=4?'pass':(trend>=3?'warn':'fail'), trend?trend+'/6':'نامشخص');
+  add('RSI', rsi===null?'warn':(rsi>=80?'fail':(rsi>=70?'warn':'pass')), rsi===null?'نامشخص':rsi.toFixed(2));
+  add('حجم', vol===null?'warn':(vol>=1.5?'pass':(vol>=1.2?'warn':'fail')), vol===null?'نامشخص':vol.toFixed(2)+'x');
+  add('سطح ابطال', (price!==null&&stop!==null&&price>stop)?'pass':(stop!==null?'fail':'warn'), stop!==null?money(stop):'نامشخص');
+  add('هدف بالاتر از قیمت', (price!==null&&target!==null&&target>price)?'pass':(target!==null?'fail':'warn'), target!==null?money(target):'نامشخص');
+  add('R/R', rr===null?'warn':(rr>=1.5?'pass':(rr>=1.2?'warn':'fail')), rr!==null&&rr>0?rr.toFixed(2):'نامشخص');
+  add('تعارض ریسک', d.conflict?'fail':'pass', d.conflict?'امتیاز/RSI یا داده متعارض':'بدون تعارض جدی');
+
+  var pass=items.filter(function(x){return x.state==='pass'}).length;
+  var warn=items.filter(function(x){return x.state==='warn'}).length;
+  var fail=items.filter(function(x){return x.state==='fail'}).length;
+  var score=Math.round((pass*100 + warn*50) / (items.length*100) * 100);
+  var color=score>=75?'#00c853':(score>=55?'#ffab40':'#ff5252');
+  return {setup:setup, setupFa:setupFa, note:setupNote, score:score, color:color, items:items, fail:fail};
+}
+function buildEvidenceChecklist(d){
+  var se=setupEvidence(d);
+  var chips=se.items.map(function(it){
+    var c=it.state==='pass'?'#00c853':(it.state==='warn'?'#ffab40':'#ff5252');
+    var bg=it.state==='pass'?'#06240f':(it.state==='warn'?'#241400':'#2a0505');
+    var icon=it.state==='pass'?'✓':(it.state==='warn'?'!':'×');
+    return '<div style="background:'+bg+';border:1px solid '+c+'77;border-radius:6px;padding:7px 9px">'
+      +'<div style="color:'+c+';font-weight:800;font-size:12px">'+icon+' '+e(it.name)+'</div>'
+      +'<div style="color:#c9d1d9;font-size:11px;margin-top:4px">'+e(it.detail)+'</div>'
+      +'</div>';
+  }).join('');
+  return '<div class="dsec"><h4>نوع موقعیت و چک‌لیست شواهد</h4>'
+    +'<div class="wbox" style="background:#101923;border:1px solid #58a6ff66;color:#c9d1d9">'
+    +'<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">'
+    +'<div><b style="color:#58a6ff">'+e(se.setupFa)+'</b><span style="color:#8b949e"> / '+e(se.setup)+'</span></div>'
+    +'<div style="color:'+se.color+';font-weight:900">Confluence '+se.score+'%</div>'
+    +'</div><div style="font-size:11px;line-height:1.8;margin-top:6px;color:#8b949e">'+e(se.note)+'</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px">'+chips+'</div>'
+    +'<p style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این چک‌لیست جایگزین تصمیم نهایی نیست؛ فقط نشان می‌دهد ورود از چند شاهد مستقل پشتیبانی می‌شود.</p>'
+    +'</div>';
+}
+
 function buildTradePlan(d){
   function row(l,v){return v?'<dt>'+e(l)+'</dt><dd>'+e(v)+'</dd>':'';}
   var price=num(d.price), stop=num(d.stop_loss), target=num(d.target_1), rr=num(d.rr), rsi=num(d.rsi), vol=num(d.vol);
@@ -1108,7 +1190,8 @@ function buildTradePlan(d){
   if(target!==null && price!==null && target<=price) risk.push('هدف تحلیلی بالاتر از قیمت فعلی نیست؛ ورود بازده انتظاری مناسبی ندارد.');
   if(rsi!==null && rsi>=80) risk.push('RSI اشباع خرید شدید؛ خطر ورود دیرهنگام.');
 
-  return '<div class="dsec"><h4>پلن ورود/خروج مشروط</h4>'
+  return buildEvidenceChecklist(d)
+    +'<div class="dsec"><h4>پلن ورود/خروج مشروط</h4>'
     +'<div class="wbox" style="background:'+gate.bg+';border:1px solid '+gate.color+'99;color:'+gate.color+';font-weight:800">Entry Gate: '+e(gate.title)+'</div>'
     +'<dl class="dl">'
     +row('علت تصمیم Gate',gate.reasons.join(' | '))
