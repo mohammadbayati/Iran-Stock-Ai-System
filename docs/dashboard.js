@@ -550,6 +550,51 @@ function renderPerf(){
       +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">نرخ موفقیت فقط روی ردیف‌های درست/غلط محاسبه می‌شود؛ ردیف‌های خنثی در win rate نمی‌آیند.</div>'
       +'</div>';
   }
+  function entryPerformanceBox(h){
+    var ent=(h&&h.entry)?h.entry:{};
+    var completed=Number(ent.completed||0), pending=Number(ent.pending||0), judgeable=Number(ent.judgeable||0);
+    var body='';
+    if(completed<=0){
+      body='<div style="color:#ffd740;font-weight:800;margin-top:10px">هنوز کاندید ورود 5D کامل‌شده نداریم</div>'
+        +'<div style="color:#8b949e;font-size:12px;line-height:1.9;margin-top:8px">KPI اصلی فاز اول فقط روی کاندیدهای ورود حساب می‌شود. هشدارهای عدم ورود، رصد و صبر در این بخش وارد نمی‌شوند.</div>';
+    }else{
+      body='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px">'
+        +card('ورودهای 5D کامل',String(completed),'فقط کاندیدهای ورود','#58a6ff')
+        +card('نرخ موفقیت ورود',pct(ent.win_rate),'قابل قضاوت: '+judgeable+' از '+completed,'#00c853')
+        +card('میانگین بازده ورود',pct(ent.avg_ret),'فقط ورودهای کامل‌شده',Number(ent.avg_ret||0)>=0?'#00c853':'#ff5252')
+        +card('High Confidence Entry',pct(ent.high_conf_win_rate),'تعداد: '+(ent.high_conf_completed||0),'#ffd740')
+        +'</div>';
+    }
+    return '<div style="background:#101923;border:1px solid #58a6ff55;border-radius:8px;padding:14px;margin-bottom:12px">'
+      +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'
+      +'<h3 style="margin:0;color:#58a6ff;font-size:16px">عملکرد کاندیدهای ورود</h3>'
+      +'<span style="color:#8b949e;font-size:12px">در انتظار ورود 5D: '+pending+'</span>'
+      +'</div>'+body+'</div>';
+  }
+  function entryOutcomeTable(h){
+    var ent=(h&&h.entry)?h.entry:{};
+    var rows=(ent&&ent.recent)?ent.recent:[];
+    if(!rows.length)return '';
+    var body=rows.slice().reverse().map(function(item){
+      var ret=Number(item.ret||0);
+      var retColor=ret>=0?'#00c853':'#ff5252';
+      return '<tr>'
+        +'<td>'+e(item.date||'-')+'</td>'
+        +'<td style="font-weight:800;color:#e6edf3">'+e(item.symbol||'-')+'</td>'
+        +'<td>'+e(item.label||'-')+'</td>'
+        +'<td>'+e(item.grade||'-')+'</td>'
+        +'<td style="color:'+retColor+';font-weight:800">'+pct(ret)+'</td>'
+        +'<td>'+perfResultLabel(item)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="background:#0d1117;border:1px solid #58a6ff55;border-radius:8px;padding:14px;margin-top:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<h3 style="margin:0;color:#58a6ff;font-size:15px">ورودهای 5D کامل‌شده</h3>'
+      +'<span style="color:#8b949e;font-size:12px">قابل قضاوت: '+(ent.judgeable||0)+' از '+(ent.completed||0)+'</span>'
+      +'</div>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه ورود</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'</div>';
+  }
   function horizonBox(name,h){
     var completed=Number(h.completed||0), pending=Number(h.pending||0), judgeable=Number(h.judgeable||0);
     var body='';
@@ -594,7 +639,9 @@ function renderPerf(){
     +card('در انتظار 5D',String(h5.pending||0),'پس از 5 روز معاملاتی کامل می‌شود','#ffab40')
     +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
     +'</div>'
+    +entryPerformanceBox(h5)
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+horizonBox('5D',h5)+horizonBox('10D',h10)+'</div>'
+    +entryOutcomeTable(h5)
     +recentOutcomeTable(h5)
     +'<div style="margin-top:14px;color:#8b949e;font-size:12px;line-height:1.9;text-align:center">این بخش سابقه عملکرد را پس از کامل شدن روزهای معاملاتی نشان می‌دهد و توصیه قطعی خرید/فروش نیست.</div>'
     +'</section>';
