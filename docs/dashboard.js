@@ -107,7 +107,7 @@ function render(){
   });
   document.getElementById('tb').innerHTML=html;
   document.getElementById('emp').style.display=rows.length?'none':'block';
-  drawSparks();drawTopPicks();
+  drawSparks();drawTopPicks();renderActionBoard();
   requestAnimationFrame(function(){drawDist();drawScatter();drawHeat();});
 }
 function drawSparks(){
@@ -136,6 +136,49 @@ function drawTopPicks(){
       +'<div class="pick-gr">'+e(d.rsi_band)+' | '+e(d.sector)+'</div></div>';
   }).join('');
 }
+function actionBucket(d){
+  var gate=entryGate(d), se=setupEvidence(d);
+  var score=Number(d.score||0);
+  if(gate.code==='allowed' && score>=75 && !d.conflict && !d.missing && !d.stale){
+    return {bucket:'ready', title:'آماده بررسی ورود', color:'#00c853', bg:'#06240f', reason:'Gate مجاز، امتیاز مناسب و شواهد قابل اتکا'};
+  }
+  if(gate.code==='wait' || se.score>=60){
+    return {bucket:'wait', title:'در انتظار تایید', color:'#ffd740', bg:'#241400', reason:(gate.reasons||[]).join(' | ')||se.note};
+  }
+  return {bucket:'risk', title:'ریسک / عدم ورود', color:'#ff5252', bg:'#2a0505', reason:(gate.reasons||[]).join(' | ')||'شواهد کافی برای ورود وجود ندارد'};
+}
+function renderActionBoard(){
+  var box=document.getElementById('actionBoard'), root=document.getElementById('actionRows');
+  if(!box||!root)return;
+  var rows=DATA.slice().map(function(d){
+    var gate=entryGate(d), se=setupEvidence(d), ab=actionBucket(d);
+    var pr=Number(d.score||0) + (gate.code==='allowed'?25:gate.code==='wait'?10:-20) + (se.score||0)/5;
+    return {d:d, gate:gate, se:se, ab:ab, priority:pr};
+  }).sort(function(a,b){return b.priority-a.priority;});
+  var groups=[
+    {key:'ready', title:'آماده بررسی ورود', max:4},
+    {key:'wait', title:'در انتظار تایید', max:4},
+    {key:'risk', title:'ریسک / عدم ورود', max:4}
+  ];
+  var html=groups.map(function(g){
+    var items=rows.filter(function(x){return x.ab.bucket===g.key;}).slice(0,g.max);
+    var body=items.length?items.map(function(x){
+      var d=x.d;
+      return '<div class="pick" onclick="openDr('+DATA.indexOf(d)+')" title="'+e(x.ab.reason)+'">'
+        +'<div class="pick-sym">'+e(d.sym)+'</div>'
+        +'<div style="color:'+x.ab.color+';font-size:11px;font-weight:800">'+e(x.se.setupFa)+'</div>'
+        +'<div style="font-size:10px;color:#8b949e;margin-top:3px">Score '+(Number(d.score||0).toFixed(0))+' | '+e(x.gate.title)+'</div>'
+        +'</div>';
+    }).join(''):'<div style="color:#484f58;font-size:12px;padding:8px">فعلا موردی ندارد</div>';
+    return '<div style="flex:1;min-width:220px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px">'
+      +'<div style="color:#58a6ff;font-weight:800;font-size:12px;margin-bottom:8px">'+g.title+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'+body+'</div>'
+      +'</div>';
+  }).join('');
+  root.innerHTML=html;
+  box.style.display='block';
+}
+
 function drawDist(){
   var c=document.getElementById('cDist');if(!c)return;
   var W=c.offsetWidth||300;c.width=W;c.height=190;
