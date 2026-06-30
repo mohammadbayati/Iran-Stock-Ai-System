@@ -30,7 +30,7 @@ function toggleTag(t){
 }
 function kpiF(type){
   _kf=_kf===type?null:type;
-  document.getElementById('fL').value='';document.getElementById('fG').value='';document.getElementById('fGate').value='';
+  document.getElementById('fL').value='';document.getElementById('fG').value='';document.getElementById('fGate').value='';var fsu=document.getElementById('fSetup');if(fsu)fsu.value='';
   Object.keys(_tags).forEach(function(t){
     _tags[t]=false;
     var el=document.getElementById('btn'+t.charAt(0).toUpperCase()+t.slice(1));
@@ -41,7 +41,7 @@ function kpiF(type){
 function filtered(){
   var q=(document.getElementById('q').value||'').toLowerCase();
   var fL=document.getElementById('fL').value,fG=document.getElementById('fG').value;
-  var fS=document.getElementById('fS').value,fR=document.getElementById('fR').value,fGate=document.getElementById('fGate').value;
+  var fS=document.getElementById('fS').value,fR=document.getElementById('fR').value,fGate=document.getElementById('fGate').value,fSetup=(document.getElementById('fSetup')||{}).value||'';
   return DATA.filter(function(d){
     if(q&&!d.sym.toLowerCase().includes(q)&&!(d.sector||'').toLowerCase().includes(q))return false;
     if(fL&&d.label_fa!==fL)return false;
@@ -49,6 +49,7 @@ function filtered(){
     if(fS&&d.sector!==fS)return false;
     if(fR&&d.rsi_band!==fR)return false;
     if(fGate&&entryGate(d).code!==fGate)return false;
+    if(fSetup&&setupEvidence(d).setup!==fSetup)return false;
     if(_tags.complete&&d.missing)return false;
     if(_tags.conflict&&!d.conflict)return false;
     if(_tags.changes&&!d.change)return false;
@@ -88,10 +89,13 @@ function render(){
     var gate=entryGate(d);
     var gateLabel=gate.code==='allowed'?'مجاز':gate.code==='wait'?'صبر':'مسدود';
     var gateBadge='<span class="badge" title="'+e(gate.reasons.join(' | '))+'" style="color:'+gate.color+';background:'+gate.bg+'">'+gateLabel+'</span>';
+    var se=setupEvidence(d);
+    var setupBadge='<span class="badge" title="'+e(se.note)+'" style="color:'+se.color+';background:#101923">'+e(se.setupFa)+'</span>';
     html+='<tr class="'+cls+'" onclick="openDr('+DATA.indexOf(d)+')">'
       +'<td><b>'+e(d.sym)+'</b>'+ci+wi+si+'</td>'
       +'<td><span class="badge" style="color:'+e(d.label_color)+';background:'+e(d.label_bg)+'">'+e(d.label_fa)+'</span></td>'
       +'<td style="text-align:center">'+gateBadge+'</td>'
+      +'<td style="text-align:center">'+setupBadge+'</td>'
       +'<td style="text-align:center"><b style="color:'+e(d.grade_color)+'">'+e(d.grade)+'</b></td>'
       +'<td style="text-align:center">'+(d.score?d.score.toFixed(0):'')+sb+'</td>'
       +'<td style="text-align:center"><span class="rbadge" style="color:'+e(d.rsi_color)+'">'+e(d.rsi)+'</span></td>'
