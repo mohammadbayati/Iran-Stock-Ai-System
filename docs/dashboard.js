@@ -521,15 +521,44 @@ function renderPerf(){
       +'<div style="color:'+(color||'#58a6ff')+';font-size:26px;font-weight:800;margin-top:6px">'+value+'</div>'
       +'<div style="color:#8b949e;font-size:11px;margin-top:4px">'+sub+'</div></div>';
   }
+  function perfResultLabel(item){
+    if(item.win===true)return '<span style="color:#00c853;font-weight:800">درست</span>';
+    if(item.win===false)return '<span style="color:#ff5252;font-weight:800">غلط</span>';
+    return '<span style="color:#8b949e;font-weight:800">خنثی</span>';
+  }
+  function recentOutcomeTable(h){
+    var rows=(h&&h.recent)?h.recent:[];
+    if(!rows.length)return '';
+    var body=rows.slice().reverse().map(function(item){
+      var ret=Number(item.ret||0);
+      var retColor=ret>=0?'#00c853':'#ff5252';
+      return '<tr>'
+        +'<td>'+e(item.date||'-')+'</td>'
+        +'<td style="font-weight:800;color:#e6edf3">'+e(item.symbol||'-')+'</td>'
+        +'<td>'+e(item.label||'-')+'</td>'
+        +'<td>'+e(item.grade||'-')+'</td>'
+        +'<td style="color:'+retColor+';font-weight:800">'+pct(ret)+'</td>'
+        +'<td>'+perfResultLabel(item)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin-top:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<h3 style="margin:0;color:#c9d1d9;font-size:15px">سیگنال‌های 5D کامل‌شده</h3>'
+      +'<span style="color:#8b949e;font-size:12px">قابل قضاوت: '+(h.judgeable||0)+' از '+(h.completed||0)+'</span>'
+      +'</div>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ</th><th>نماد</th><th>وضعیت</th><th>رتبه</th><th>بازده 5D</th><th>نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">نرخ موفقیت فقط روی ردیف‌های درست/غلط محاسبه می‌شود؛ ردیف‌های خنثی در win rate نمی‌آیند.</div>'
+      +'</div>';
+  }
   function horizonBox(name,h){
-    var completed=Number(h.completed||0), pending=Number(h.pending||0);
+    var completed=Number(h.completed||0), pending=Number(h.pending||0), judgeable=Number(h.judgeable||0);
     var body='';
     if(completed<=0){
       body='<div style="color:#ffd740;font-weight:700;margin-top:8px">در انتظار تکمیل روزهای معاملاتی</div>'
         +'<div style="color:#8b949e;font-size:12px;line-height:1.9;margin-top:8px">برای '+name+' باید '+(name==='5D'?'5':'10')+' روز معاملاتی بعد از تاریخ سیگنال کامل شود. فعلا نتیجه قابل قضاوت ثبت نشده است.</div>';
     }else{
       body='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px">'
-        +card('نرخ موفقیت',pct(h.win_rate),'سیگنال‌های کامل‌شده','#00c853')
+        +card('نرخ موفقیت',pct(h.win_rate),'قابل قضاوت: '+judgeable+' از '+completed,'#00c853')
         +card('میانگین بازده',pct(h.avg_ret),'بر اساس بازده تحقق‌یافته',Number(h.avg_ret||0)>=0?'#00c853':'#ff5252')
         +card('High Confidence',pct(h.high_conf_win_rate),'تعداد: '+(h.high_conf_completed||0),'#ffd740')
         +'</div>';
@@ -537,7 +566,7 @@ function renderPerf(){
     return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px">'
       +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'
       +'<h3 style="margin:0;color:#c9d1d9;font-size:15px">Track Record '+name+'</h3>'
-      +'<span style="color:#8b949e;font-size:12px">کامل‌شده: '+completed+' | در انتظار: '+pending+'</span>'
+      +'<span style="color:#8b949e;font-size:12px">کامل‌شده: '+completed+' | قابل قضاوت: '+judgeable+' | در انتظار: '+pending+'</span>'
       +'</div>'+body+'</div>';
   }
   var html='<section style="padding:18px 10px 28px;max-width:1280px;margin:0 auto">'
@@ -566,6 +595,7 @@ function renderPerf(){
     +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+horizonBox('5D',h5)+horizonBox('10D',h10)+'</div>'
+    +recentOutcomeTable(h5)
     +'<div style="margin-top:14px;color:#8b949e;font-size:12px;line-height:1.9;text-align:center">این بخش سابقه عملکرد را پس از کامل شدن روزهای معاملاتی نشان می‌دهد و توصیه قطعی خرید/فروش نیست.</div>'
     +'</section>';
   root.innerHTML=html;
