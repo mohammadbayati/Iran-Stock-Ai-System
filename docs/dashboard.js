@@ -701,6 +701,10 @@ function copyPilotReport(){
   var first=(PERF&&PERF.first_signal_date)||'-';
   var last=(PERF&&PERF.last_signal_date)||'-';
   var age=(PERF&&PERF.track_age_days)||0;
+  function fmtAlpha(v,n){
+    if(v===null||v===undefined)return '—';
+    return (v>0?'+':'')+v.toFixed(1)+'% (بر اساس '+(n||0)+' سیگنال)';
+  }
   var lines=[
     'گزارش پایلوت Iran Stock AI Dashboard',
     'شروع Track Record: '+first,
@@ -709,10 +713,12 @@ function copyPilotReport(){
     'کل سیگنال‌های ثبت‌شده: '+total,
     'نتیجه 5D کامل: '+(h5.completed||0)+' | در انتظار 5D: '+(h5.pending||0),
     'نتیجه 10D کامل: '+(h10.completed||0)+' | در انتظار 10D: '+(h10.pending||0),
+    'Alpha واقعی نسبت به شاخص کل (5D): '+fmtAlpha(h5.alpha_avg,h5.alpha_n),
+    'Alpha واقعی نسبت به شاخص کل (10D): '+fmtAlpha(h10.alpha_avg,h10.alpha_n),
     '',
     'وضعیت اعتبارسنجی: سیستم وارد مرحله Track Record شده است. ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است.',
     'مرز استفاده: خروجی‌ها کاندید بررسی هستند و توصیه قطعی خرید/فروش یا ادعای بازدهی قطعی محسوب نمی‌شوند.',
-    'معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.'
+    'معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، Alpha نسبت به شاخص کل، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.'
   ];
   var text=lines.join('\n');
   function done(){
@@ -1074,13 +1080,15 @@ function renderPerf(){
     +'</div>'
     +'<div id="pilotCopyStatus" style="color:#00c853;font-size:11px;height:16px;margin-bottom:2px"></div>'
     +'<div style="font-size:12px;color:#c9d1d9">این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است. تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و ادعای بازدهی قطعی ندارند.</div>'
-    +'<div style="margin-top:7px;font-size:11px;color:#8b949e">معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.</div>'
+    +'<div style="margin-top:7px;font-size:11px;color:#8b949e">معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، Alpha نسبت به شاخص کل، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.</div>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">'
     +card('کل سیگنال‌های ثبت‌شده',String(total),'خوانده‌شده از signal_log.csv','#58a6ff')
     +card('نتیجه 5D کامل',String(h5.completed||0),'آماده ارزیابی','#00c853')
     +card('در انتظار 5D',String(h5.pending||0),'پس از 5 روز معاملاتی کامل می‌شود','#ffab40')
     +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
+    +card('Alpha واقعی (5D) نسبت به شاخص کل',(h5.alpha_avg==null?'—':(h5.alpha_avg>0?'+':'')+h5.alpha_avg.toFixed(1)+'%'),'بر اساس '+(h5.alpha_n||0)+' سیگنال',Number(h5.alpha_avg||0)>=0?'#00c853':'#ff5252')
+    +card('Alpha واقعی (10D) نسبت به شاخص کل',(h10.alpha_avg==null?'—':(h10.alpha_avg>0?'+':'')+h10.alpha_avg.toFixed(1)+'%'),'بر اساس '+(h10.alpha_n||0)+' سیگنال',Number(h10.alpha_avg||0)>=0?'#00c853':'#ff5252')
     +'</div>'
     +entryPerformanceBox(h5)
     +pendingEntryQueue(h5)
