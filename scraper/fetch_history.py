@@ -21,6 +21,11 @@ ARABIC_TO_PERSIAN = str.maketrans({
     "آ": "آ",
 })
 
+BENCHMARK_SYMBOLS = [
+    "شاخص کل",
+    "شاخص کل (هم وزن)",
+]
+
 
 def normalize(symbol: str) -> str:
     return symbol.translate(ARABIC_TO_PERSIAN).strip()
@@ -65,6 +70,37 @@ def fetch_all(symbols: list) -> dict:
     return results
 
 
+def fetch_benchmarks() -> dict:
+    """Fetch شاخص کل and شاخص کل (هم وزن) so we can compute alpha vs market later."""
+    results = {}
+    try:
+        import pytse_client as tse
+    except Exception as e:
+        print(f"[fetch_history] pytse_client unavailable for benchmarks: {e}")
+        return results
+
+    for name in BENCHMARK_SYMBOLS:
+        try:
+            if hasattr(tse, "download_index_history"):
+                tse.download_index_history(symbols=[name], write_to_csv=True)
+            else:
+                tse.download(symbols=name, write_to_csv=True, include_jdate=True)
+            src = os.path.join(PYTSE_CACHE, f"{name}.csv")
+            if os.path.exists(src):
+                os.makedirs(HISTORY_DIR, exist_ok=True)
+                dst = os.path.join(HISTORY_DIR, f"{name}.csv")
+                shutil.copy2(src, dst)
+                print(f"[fetch_history] ✓ benchmark {name}")
+                results[name] = True
+            else:
+                print(f"[fetch_history] ✗ benchmark {name}: no file produced")
+                results[name] = False
+        except Exception as e:
+            print(f"[fetch_history] ✗ benchmark {name}: {e}")
+            results[name] = False
+    return results
+
+
 def load_symbols_from_top10() -> list:
     if not os.path.exists(TOP10_CSV):
         print(f"[fetch_history] {TOP10_CSV} not found")
@@ -81,6 +117,11 @@ if __name__ == "__main__":
         os.environ["FORCE_HISTORY_FETCH"] = "true"
     if not should_fetch():
         sys.exit(0)
+
+    bench_results = fetch_benchmarks()
+    bench_ok = sum(1 for v in bench_results.values() if v)
+    print(f"[fetch_history] Benchmarks: {bench_ok}/{len(bench_results)} succeeded")
+
     symbols = load_symbols_from_top10()
     if not symbols:
         sys.exit(0)
