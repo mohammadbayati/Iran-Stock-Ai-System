@@ -784,7 +784,8 @@ function renderPerf(){
     }
     if(completed<=0){
       body='<div style="color:#ffd740;font-weight:800;margin-top:10px">هنوز کاندید ورود 5D کامل‌شده نداریم</div>'
-        +'<div style="color:#8b949e;font-size:12px;line-height:1.9;margin-top:8px">KPI اصلی فاز اول فقط روی کاندیدهای ورود حساب می‌شود. هشدارهای عدم ورود، رصد و صبر در این بخش وارد نمی‌شوند.</div>';
+        +'<div style="color:#8b949e;font-size:12px;line-height:1.9;margin-top:8px">Benchmark ورود بعد از کامل شدن اولین کاندید ورود 5D فعال می‌شود. KPI اصلی فاز اول فقط روی کاندیدهای ورود حساب می‌شود؛ هشدارهای عدم ورود، رصد و صبر در این بخش وارد نمی‌شوند.</div>'
+        +'<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;margin-top:10px;color:#c9d1d9;font-size:12px;line-height:1.9">وضعیت فعلی: ورودهای ثبت‌شده هنوز در پنجره انتظار هستند. تا قبل از تکمیل 5 روز معاملاتی، مزیت نسبت به کل رصد و غیرورودها قابل قضاوت نیست.</div>';
     }else{
       body='<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px">'
         +card('ورودهای 5D کامل',String(completed),'فقط کاندیدهای ورود','#58a6ff')
