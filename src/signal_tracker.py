@@ -24,6 +24,8 @@ LOG_COLUMNS = [
     "confidence_grade", "close_at_signal", "close_5d_later",
     "return_5d_pct", "was_correct", "close_10d_later",
     "return_10d_pct", "was_correct_10d",
+    "benchmark_return_5d_pct", "alpha_5d_pct",
+    "benchmark_return_10d_pct", "alpha_10d_pct",
 ]
 
 
@@ -124,6 +126,10 @@ def log_signals(report_df: pd.DataFrame):
             "close_10d_later": None,
             "return_10d_pct": None,
             "was_correct_10d": None,
+            "benchmark_return_5d_pct": None,
+            "alpha_5d_pct": None,
+            "benchmark_return_10d_pct": None,
+            "alpha_10d_pct": None,
         })
 
     if new_rows:
