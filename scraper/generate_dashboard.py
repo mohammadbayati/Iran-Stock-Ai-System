@@ -109,6 +109,21 @@ def load_prev_labels():
 def load_perf_data():
     """Load signal log and expose track-record readiness for the dashboard."""
     import csv
+    from datetime import datetime, timedelta
+
+    MARKET_WEEKDAYS = {0, 1, 2, 5, 6}  # Mon, Tue, Wed, Sat, Sun
+
+    def review_date(signal_date, trading_days):
+        try:
+            d = datetime.strptime(str(signal_date)[:10], "%Y-%m-%d").date()
+        except Exception:
+            return ""
+        done = 0
+        while done < trading_days:
+            d += timedelta(days=1)
+            if d.weekday() in MARKET_WEEKDAYS:
+                done += 1
+        return d.isoformat()
 
     def to_float(value):
         try:
@@ -204,6 +219,8 @@ def load_perf_data():
                     entry_pending += 1
                     entry_pending_items.append({
                         "date": row.get("date", ""),
+                        "review_5d": review_date(row.get("date", ""), 5),
+                        "review_10d": review_date(row.get("date", ""), 10),
                         "symbol": row.get("symbol", ""),
                         "label": str(row.get("decision_label", "") or "نامشخص"),
                         "grade": str(row.get("confidence_grade", "") or "نامشخص"),
@@ -1635,6 +1652,7 @@ function renderPerf(){
         +'<td>'+e(item.setup_fa||item.setup_type||'-')+'</td>'
         +'<td>'+e(item.grade||'-')+'</td>'
         +'<td style="font-weight:800;color:#58a6ff">'+num(item.score,0)+'</td>'
+        +'<td style="color:#ffab40;font-weight:800">'+e(item.review_5d||'-')+'</td>'
         +'<td style="color:#ffd740;font-weight:700">در انتظار 5D</td>'
         +'</tr>';
     }).join('');
@@ -1643,8 +1661,8 @@ function renderPerf(){
       +'<h3 style="margin:0;color:#ffd740;font-size:15px">صف انتظار کاندیدهای ورود</h3>'
       +'<span style="color:#8b949e;font-size:12px">نمایش آخرین '+rows.length+' مورد از '+(ent.pending||0)+' ورود در انتظار</span>'
       +'</div>'
-      +'<table class="recent-table"><thead><tr><th>تاریخ سیگنال</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>امتیاز</th><th>وضعیت نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
-      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این جدول برای مدیریت انتظار است: تا وقتی پنجره 5D کامل نشود، این نمادها وارد محاسبه عملکرد ورود و Benchmark نمی‌شوند.</div>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ سیگنال</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>امتیاز</th><th>بررسی تقریبی 5D</th><th>وضعیت نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این جدول برای مدیریت انتظار است: تا وقتی پنجره 5D کامل نشود، این نمادها وارد محاسبه عملکرد ورود و Benchmark نمی‌شوند. تاریخ بررسی تقریبی بر اساس روزهای معاملاتی شنبه تا چهارشنبه محاسبه شده و تعطیلی رسمی را لحاظ نمی‌کند.</div>'
       +'</div>';
   }
   function calibrationReadinessBox(h){
