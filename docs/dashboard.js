@@ -804,6 +804,42 @@ function renderPerf(){
       +'<span style="color:#8b949e;font-size:12px">در انتظار ورود 5D: '+pending+'</span>'
       +'</div>'+body+setupPerformanceTable(ent)+'</div>';
   }
+  function calibrationReadinessBox(h){
+    var ent=(h&&h.entry)?h.entry:{};
+    var completed=Number(ent.completed||0), judgeable=Number(ent.judgeable||0), pending=Number(ent.pending||0);
+    var level='در انتظار نمونه اولیه', color='#ffd740', progress=0, next='اولین کاندید ورود 5D باید کامل شود.';
+    if(completed>=30){
+      level='آماده کالیبراسیون جدی';
+      color='#00c853';
+      progress=100;
+      next='می‌توان آستانه‌های Score، RSI، حجم و Gate را با داده واقعی بازتنظیم کرد.';
+    }else if(completed>=10){
+      level='نمونه قابل بررسی';
+      color='#58a6ff';
+      progress=Math.min(99,Math.round(completed/30*100));
+      next='تا 30 ورود کامل‌شده صبر کن تا تصمیم کالیبراسیون قابل دفاع‌تر شود.';
+    }else if(completed>=5){
+      level='نمونه اولیه';
+      color='#ffab40';
+      progress=Math.min(60,Math.round(completed/30*100));
+      next='برای قضاوت اولیه خوب است؛ برای تغییر آستانه‌ها هنوز زود است.';
+    }else{
+      progress=Math.round(completed/5*20);
+    }
+    return '<div style="background:#0d1117;border:1px solid '+color+'66;border-radius:8px;padding:14px;margin-bottom:12px">'
+      +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px">'
+      +'<h3 style="margin:0;color:'+color+';font-size:15px">آمادگی کالیبراسیون</h3>'
+      +'<span style="color:#8b949e;font-size:12px">ورود کامل‌شده: '+completed+' | قابل قضاوت: '+judgeable+' | در انتظار: '+pending+'</span>'
+      +'</div>'
+      +'<div style="height:10px;background:#21262d;border-radius:999px;overflow:hidden;margin-bottom:10px"><div style="height:10px;width:'+progress+'%;background:'+color+'"></div></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;color:#c9d1d9;font-size:12px;line-height:1.8">'
+      +'<div><span style="color:#8b949e">وضعیت</span><br><b style="color:'+color+'">'+level+'</b></div>'
+      +'<div><span style="color:#8b949e">حداقل بررسی اولیه</span><br><b>5 ورود کامل‌شده</b></div>'
+      +'<div><span style="color:#8b949e">حد قابل دفاع‌تر</span><br><b>30 ورود کامل‌شده</b></div>'
+      +'</div>'
+      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:10px">قدم بعدی: '+next+'</div>'
+      +'</div>';
+  }
   function entryOutcomeTable(h){
     var ent=(h&&h.entry)?h.entry:{};
     var rows=(ent&&ent.recent)?ent.recent:[];
@@ -873,6 +909,7 @@ function renderPerf(){
     +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
     +'</div>'
     +entryPerformanceBox(h5)
+    +calibrationReadinessBox(h5)
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+horizonBox('5D',h5)+horizonBox('10D',h10)+'</div>'
     +entryOutcomeTable(h5)
     +recentOutcomeTable(h5)
