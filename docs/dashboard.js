@@ -808,7 +808,24 @@ function renderPerf(){
     var ent=(h&&h.entry)?h.entry:{};
     var rows=(ent&&ent.pending_recent)?ent.pending_recent:[];
     if(!rows.length)return '';
+    var due=rows.filter(function(x){return x.due_status==='امروز';}).length;
+    var overdue=rows.filter(function(x){return x.due_status==='عقب‌افتاده';}).length;
+    var near=rows.filter(function(x){return x.due_status==='نزدیک';}).length;
+    function statusColor(s){
+      if(s==='عقب‌افتاده')return '#ff5252';
+      if(s==='امروز')return '#00c853';
+      if(s==='نزدیک')return '#ffab40';
+      return '#8b949e';
+    }
+    function daysLabel(v){
+      v=Number(v);
+      if(!isFinite(v))return '-';
+      if(v<0)return Math.abs(v)+' روز عقب';
+      if(v===0)return 'امروز';
+      return v+' روز مانده';
+    }
     var body=rows.slice().reverse().map(function(item){
+      var sc=statusColor(item.due_status||'');
       return '<tr>'
         +'<td>'+e(item.date||'-')+'</td>'
         +'<td style="font-weight:800;color:#e6edf3">'+e(item.symbol||'-')+'</td>'
@@ -817,7 +834,8 @@ function renderPerf(){
         +'<td>'+e(item.grade||'-')+'</td>'
         +'<td style="font-weight:800;color:#58a6ff">'+num(item.score,0)+'</td>'
         +'<td style="color:#ffab40;font-weight:800">'+e(item.review_5d||'-')+'</td>'
-        +'<td style="color:#ffd740;font-weight:700">در انتظار 5D</td>'
+        +'<td style="color:'+sc+';font-weight:800">'+e(item.due_status||'-')+'</td>'
+        +'<td style="color:'+sc+';font-weight:700">'+e(daysLabel(item.days_to_5d))+'</td>'
         +'</tr>';
     }).join('');
     return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin-bottom:12px">'
@@ -825,8 +843,13 @@ function renderPerf(){
       +'<h3 style="margin:0;color:#ffd740;font-size:15px">صف انتظار کاندیدهای ورود</h3>'
       +'<span style="color:#8b949e;font-size:12px">نمایش آخرین '+rows.length+' مورد از '+(ent.pending||0)+' ورود در انتظار</span>'
       +'</div>'
-      +'<table class="recent-table"><thead><tr><th>تاریخ سیگنال</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>امتیاز</th><th>بررسی تقریبی 5D</th><th>وضعیت نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
-      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این جدول برای مدیریت انتظار است: تا وقتی پنجره 5D کامل نشود، این نمادها وارد محاسبه عملکرد ورود و Benchmark نمی‌شوند. تاریخ بررسی تقریبی بر اساس روزهای معاملاتی شنبه تا چهارشنبه محاسبه شده و تعطیلی رسمی را لحاظ نمی‌کند.</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px">'
+      +card('نیازمند بررسی امروز',String(due),'کاندیدهایی که 5D آن‌ها امروز می‌رسد',due?'#00c853':'#8b949e')
+      +card('عقب‌افتاده',String(overdue),'احتمالا نیازمند تکمیل داده/بازبینی',overdue?'#ff5252':'#8b949e')
+      +card('سه روز آینده',String(near),'نزدیک به تکمیل پنجره 5D','#ffab40')
+      +'</div>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ سیگنال</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>امتیاز</th><th>بررسی تقریبی 5D</th><th>وضعیت بررسی</th><th>باقی‌مانده</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این جدول برای مدیریت انتظار است: تا وقتی پنجره 5D کامل نشود، این نمادها وارد محاسبه عملکرد ورود و Benchmark نمی‌شوند. وضعیت بررسی بر اساس تاریخ تقریبی 5D ساخته می‌شود؛ تعطیلی رسمی بازار فعلاً لحاظ نمی‌شود.</div>'
       +'</div>';
   }
   function calibrationReadinessBox(h){
