@@ -1751,6 +1751,36 @@ function renderPerf(){
       prompt('کپی دستی لیست صف انتظار:',txt);
     }
   }
+  function exportPendingEntryCsv(){
+    var h5=(PERF&&PERF.horizons&&PERF.horizons['5D'])?PERF.horizons['5D']:{};
+    var ent=(h5&&h5.entry)?h5.entry:{};
+    var rows=(ent&&ent.pending_recent)?ent.pending_recent:[];
+    var header=['date','symbol','label','setup','grade','score','review_5d','due_status','days_to_5d'];
+    function csvCell(v){
+      v=(v===null||v===undefined)?'':String(v);
+      return '"'+v.replace(/"/g,'""')+'"';
+    }
+    var csv=[header.map(csvCell).join(',')].concat(rows.slice().reverse().map(function(x){
+      return [
+        x.date||'',
+        x.symbol||'',
+        x.label||'',
+        x.setup_fa||x.setup_type||'',
+        x.grade||'',
+        Math.round(Number(x.score||0)),
+        x.review_5d||'',
+        x.due_status||'',
+        x.days_to_5d===null||x.days_to_5d===undefined?'':x.days_to_5d
+      ].map(csvCell).join(',');
+    })).join('\n');
+    var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='pending-entry-queue.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
+  }
   function pendingEntryQueue(h){
     var ent=(h&&h.entry)?h.entry:{};
     var rows=(ent&&ent.pending_recent)?ent.pending_recent:[];
@@ -1790,6 +1820,7 @@ function renderPerf(){
       +'<h3 style="margin:0;color:#ffd740;font-size:15px">صف انتظار کاندیدهای ورود</h3>'
       +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
       +'<button onclick="copyPendingEntryQueue()" style="background:#238636;color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی لیست بررسی</button>'
+      +'<button onclick="exportPendingEntryCsv()" style="background:#1f6feb;color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">CSV صف انتظار</button>'
       +'<span style="color:#8b949e;font-size:12px">نمایش آخرین '+rows.length+' مورد از '+(ent.pending||0)+' ورود در انتظار</span>'
       +'</div>'
       +'</div>'
