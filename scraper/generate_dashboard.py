@@ -1662,6 +1662,39 @@ function renderPerf(){
       +'<span style="color:#8b949e;font-size:12px">در انتظار ورود 5D: '+pending+'</span>'
       +'</div>'+body+setupPerformanceTable(ent)+'</div>';
   }
+  function copyPendingEntryQueue(){
+    var h5=(PERF&&PERF.horizons&&PERF.horizons['5D'])?PERF.horizons['5D']:{};
+    var ent=(h5&&h5.entry)?h5.entry:{};
+    var rows=(ent&&ent.pending_recent)?ent.pending_recent:[];
+    var watch=rows.slice().reverse();
+    var lines=['لیست بررسی صف انتظار کاندیدهای ورود'];
+    lines.push('تاریخ گزارش: '+new Date().toLocaleDateString('fa-IR'));
+    lines.push('کل در انتظار 5D: '+(ent.pending||0));
+    lines.push('');
+    if(!watch.length){
+      lines.push('موردی برای نمایش در صف انتظار وجود ندارد.');
+    }else{
+      watch.forEach(function(item,i){
+        lines.push((i+1)+'. '+(item.symbol||'-')+
+          ' | سیگنال: '+(item.date||'-')+
+          ' | بررسی تقریبی 5D: '+(item.review_5d||'-')+
+          ' | وضعیت: '+(item.due_status||'-')+
+          ' | باقی‌مانده: '+(item.days_to_5d===0?'امروز':(Number(item.days_to_5d)<0?Math.abs(Number(item.days_to_5d))+' روز عقب':(item.days_to_5d||'-')+' روز'))+
+          ' | امتیاز: '+(item.score||0)+
+          ' | رتبه: '+(item.grade||'-'));
+      });
+    }
+    lines.push('');
+    lines.push('یادآوری: این فهرست توصیه خرید/فروش نیست؛ فقط مدیریت پنجره بررسی 5D است.');
+    var txt=lines.join('\n');
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){
+        var s=document.getElementById('pendingCopyStatus');if(s)s.textContent='لیست صف انتظار کپی شد';
+      }).catch(function(){prompt('کپی دستی لیست صف انتظار:',txt);});
+    }else{
+      prompt('کپی دستی لیست صف انتظار:',txt);
+    }
+  }
   function pendingEntryQueue(h){
     var ent=(h&&h.entry)?h.entry:{};
     var rows=(ent&&ent.pending_recent)?ent.pending_recent:[];
@@ -1699,8 +1732,12 @@ function renderPerf(){
     return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin-bottom:12px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">'
       +'<h3 style="margin:0;color:#ffd740;font-size:15px">صف انتظار کاندیدهای ورود</h3>'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<button onclick="copyPendingEntryQueue()" style="background:#238636;color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی لیست بررسی</button>'
       +'<span style="color:#8b949e;font-size:12px">نمایش آخرین '+rows.length+' مورد از '+(ent.pending||0)+' ورود در انتظار</span>'
       +'</div>'
+      +'</div>'
+      +'<div id="pendingCopyStatus" style="height:16px;color:#00c853;font-size:11px;margin-bottom:4px"></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px">'
       +card('نیازمند بررسی امروز',String(due),'کاندیدهایی که 5D آن‌ها امروز می‌رسد',due?'#00c853':'#8b949e')
       +card('عقب‌افتاده',String(overdue),'احتمالا نیازمند تکمیل داده/بازبینی',overdue?'#ff5252':'#8b949e')
