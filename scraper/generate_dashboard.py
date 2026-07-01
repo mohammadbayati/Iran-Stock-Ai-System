@@ -14,6 +14,7 @@ SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.csv")
 DASHBOARD_PATH = os.path.join("docs", "index.html")
 JS_PATH = os.path.join("docs", "dashboard.js")
 PILOT_REPORT_PATH = os.path.join("docs", "pilot-report.html")
+DAILY_BRIEF_PATH = os.path.join("docs", "daily-brief.html")
 
 LABEL_FA = {
     "Entry Candidate":                   "کاندید بررسی قوی",
@@ -851,6 +852,98 @@ def build_pilot_report_html(perf, generated_at):
       <li>نتایج عملکرد تا زمانی که تعداد کافی سیگنال کامل‌شده وجود نداشته باشد، از نظر آماری قطعی نیستند.</li>
     </ul>
   </section>
+</main>
+</body>
+</html>'''
+
+
+def build_daily_brief_html(perf, generated_at):
+    horizons = perf.get("horizons") or {}
+    h5 = horizons.get("5D", {})
+    h10 = horizons.get("10D", {})
+    entry = h5.get("entry") or {}
+    bm = entry.get("benchmark") or {}
+    pending = entry.get("pending_recent") or []
+    due = [x for x in pending if x.get("due_status") == "امروز"]
+    overdue = [x for x in pending if x.get("due_status") == "عقب‌افتاده"]
+    near = [x for x in pending if x.get("due_status") == "نزدیک"]
+
+    def pct(v):
+        try:
+            v = float(v or 0)
+        except Exception:
+            v = 0.0
+        return ("+" if v > 0 else "") + f"{v:.1f}%"
+
+    def row(item):
+        return (
+            "<tr>"
+            f"<td>{_esc(item.get('date','-'))}</td>"
+            f"<td><b>{_esc(item.get('symbol','-'))}</b></td>"
+            f"<td>{_esc(item.get('setup_fa') or item.get('setup_type') or '-')}</td>"
+            f"<td>{_esc(item.get('grade','-'))}</td>"
+            f"<td>{_esc(round(float(item.get('score') or 0)))}</td>"
+            f"<td>{_esc(item.get('review_5d','-'))}</td>"
+            f"<td>{_esc(item.get('due_status','-'))}</td>"
+            f"<td>{_esc(item.get('days_to_5d','-'))}</td>"
+            "</tr>"
+        )
+
+    watch = due + overdue + near
+    rows_html = "".join(row(x) for x in watch[:30]) or '<tr><td colspan="8">موردی برای بررسی فوری وجود ندارد.</td></tr>'
+    if entry.get("completed", 0):
+        benchmark_note = f"مزیت نسبت به کل رصد: {pct(bm.get('edge_vs_all'))} | مزیت نسبت به غیرورود: {pct(bm.get('edge_vs_non_entry'))}"
+    else:
+        benchmark_note = "Benchmark ورود هنوز فعال نیست؛ اولین کاندید ورود 5D کامل نشده است."
+
+    return f'''<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>گزارش روزانه پایلوت | Iran Stock AI Dashboard</title>
+<style>
+body{{margin:0;background:#0d1117;color:#e6edf3;font-family:Tahoma,Arial,sans-serif}}
+main{{max-width:1120px;margin:0 auto;padding:28px 18px 42px}}
+h1{{color:#58a6ff;font-size:24px;margin:0 0 8px}}
+h2{{color:#c9d1d9;font-size:17px;margin:24px 0 10px}}
+.muted{{color:#8b949e;font-size:12px;line-height:1.9}}
+.grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px}}
+.card b{{font-size:24px;color:#58a6ff}}
+.good{{color:#00c853}}.warn{{color:#ffd740}}.bad{{color:#ff5252}}
+table{{width:100%;border-collapse:collapse;background:#0d1117;border:1px solid #30363d;border-radius:8px;overflow:hidden}}
+th,td{{padding:9px 10px;border-bottom:1px solid #21262d;text-align:center;font-size:12px}}
+th{{color:#58a6ff;background:#161b22}}
+.box{{background:#101923;border:1px solid #58a6ff55;border-radius:8px;padding:14px;line-height:1.9;margin:14px 0}}
+a{{color:#58a6ff}}
+@media(max-width:760px){{.grid{{grid-template-columns:1fr 1fr}}}}
+</style>
+</head>
+<body>
+<main>
+<h1>گزارش روزانه پایلوت Iran Stock AI Dashboard</h1>
+<div class="muted">آخرین بروزرسانی: {_esc(generated_at)} | آخرین سیگنال: {_esc(perf.get("last_signal_date") or "-")} | شروع Track Record: {_esc(perf.get("first_signal_date") or "-")}</div>
+<div class="grid">
+  <div class="card"><div class="muted">کل سیگنال‌ها</div><b>{_esc(perf.get("total_logged",0))}</b></div>
+  <div class="card"><div class="muted">نتیجه 5D کامل</div><b>{_esc(h5.get("completed",0))}</b></div>
+  <div class="card"><div class="muted">ورود در انتظار 5D</div><b class="warn">{_esc(entry.get("pending",0))}</b></div>
+  <div class="card"><div class="muted">نیازمند بررسی امروز</div><b class="good">{_esc(len(due))}</b></div>
+</div>
+<div class="box"><b>وضعیت Benchmark ورود:</b><br>{_esc(benchmark_note)}</div>
+<div class="grid">
+  <div class="card"><div class="muted">عقب‌افتاده/بازبینی داده</div><b class="bad">{_esc(len(overdue))}</b></div>
+  <div class="card"><div class="muted">سه روز آینده</div><b class="warn">{_esc(len(near))}</b></div>
+  <div class="card"><div class="muted">ورود 5D کامل‌شده</div><b>{_esc(entry.get("completed",0))}</b></div>
+  <div class="card"><div class="muted">آماده 10D</div><b>{_esc(h10.get("completed",0))}</b></div>
+</div>
+<h2>لیست اقدام روزانه</h2>
+<table>
+<thead><tr><th>تاریخ سیگنال</th><th>نماد</th><th>نوع موقعیت</th><th>رتبه</th><th>امتیاز</th><th>بررسی 5D</th><th>وضعیت</th><th>باقی‌مانده</th></tr></thead>
+<tbody>{rows_html}</tbody>
+</table>
+<p class="muted">این گزارش ابزار پایش پایلوت است؛ توصیه قطعی خرید/فروش نیست. تاریخ بررسی 5D تقریبی است و تعطیلی رسمی بازار ممکن است در آن لحاظ نشده باشد.</p>
+<p class="muted"><a href="index.html">بازگشت به داشبورد</a> | <a href="pilot-report.html">گزارش رسمی پایلوت</a></p>
 </main>
 </body>
 </html>'''
@@ -1925,6 +2018,7 @@ function renderPerf(){
     +'<div style="color:#58a6ff;font-weight:800;font-size:14px">خلاصه اعتبارسنجی پایلوت</div>'
     +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     +'<a href="pilot-report.html" target="_blank" style="background:#1f6feb;border:1px solid #388bfd;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;text-decoration:none">مشاهده گزارش رسمی</a>'
+    +'<a href="daily-brief.html" target="_blank" style="background:#8957e5;border:1px solid #a371f7;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;text-decoration:none">گزارش روزانه</a>'
     +'<button type="button" onclick="copyPilotReport()" style="background:#238636;border:1px solid #2ea043;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش پایلوت</button>'
     +'<button type="button" onclick="copyDailyPilotBrief()" style="background:#8957e5;border:1px solid #a371f7;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش روزانه</button>'
     +'</div>'
@@ -2070,6 +2164,7 @@ def run():
     page  = build_html(data, gen, kpi, perf)
     js    = build_js()
     report = build_pilot_report_html(perf, gen)
+    daily_brief = build_daily_brief_html(perf, gen)
     os.makedirs("docs", exist_ok=True)
     with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(page)
@@ -2077,7 +2172,9 @@ def run():
         f.write(js)
     with open(PILOT_REPORT_PATH, "w", encoding="utf-8") as f:
         f.write(report)
-    print(f"[dashboard] -> {DASHBOARD_PATH} + {JS_PATH} + {PILOT_REPORT_PATH} | {len(rows)} symbols")
+    with open(DAILY_BRIEF_PATH, "w", encoding="utf-8") as f:
+        f.write(daily_brief)
+    print(f"[dashboard] -> {DASHBOARD_PATH} + {JS_PATH} + {PILOT_REPORT_PATH} + {DAILY_BRIEF_PATH} | {len(rows)} symbols")
 
 
 if __name__ == "__main__":

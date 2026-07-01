@@ -1067,6 +1067,7 @@ function renderPerf(){
     +'<div style="color:#58a6ff;font-weight:800;font-size:14px">خلاصه اعتبارسنجی پایلوت</div>'
     +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     +'<a href="pilot-report.html" target="_blank" style="background:#1f6feb;border:1px solid #388bfd;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;text-decoration:none">مشاهده گزارش رسمی</a>'
+    +'<a href="daily-brief.html" target="_blank" style="background:#8957e5;border:1px solid #a371f7;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;text-decoration:none">گزارش روزانه</a>'
     +'<button type="button" onclick="copyPilotReport()" style="background:#238636;border:1px solid #2ea043;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش پایلوت</button>'
     +'<button type="button" onclick="copyDailyPilotBrief()" style="background:#8957e5;border:1px solid #a371f7;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش روزانه</button>'
     +'</div>'
