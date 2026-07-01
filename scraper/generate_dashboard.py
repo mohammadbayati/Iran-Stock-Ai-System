@@ -192,6 +192,7 @@ def load_perf_data():
         non_entry_judged = []
         entry_by_setup = {}
         entry_pending = 0
+        entry_pending_items = []
         recent = []
 
         for row in rows:
@@ -201,6 +202,15 @@ def load_perf_data():
                 pending += 1
                 if row_is_entry:
                     entry_pending += 1
+                    entry_pending_items.append({
+                        "date": row.get("date", ""),
+                        "symbol": row.get("symbol", ""),
+                        "label": str(row.get("decision_label", "") or "نامشخص"),
+                        "grade": str(row.get("confidence_grade", "") or "نامشخص"),
+                        "score": to_float(row.get("confidence_score")) or 0,
+                        "setup_type": str(row.get("setup_type", "") or "Legacy / Unknown"),
+                        "setup_fa": str(row.get("setup_fa", "") or "قدیمی/نامشخص"),
+                    })
                 continue
 
             correct_col = "was_correct" if horizon == 5 else f"was_correct_{horizon}d"
@@ -285,6 +295,7 @@ def load_perf_data():
 
         recent = sorted(completed, key=lambda x: (x["date"], x["symbol"]))[-20:]
         entry_recent = sorted(entry_completed, key=lambda x: (x["date"], x["symbol"]))[-20:]
+        entry_pending_recent = sorted(entry_pending_items, key=lambda x: (x["date"], x["symbol"]))[-30:]
         equity = []
         acc = 0.0
         for item in sorted(completed, key=lambda x: (x["date"], x["symbol"])):
@@ -323,6 +334,7 @@ def load_perf_data():
                     "edge_vs_non_entry": avg_ret(entry_completed) - avg_ret(non_entry_completed),
                 },
                 "recent": entry_recent,
+                "pending_recent": entry_pending_recent,
                 "by_setup": finalize_buckets(entry_by_setup),
             },
             "by_label": by_label,
@@ -1611,6 +1623,30 @@ function renderPerf(){
       +'<span style="color:#8b949e;font-size:12px">در انتظار ورود 5D: '+pending+'</span>'
       +'</div>'+body+setupPerformanceTable(ent)+'</div>';
   }
+  function pendingEntryQueue(h){
+    var ent=(h&&h.entry)?h.entry:{};
+    var rows=(ent&&ent.pending_recent)?ent.pending_recent:[];
+    if(!rows.length)return '';
+    var body=rows.slice().reverse().map(function(item){
+      return '<tr>'
+        +'<td>'+e(item.date||'-')+'</td>'
+        +'<td style="font-weight:800;color:#e6edf3">'+e(item.symbol||'-')+'</td>'
+        +'<td>'+e(item.label||'-')+'</td>'
+        +'<td>'+e(item.setup_fa||item.setup_type||'-')+'</td>'
+        +'<td>'+e(item.grade||'-')+'</td>'
+        +'<td style="font-weight:800;color:#58a6ff">'+num(item.score,0)+'</td>'
+        +'<td style="color:#ffd740;font-weight:700">در انتظار 5D</td>'
+        +'</tr>';
+    }).join('');
+    return '<div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin-bottom:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<h3 style="margin:0;color:#ffd740;font-size:15px">صف انتظار کاندیدهای ورود</h3>'
+      +'<span style="color:#8b949e;font-size:12px">نمایش آخرین '+rows.length+' مورد از '+(ent.pending||0)+' ورود در انتظار</span>'
+      +'</div>'
+      +'<table class="recent-table"><thead><tr><th>تاریخ سیگنال</th><th>نماد</th><th>وضعیت</th><th>نوع موقعیت</th><th>رتبه</th><th>امتیاز</th><th>وضعیت نتیجه</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">این جدول برای مدیریت انتظار است: تا وقتی پنجره 5D کامل نشود، این نمادها وارد محاسبه عملکرد ورود و Benchmark نمی‌شوند.</div>'
+      +'</div>';
+  }
   function calibrationReadinessBox(h){
     var ent=(h&&h.entry)?h.entry:{};
     var completed=Number(ent.completed||0), judgeable=Number(ent.judgeable||0), pending=Number(ent.pending||0);
@@ -1716,6 +1752,7 @@ function renderPerf(){
     +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
     +'</div>'
     +entryPerformanceBox(h5)
+    +pendingEntryQueue(h5)
     +calibrationReadinessBox(h5)
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+horizonBox('5D',h5)+horizonBox('10D',h10)+'</div>'
     +entryOutcomeTable(h5)
