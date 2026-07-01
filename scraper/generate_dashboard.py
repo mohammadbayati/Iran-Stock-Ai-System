@@ -188,6 +188,8 @@ def load_perf_data():
         entry_completed = []
         entry_judged = []
         entry_high_conf = []
+        non_entry_completed = []
+        non_entry_judged = []
         entry_by_setup = {}
         entry_pending = 0
         recent = []
@@ -237,6 +239,10 @@ def load_perf_data():
                 sb['judged'] += 1 if win is not None else 0
                 sb['wins'] += 1 if win else 0
                 sb['avg'] += ret
+            else:
+                non_entry_completed.append(item)
+                if win is not None:
+                    non_entry_judged.append(item)
 
             bucket = by_label.setdefault(label, {"n": 0, "judged": 0, "wins": 0, "avg": 0.0})
             bucket["n"] += 1
@@ -305,6 +311,17 @@ def load_perf_data():
                 "high_conf_completed": len(entry_high_conf),
                 "high_conf_win_rate": win_rate(entry_high_conf),
                 "high_conf_avg_ret": avg_ret(entry_high_conf),
+                "benchmark": {
+                    "all_completed": len(completed),
+                    "all_avg_ret": avg_ret(completed),
+                    "all_win_rate": win_rate(completed),
+                    "non_entry_completed": len(non_entry_completed),
+                    "non_entry_judgeable": len(non_entry_judged),
+                    "non_entry_avg_ret": avg_ret(non_entry_completed),
+                    "non_entry_win_rate": win_rate(non_entry_completed),
+                    "edge_vs_all": avg_ret(entry_completed) - avg_ret(completed),
+                    "edge_vs_non_entry": avg_ret(entry_completed) - avg_ret(non_entry_completed),
+                },
                 "recent": entry_recent,
                 "by_setup": finalize_buckets(entry_by_setup),
             },
@@ -1564,8 +1581,14 @@ function renderPerf(){
   }
   function entryPerformanceBox(h){
     var ent=(h&&h.entry)?h.entry:{};
+    var bm=(ent&&ent.benchmark)?ent.benchmark:{};
     var completed=Number(ent.completed||0), pending=Number(ent.pending||0), judgeable=Number(ent.judgeable||0);
     var body='';
+    function signedPct(v){v=Number(v||0);return (v>0?'+':'')+num(v,1)+'%';}
+    function edgeCard(title,value,sub){
+      var v=Number(value||0), color=v>0?'#00c853':v<0?'#ff5252':'#ffd740';
+      return card(title,signedPct(v),sub,color);
+    }
     if(completed<=0){
       body='<div style="color:#ffd740;font-weight:800;margin-top:10px">هنوز کاندید ورود 5D کامل‌شده نداریم</div>'
         +'<div style="color:#8b949e;font-size:12px;line-height:1.9;margin-top:8px">KPI اصلی فاز اول فقط روی کاندیدهای ورود حساب می‌شود. هشدارهای عدم ورود، رصد و صبر در این بخش وارد نمی‌شوند.</div>';
@@ -1575,7 +1598,11 @@ function renderPerf(){
         +card('نرخ موفقیت ورود',pct(ent.win_rate),'قابل قضاوت: '+judgeable+' از '+completed,'#00c853')
         +card('میانگین بازده ورود',pct(ent.avg_ret),'فقط ورودهای کامل‌شده',Number(ent.avg_ret||0)>=0?'#00c853':'#ff5252')
         +card('High Confidence Entry',pct(ent.high_conf_win_rate),'تعداد: '+(ent.high_conf_completed||0),'#ffd740')
-        +'</div>';
+        +edgeCard('مزیت نسبت به کل رصد',bm.edge_vs_all,'کل کامل‌شده: '+(bm.all_completed||0)+' | میانگین: '+signedPct(bm.all_avg_ret))
+        +edgeCard('مزیت نسبت به غیرورود',bm.edge_vs_non_entry,'غیرورود کامل‌شده: '+(bm.non_entry_completed||0)+' | میانگین: '+signedPct(bm.non_entry_avg_ret))
+        +card('نرخ موفقیت غیرورود',pct(bm.non_entry_win_rate),'کنترل داخلی برای مقایسه','#8b949e')
+        +'</div>'
+        +'<div style="color:#8b949e;font-size:11px;line-height:1.8;margin-top:8px">Benchmark داخلی یعنی مقایسه کاندیدهای ورود با کل سیگنال‌های کامل‌شده و با سیگنال‌های غیرورود. بعد از اتصال داده شاخص، این بخش با شاخص کل/هم‌وزن هم مقایسه می‌شود.</div>';
     }
     return '<div style="background:#101923;border:1px solid #58a6ff55;border-radius:8px;padding:14px;margin-bottom:12px">'
       +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center">'
