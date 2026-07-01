@@ -260,6 +260,7 @@ def load_perf_data():
             score = to_float(row.get("confidence_score")) or 0
             label = str(row.get("decision_label", "") or "نامشخص")
             grade = str(row.get("confidence_grade", "") or "نامشخص")
+            alpha = to_float(row.get(f"alpha_{horizon}d_pct"))
             item = {
                 "date": row.get("date", ""),
                 "symbol": row.get("symbol", ""),
@@ -272,6 +273,7 @@ def load_perf_data():
                 "entry": row_is_entry,
                 "setup_type": str(row.get("setup_type", "") or "Legacy / Unknown"),
                 "setup_fa": str(row.get("setup_fa", "") or "قدیمی/نامشخص"),
+                "alpha": alpha,
             }
             completed.append(item)
             if win is not None:
@@ -314,6 +316,13 @@ def load_perf_data():
         def avg_ret(items):
             return sum(x["ret"] for x in items) / len(items) if items else 0
 
+        def avg_alpha(items):
+            vals = [x["alpha"] for x in items if x.get("alpha") is not None]
+            return (sum(vals) / len(vals)) if vals else None
+
+        def alpha_n(items):
+            return sum(1 for x in items if x.get("alpha") is not None)
+
         def finalize_buckets(buckets):
             out = []
             for key, b in buckets.items():
@@ -353,6 +362,8 @@ def load_perf_data():
             "high_conf_completed": len(high_conf),
             "high_conf_win_rate": win_rate(high_conf),
             "high_conf_avg_ret": avg_ret(high_conf),
+            "alpha_avg": avg_alpha(completed),
+            "alpha_n": alpha_n(completed),
             "entry": {
                 "completed": len(entry_completed),
                 "judgeable": len(entry_judged),
@@ -362,6 +373,8 @@ def load_perf_data():
                 "high_conf_completed": len(entry_high_conf),
                 "high_conf_win_rate": win_rate(entry_high_conf),
                 "high_conf_avg_ret": avg_ret(entry_high_conf),
+                "alpha_avg": avg_alpha(entry_completed),
+                "alpha_n": alpha_n(entry_completed),
                 "benchmark": {
                     "all_completed": len(completed),
                     "all_avg_ret": avg_ret(completed),
@@ -760,11 +773,23 @@ def build_pilot_report_html(perf, generated_at):
         except Exception:
             return 0
 
+    def fmt_alpha(value):
+        if value is None:
+            return "—"
+        return f"{value:+.1f}%"
+
+    alpha5 = h5.get("alpha_avg")
+    alpha5_n = n(h5.get("alpha_n"))
+    alpha10 = h10.get("alpha_avg")
+    alpha10_n = n(h10.get("alpha_n"))
+
     cards = [
         ("کل سیگنال‌های ثبت‌شده", total, "ثبت‌شده در signal_log.csv"),
         ("نتیجه 5D کامل", n(h5.get("completed")), "آماده ارزیابی"),
         ("در انتظار 5D", n(h5.get("pending")), "پس از 5 روز معاملاتی"),
         ("در انتظار 10D", n(h10.get("pending")), "پس از 10 روز معاملاتی"),
+        ("Alpha واقعی (5D) نسبت به شاخص کل", fmt_alpha(alpha5), f"بر اساس {alpha5_n} سیگنال دارای بنچمارک"),
+        ("Alpha واقعی (10D) نسبت به شاخص کل", fmt_alpha(alpha10), f"بر اساس {alpha10_n} سیگنال دارای بنچمارک"),
     ]
     card_html = "\n".join(
         f'<div class="card"><span>{html_mod.escape(str(title))}</span><b>{html_mod.escape(str(value))}</b><small>{html_mod.escape(str(sub))}</small></div>'
@@ -839,6 +864,7 @@ def build_pilot_report_html(perf, generated_at):
     <ul>
       <li>نرخ موفقیت سیگنال‌ها پس از تکمیل 5D و 10D</li>
       <li>میانگین بازده تحقق‌یافته در هر افق زمانی</li>
+      <li>Alpha واقعی نسبت به شاخص کل (مبنای تصمیم فارابی: عملکرد باید بهتر از خرید ساده شاخص باشد)</li>
       <li>تفکیک عملکرد سیگنال‌های High Confidence</li>
       <li>مقایسه وضعیت‌های مختلف مثل کاندید بررسی، ریسک اشباع خرید و داده ناقص</li>
     </ul>
@@ -1652,6 +1678,10 @@ function copyPilotReport(){
   var first=(PERF&&PERF.first_signal_date)||'-';
   var last=(PERF&&PERF.last_signal_date)||'-';
   var age=(PERF&&PERF.track_age_days)||0;
+  function fmtAlpha(v,n){
+    if(v===null||v===undefined)return '—';
+    return (v>0?'+':'')+v.toFixed(1)+'% (بر اساس '+(n||0)+' سیگنال)';
+  }
   var lines=[
     'گزارش پایلوت Iran Stock AI Dashboard',
     'شروع Track Record: '+first,
@@ -1660,10 +1690,12 @@ function copyPilotReport(){
     'کل سیگنال‌های ثبت‌شده: '+total,
     'نتیجه 5D کامل: '+(h5.completed||0)+' | در انتظار 5D: '+(h5.pending||0),
     'نتیجه 10D کامل: '+(h10.completed||0)+' | در انتظار 10D: '+(h10.pending||0),
+    'Alpha واقعی نسبت به شاخص کل (5D): '+fmtAlpha(h5.alpha_avg,h5.alpha_n),
+    'Alpha واقعی نسبت به شاخص کل (10D): '+fmtAlpha(h10.alpha_avg,h10.alpha_n),
     '',
     'وضعیت اعتبارسنجی: سیستم وارد مرحله Track Record شده است. ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است.',
     'مرز استفاده: خروجی‌ها کاندید بررسی هستند و توصیه قطعی خرید/فروش یا ادعای بازدهی قطعی محسوب نمی‌شوند.',
-    'معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.'
+    'معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، Alpha نسبت به شاخص کل، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.'
   ];
   var text=lines.join('\n');
   function done(){
@@ -2025,13 +2057,15 @@ function renderPerf(){
     +'</div>'
     +'<div id="pilotCopyStatus" style="color:#00c853;font-size:11px;height:16px;margin-bottom:2px"></div>'
     +'<div style="font-size:12px;color:#c9d1d9">این سیستم وارد مرحله Track Record شده است. سیگنال‌ها ثبت می‌شوند، اما ارزیابی عملکرد فقط پس از کامل شدن پنجره‌های 5D و 10D معتبر است. تا قبل از تکمیل این پنجره‌ها، خروجی‌ها صرفا کاندید بررسی هستند و ادعای بازدهی قطعی ندارند.</div>'
-    +'<div style="margin-top:7px;font-size:11px;color:#8b949e">معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.</div>'
+    +'<div style="margin-top:7px;font-size:11px;color:#8b949e">معیارهای قضاوت آینده: نرخ موفقیت، میانگین بازده، Alpha نسبت به شاخص کل، نتیجه 5D، نتیجه 10D و تفکیک High Confidence.</div>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">'
     +card('کل سیگنال‌های ثبت‌شده',String(total),'خوانده‌شده از signal_log.csv','#58a6ff')
     +card('نتیجه 5D کامل',String(h5.completed||0),'آماده ارزیابی','#00c853')
     +card('در انتظار 5D',String(h5.pending||0),'پس از 5 روز معاملاتی کامل می‌شود','#ffab40')
     +card('در انتظار 10D',String(h10.pending||0),'پس از 10 روز معاملاتی کامل می‌شود','#ffd740')
+    +card('Alpha واقعی (5D) نسبت به شاخص کل',(h5.alpha_avg==null?'—':(h5.alpha_avg>0?'+':'')+h5.alpha_avg.toFixed(1)+'%'),'بر اساس '+(h5.alpha_n||0)+' سیگنال',Number(h5.alpha_avg||0)>=0?'#00c853':'#ff5252')
+    +card('Alpha واقعی (10D) نسبت به شاخص کل',(h10.alpha_avg==null?'—':(h10.alpha_avg>0?'+':'')+h10.alpha_avg.toFixed(1)+'%'),'بر اساس '+(h10.alpha_n||0)+' سیگنال',Number(h10.alpha_avg||0)>=0?'#00c853':'#ff5252')
     +'</div>'
     +entryPerformanceBox(h5)
     +pendingEntryQueue(h5)
