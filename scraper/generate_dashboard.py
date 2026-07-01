@@ -1496,6 +1496,62 @@ function closeDr(ev){
   document.body.style.overflow='';
 }
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeDr();});
+function copyDailyPilotBrief(){
+  var horizons=(PERF&&PERF.horizons)?PERF.horizons:{};
+  var h5=horizons['5D']||{}, h10=horizons['10D']||{};
+  var ent=(h5&&h5.entry)?h5.entry:{};
+  var bm=(ent&&ent.benchmark)?ent.benchmark:{};
+  var pending=(ent&&ent.pending_recent)?ent.pending_recent:[];
+  var due=pending.filter(function(x){return x.due_status==='امروز';});
+  var overdue=pending.filter(function(x){return x.due_status==='عقب‌افتاده';});
+  var near=pending.filter(function(x){return x.due_status==='نزدیک';});
+  function pct(v){v=Number(v||0);return (v>0?'+':'')+v.toFixed(1)+'%';}
+  function listRows(rows,limit){
+    rows=rows.slice().reverse().slice(0,limit||8);
+    if(!rows.length)return 'موردی ندارد';
+    return rows.map(function(x,i){
+      return (i+1)+'. '+(x.symbol||'-')+' | امتیاز '+Math.round(Number(x.score||0))+' | بررسی 5D: '+(x.review_5d||'-')+' | '+(x.due_status||'-');
+    }).join('\n');
+  }
+  var lines=[
+    'گزارش روزانه پایلوت Iran Stock AI Dashboard',
+    'تاریخ گزارش: '+new Date().toLocaleDateString('fa-IR'),
+    'آخرین سیگنال ثبت‌شده: '+((PERF&&PERF.last_signal_date)||'-'),
+    '',
+    'خلاصه Track Record',
+    '- کل سیگنال‌ها: '+((PERF&&PERF.total_logged)||0),
+    '- نتیجه 5D کامل: '+(h5.completed||0)+' | در انتظار 5D: '+(h5.pending||0),
+    '- نتیجه 10D کامل: '+(h10.completed||0)+' | در انتظار 10D: '+(h10.pending||0),
+    '',
+    'کاندیدهای ورود',
+    '- ورود 5D کامل‌شده: '+(ent.completed||0),
+    '- ورود در انتظار 5D: '+(ent.pending||0),
+    '- نیازمند بررسی امروز: '+due.length,
+    '- عقب‌افتاده/نیازمند بازبینی داده: '+overdue.length,
+    '- نزدیک به بررسی در سه روز آینده: '+near.length,
+    '',
+    'Benchmark ورود',
+    ent.completed>0
+      ? '- مزیت نسبت به کل رصد: '+pct(bm.edge_vs_all)+' | مزیت نسبت به غیرورود: '+pct(bm.edge_vs_non_entry)
+      : '- هنوز فعال نیست؛ اولین کاندید ورود 5D کامل نشده است.',
+    '',
+    'لیست بررسی امروز',
+    listRows(due.concat(overdue),10),
+    '',
+    'نزدیک به بررسی',
+    listRows(near,8),
+    '',
+    'مرز استفاده: این گزارش ابزار پایش پایلوت است و توصیه قطعی خرید/فروش نیست.'
+  ];
+  var txt=lines.join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){
+      var s=document.getElementById('pilotCopyStatus');if(s)s.textContent='گزارش روزانه کپی شد';
+    }).catch(function(){prompt('کپی دستی گزارش روزانه:',txt);});
+  }else{
+    prompt('کپی دستی گزارش روزانه:',txt);
+  }
+}
 function copyPilotReport(){
   var horizons=(PERF&&PERF.horizons)?PERF.horizons:{};
   var h5=horizons['5D']||{},h10=horizons['10D']||{};
@@ -1839,6 +1895,7 @@ function renderPerf(){
     +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     +'<a href="pilot-report.html" target="_blank" style="background:#1f6feb;border:1px solid #388bfd;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;text-decoration:none">مشاهده گزارش رسمی</a>'
     +'<button type="button" onclick="copyPilotReport()" style="background:#238636;border:1px solid #2ea043;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش پایلوت</button>'
+    +'<button type="button" onclick="copyDailyPilotBrief()" style="background:#8957e5;border:1px solid #a371f7;color:#fff;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">کپی گزارش روزانه</button>'
     +'</div>'
     +'</div>'
     +'<div id="pilotCopyStatus" style="color:#00c853;font-size:11px;height:16px;margin-bottom:2px"></div>'
